@@ -1,0 +1,31 @@
+{
+  "name": "light-for-volunteer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Light For Volunteer — a marketplace connecting social impact organisations with volunteers and interns. An initiative of Amaanitvam Foundation.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24.9"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run test:e2e --workspaces --if-present",
+    "dev:api": "npm run dev --workspace apps/api",
+    "db:up": "docker compose -f docker/docker-compose.yml up -d",
+    "db:down": "docker compose -f docker/docker-compose.yml down",
+    "db:migrate": "npm run migration:run --workspace apps/api",
+    "seed:admin": "npm run seed:admin --workspace apps/api"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "argon2@0.45.1": true,
+    "unrs-resolver@1.12.2": true,
+    "@scarf/scarf": false
+  }
+}

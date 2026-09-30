@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lfv-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lfv
+      POSTGRES_PASSWORD: lfv
+      POSTGRES_DB: light_for_volunteer
+    ports:
+      # 5433: a native Windows PostgreSQL service already owns 5432 on the
+      # dev machine; keep the container on 5433 to avoid the clash.
+      - "5433:5432"
+    volumes:
+      - lfv-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lfv -d light_for_volunteer"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: lfv-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - lfv-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  lfv-postgres-data:
+  lfv-redis-data:
