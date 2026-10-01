@@ -11,6 +11,7 @@
     "node": ">=24.9"
   },
   "scripts": {
+    "postinstall": "npm run build --workspace packages/types",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
