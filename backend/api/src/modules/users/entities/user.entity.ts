@@ -1,8 +1,11 @@
 import { DEFAULT_ROLE, ROLES, type Role } from '@lfv/types';
+import { Organisation } from 'src/database/entities/organisation.entity';
+import { VolunteerProfile } from 'src/database/entities/volunteer-profile.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -64,4 +67,10 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
+
+  @OneToOne(() => VolunteerProfile, (profile) => profile.user)
+  volunteerProfile!: VolunteerProfile;
+
+  @OneToOne(() => Organisation, (org) => org.user)
+  organisation!: Organisation;
 }

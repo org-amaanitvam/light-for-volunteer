@@ -1,8 +1,7 @@
 import { 
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, 
-  OneToOne, OneToMany, ManyToOne, JoinColumn 
+  Entity, PrimaryGeneratedColumn, Column,OneToOne, OneToMany,JoinColumn 
 } from 'typeorm';
-import { User } from './user.entity';
+import { User } from '../../modules/users/entities/user.entity';
 import { VerificationStatus } from '../enums/verification-status.enum';
 import { Opportunity } from './opportunity.entity';
 

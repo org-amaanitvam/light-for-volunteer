@@ -1,6 +1,5 @@
 import { 
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, 
-  OneToOne, OneToMany, ManyToOne, JoinColumn 
+  Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn 
 } from 'typeorm';
 import { Application } from './application.entity';
 import { User } from './user.entity';
