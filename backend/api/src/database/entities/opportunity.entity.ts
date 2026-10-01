@@ -1,0 +1,58 @@
+import { 
+  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, 
+  OneToOne, OneToMany, ManyToOne, JoinColumn 
+} from 'typeorm';
+import { Organisation } from './organisation.entity';
+import { OpportunityType } from '../enums/opportunity-type.enum';
+import { LocationType } from '../enums/location-type.enum';
+import { OpportunityStatus } from '../enums/opportunity-status.enum';
+import { Application } from './application.entity';
+
+@Entity('opportunities')
+export class Opportunity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() => Organisation, org => org.opportunities,{ onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'org_id' })
+  organisation: Organisation;
+
+  @Column()
+  title: string;
+
+  @Column({ type: 'text' })
+  description: string;
+
+  @Column({ type: 'enum', enum: OpportunityType })
+  type: OpportunityType;
+
+  @Column({ nullable: true })
+  category: string;
+
+  @Column('simple-array', { nullable: true })
+  skills_required: string[];
+
+  @Column({ type: 'enum', enum: LocationType })
+  location_type: LocationType;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
+  duration: string;
+
+  @Column({ type: 'int', default: 0 })
+  points_reward: number;
+
+  @Column({ type: 'int', default: 1 })
+  openings: number;
+
+  @Column({ type: 'date', nullable: true })
+  deadline: Date;
+
+  @Column({ type: 'enum', enum: OpportunityStatus, default: OpportunityStatus.DRAFT })
+  status: OpportunityStatus;
+
+  @OneToMany(() => Application, application => application.opportunity)
+  applications: Application[];
+}

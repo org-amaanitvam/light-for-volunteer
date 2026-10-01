@@ -4,7 +4,7 @@
   "private": true,
   "description": "Light For Volunteer — a marketplace connecting social impact organisations with volunteers and interns. An initiative of Amaanitvam Foundation.",
   "workspaces": [
-    "apps/*",
+    "backend/*",
     "packages/*"
   ],
   "engines": {
@@ -12,21 +12,34 @@
   },
   "scripts": {
     "postinstall": "npm run build --workspace packages/types",
+    "typeorm": "typeorm-ts-node-commonjs",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "npm run test:e2e --workspaces --if-present",
-    "dev:api": "npm run dev --workspace apps/api",
+    "dev:api": "npm run dev --workspace backend/api",
     "db:up": "docker compose -f docker/docker-compose.yml up -d",
     "db:down": "docker compose -f docker/docker-compose.yml down",
-    "db:migrate": "npm run migration:run --workspace apps/api",
-    "seed:admin": "npm run seed:admin --workspace apps/api"
+    "db:migrate": "npm run migration:run --workspace backend/api",
+    "seed:admin": "npm run seed:admin --workspace backend/api"
   },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
     "argon2@0.45.1": true,
     "unrs-resolver@1.12.2": true,
     "@scarf/scarf": false
+  },
+  "dependencies": {
+    "@nestjs/mapped-types": "^12.0.0",
+    "@nestjs/typeorm": "^12.0.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "pg": "^8.23.1",
+    "typeorm": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "ts-node": "^10.9.2"
   }
 }

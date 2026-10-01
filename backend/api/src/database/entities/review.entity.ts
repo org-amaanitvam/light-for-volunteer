@@ -1,0 +1,30 @@
+import { 
+  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, 
+  OneToOne, OneToMany, ManyToOne, JoinColumn 
+} from 'typeorm';
+import { Application } from './application.entity';
+import { User } from './user.entity';
+
+@Entity('reviews')
+export class Review {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() => Application,{ onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'application_id' })
+  application: Application;
+
+  @Column({ type: 'int' })
+  rating: number;
+
+  @Column({ type: 'text', nullable: true })
+  comment: string;
+
+  @ManyToOne(() => User,{ onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'given_by' })
+  given_by: User;
+
+  @ManyToOne(() => User,{ onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'given_to' })
+  given_to: User;
+}
