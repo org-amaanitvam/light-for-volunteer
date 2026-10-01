@@ -24,6 +24,15 @@ import { SearchModule } from './modules/search/search.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 import { VolunteersModule } from './modules/volunteers/volunteers.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './database/entities/user.entity';
+import { VolunteerProfile } from './database/entities/volunteer-profile.entity';
+import { Organisation } from './database/entities/organisation.entity';
+import { Opportunity } from './database/entities/opportunity.entity';
+import { Application } from './database/entities/application.entity';
+import { Review } from './database/entities/review.entity';
+import { Message } from './database/entities/message.entity';
+import { Badge } from './database/entities/badge.entity';
 
 /**
  * Global guard order: JWT auth → RBAC roles (registered inside AuthModule),
@@ -32,6 +41,25 @@ import { VolunteersModule } from './modules/volunteers/volunteers.module';
  */
 @Module({
   imports: [
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DATABASE_HOST ?? 'localhost',
+      port: Number(process.env.DATABASE_PORT ?? 5432),
+      username: process.env.DATABASE_USER ?? 'lfv',
+      password: process.env.DATABASE_PASSWORD ?? 'lfv',
+      database: process.env.DATABASE_NAME ?? 'light_for_volunteer',
+      entities: [
+        User,
+        VolunteerProfile,
+        Organisation,
+        Opportunity,
+        Application,
+        Review,
+        Message,
+        Badge,
+      ],
+      synchronize: process.env.NODE_ENV == "development" ? true : false
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, authConfig, databaseConfig, redisConfig],
