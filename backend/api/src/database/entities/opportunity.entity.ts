@@ -1,6 +1,5 @@
 import { 
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, 
-  OneToOne, OneToMany, ManyToOne, JoinColumn 
+  Entity, PrimaryGeneratedColumn, Column,OneToMany, ManyToOne, JoinColumn 
 } from 'typeorm';
 import { Organisation } from './organisation.entity';
 import { OpportunityType } from '../enums/opportunity-type.enum';

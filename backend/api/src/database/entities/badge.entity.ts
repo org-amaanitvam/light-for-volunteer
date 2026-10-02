@@ -1,6 +1,5 @@
 import { 
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, 
-  OneToOne, OneToMany, ManyToOne, JoinColumn 
+  Entity, PrimaryGeneratedColumn, Column
 } from 'typeorm';
 
 @Entity('badges')

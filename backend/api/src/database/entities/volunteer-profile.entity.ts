@@ -1,8 +1,8 @@
+import { User } from '../../modules/users/entities/user.entity';
 import { 
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, 
-  OneToOne, OneToMany, ManyToOne, JoinColumn 
+  Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn 
 } from 'typeorm';
-import { User } from './user.entity';
+
 
 @Entity('volunteer_profiles')
 export class VolunteerProfile {
