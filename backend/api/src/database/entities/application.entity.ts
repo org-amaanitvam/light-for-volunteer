@@ -2,7 +2,7 @@ import {
   Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn 
 } from 'typeorm';
 import { Opportunity } from './opportunity.entity';
-import { User } from './user.entity';
+import { User } from '../../modules/users/entities/user.entity';
 import { ApplicationStatus } from '../enums/application-status.enum';
 
 @Entity('applications')

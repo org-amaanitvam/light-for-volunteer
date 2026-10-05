@@ -2,7 +2,7 @@ import {
   Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn 
 } from 'typeorm';
 import { Application } from './application.entity';
-import { User } from './user.entity';
+import { User } from '../../modules/users/entities/user.entity';
 
 @Entity('reviews')
 export class Review {
