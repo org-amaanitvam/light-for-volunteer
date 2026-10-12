@@ -11,10 +11,10 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:e2e": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --config test/jest-e2e.json --runInBand",
-    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
-    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",
-    "seed:admin": "ts-node -T src/database/seeds/admin.seed.ts"
+    "migration:run": "NODE_OPTIONS='-r tsconfig-paths/register' typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "migration:revert": "NODE_OPTIONS='-r tsconfig-paths/register' typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
+    "migration:generate": "NODE_OPTIONS='-r tsconfig-paths/register' typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",
+    "seed:admin": "ts-node -T -r tsconfig-paths/register src/database/seeds/admin.seed.ts"
   },
   "dependencies": {
     "@lfv/types": "*",
@@ -58,6 +58,7 @@
     "supertest": "^7.3.0",
     "ts-jest": "^29.4.14",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.0"
   }

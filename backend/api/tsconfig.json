@@ -2,7 +2,8 @@
   "extends": "../../packages/tsconfig/base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution":"bundler",
+    "moduleResolution": "node",
+    "baseUrl": ".",
     "types": ["node"],
     "target": "ES2022",
     "lib": ["ES2022"],
@@ -15,8 +16,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "paths": {
-      "src/*": ["./src/*"],
-      "*": ["./node_modules/*"]
+      "src/*": ["src/*"]
     },
     "incremental": true,
     "strictPropertyInitialization": false
