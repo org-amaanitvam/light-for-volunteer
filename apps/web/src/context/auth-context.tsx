@@ -14,9 +14,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  setUser: () => {},
-  logout: async () => {},
-  refreshProfile: async () => {},
+  setUser: () => { },
+  logout: async () => { },
+  refreshProfile: async () => { },
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -24,22 +24,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const cached = api.getUser();
-    if (cached) {
-      setUser(cached);
-    }
+    let active = true;
 
     api
       .getMe()
       .then((u) => {
-        setUser(u);
+        if (active) {
+          setUser(u);
+        }
       })
       .catch(() => {
         // Not logged in or expired
       })
       .finally(() => {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const logout = async () => {
