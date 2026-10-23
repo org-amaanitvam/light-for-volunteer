@@ -9,6 +9,7 @@ import appConfig from './config/app.config';
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
+import storageConfig from './config/storage.config';
 import { envValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -32,10 +33,16 @@ import { VolunteersModule } from './modules/volunteers/volunteers.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
-      load: [appConfig, authConfig, databaseConfig, redisConfig],
-      validationSchema: envValidationSchema,
-    }),
+  isGlobal: true,
+  load: [
+    appConfig,
+    authConfig,
+    databaseConfig,
+    redisConfig,
+    storageConfig,
+  ],
+  validationSchema: envValidationSchema,
+}),
     ThrottlerModule.forRoot([
       { ttl: 60_000, limit: Number(process.env.THROTTLE_GLOBAL_LIMIT ?? 100) },
     ]),

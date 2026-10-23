@@ -48,4 +48,8 @@ export const envValidationSchema = Joi.object({
   ADMIN_EMAIL: Joi.string().email().allow('').optional(),
   ADMIN_PASSWORD: Joi.string().allow('').optional(),
   ADMIN_NAME: Joi.string().allow('').default('Platform Admin'),
+  AWS_REGION: Joi.string().default('ap-south-2'),
+  AWS_S3_BUCKET: Joi.string().min(3).required(),
+  AWS_ACCESS_KEY_ID: Joi.string().min(16).required(),
+  AWS_SECRET_ACCESS_KEY: Joi.string().min(20).required(),
 }).unknown(true);
