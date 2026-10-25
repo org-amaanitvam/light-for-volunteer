@@ -1,7 +1,14 @@
 import { DEFAULT_ROLE, ROLES, type Role } from '@lfv/types';
 import { Organisation } from '../../../database/entities/organisation.entity';
 import { VolunteerProfile } from '../../../database/entities/volunteer-profile.entity';
-import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /**
  * The single identity record for every platform user — shared by volunteers,
