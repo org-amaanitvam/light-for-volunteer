@@ -1,4 +1,10 @@
-import type { Application, VolunteerProfileData } from "@/types/volunteer";
+import type {
+  Application,
+  BadgeItem,
+  Certificate,
+  LeaderboardEntry,
+  VolunteerProfileData,
+} from "@/types/volunteer";
 import type { UserProfile } from "@/lib/api";
 
 export const MOCK_VOLUNTEER_PROFILE: VolunteerProfileData = {
@@ -84,6 +90,129 @@ export const MOCK_DASHBOARD_APPLICATIONS: Application[] = [
   },
 ];
 
+export const MOCK_BADGES: BadgeItem[] = [
+  {
+    id: "badge-1",
+    code: "COMMUNITY_CHAMPION",
+    title: "Community Champion",
+    criteria: "Complete 25+ verified community service hours across social welfare drives.",
+    iconUrl: "🏆",
+    earned: true,
+    earnedAt: "2026-09-15T10:00:00Z",
+    category: "Milestone",
+  },
+  {
+    id: "badge-2",
+    code: "FIRST_RESPONDER",
+    title: "First Responder",
+    criteria: "Apply within 24 hours of an urgent emergency relief or medical drive posting.",
+    iconUrl: "⚡",
+    earned: true,
+    earnedAt: "2026-09-28T14:00:00Z",
+    category: "Dedication",
+  },
+  {
+    id: "badge-3",
+    code: "RELIABLE_MENTOR",
+    title: "Reliable Mentor",
+    criteria: "Lead or tutor in 3 or more youth education and skill development programs.",
+    iconUrl: "🌱",
+    earned: true,
+    earnedAt: "2026-10-12T16:30:00Z",
+    category: "Impact",
+  },
+  {
+    id: "badge-4",
+    code: "GREEN_WARRIOR",
+    title: "Green Warrior",
+    criteria: "Participate in 2 or more environmental clean-up or urban forestry drives.",
+    iconUrl: "🌿",
+    earned: false,
+    category: "Environment",
+  },
+  {
+    id: "badge-5",
+    code: "HEALING_HANDS",
+    title: "Healing Hands",
+    criteria: "Volunteer at least 10 hours supporting healthcare clinics or blood donation drives.",
+    iconUrl: "🩺",
+    earned: false,
+    category: "Health",
+  },
+  {
+    id: "badge-6",
+    code: "IMPACT_LEGEND",
+    title: "Impact Legend",
+    criteria: "Accumulate 700+ impact points and complete 50 verified volunteer hours.",
+    iconUrl: "🌟",
+    earned: false,
+    category: "Mastery",
+  },
+];
+
+export const MOCK_ACTIVITY_FEED = [
+  { action: "Completed drive: Elderly Care Digital Literacy Workshop", points: 80, date: "2026-10-10" },
+  { action: "Earned badge: Reliable Mentor", points: 50, date: "2026-10-12" },
+  { action: "Selected for Weekend Youth Reading Circle", points: 25, date: "2026-10-17" },
+  { action: "Applied to Urban Tree Plantation & Care", points: 15, date: "2026-10-21" },
+  { action: "Earned badge: First Responder", points: 50, date: "2026-09-28" },
+];
+
+export const MOCK_LEADERBOARD_MONTHLY: LeaderboardEntry[] = [
+  { rank: 1, volunteerId: "v-1", name: "Ananya Deshmukh", city: "Mumbai, MH", points: 680, badgeCount: 5 },
+  { rank: 2, volunteerId: "v-2", name: "Rohan Varma", city: "Bengaluru, KA", points: 590, badgeCount: 4 },
+  { rank: 3, volunteerId: "v-3", name: "Kavita Subramanian", city: "Chennai, TN", points: 530, badgeCount: 4 },
+  { rank: 4, volunteerId: "v-me", name: "Navya Anubhuti", city: "Bengaluru, KA", points: 420, badgeCount: 3 },
+  { rank: 5, volunteerId: "v-5", name: "Tanmay Bhatt", city: "Pune, MH", points: 370, badgeCount: 3 },
+  { rank: 6, volunteerId: "v-6", name: "Zoya Akhtar", city: "Hyderabad, TS", points: 310, badgeCount: 2 },
+  { rank: 7, volunteerId: "v-7", name: "Amitabh Sen", city: "Kolkata, WB", points: 260, badgeCount: 2 },
+  { rank: 8, volunteerId: "v-8", name: "Divya Nair", city: "Kochi, KL", points: 220, badgeCount: 1 },
+];
+
+export const MOCK_LEADERBOARD_ALL_TIME: LeaderboardEntry[] = [
+  { rank: 1, volunteerId: "v-2", name: "Rohan Varma", city: "Bengaluru, KA", points: 2450, badgeCount: 9 },
+  { rank: 2, volunteerId: "v-1", name: "Ananya Deshmukh", city: "Mumbai, MH", points: 2120, badgeCount: 8 },
+  { rank: 3, volunteerId: "v-3", name: "Kavita Subramanian", city: "Chennai, TN", points: 1890, badgeCount: 7 },
+  { rank: 4, volunteerId: "v-5", name: "Tanmay Bhatt", city: "Pune, MH", points: 1420, badgeCount: 6 },
+  { rank: 5, volunteerId: "v-me", name: "Navya Anubhuti", city: "Bengaluru, KA", points: 1280, badgeCount: 4 },
+  { rank: 6, volunteerId: "v-6", name: "Zoya Akhtar", city: "Hyderabad, TS", points: 980, badgeCount: 3 },
+  { rank: 7, volunteerId: "v-7", name: "Amitabh Sen", city: "Kolkata, WB", points: 840, badgeCount: 3 },
+  { rank: 8, volunteerId: "v-8", name: "Divya Nair", city: "Kochi, KL", points: 650, badgeCount: 2 },
+];
+
+export const MOCK_CERTIFICATES: Certificate[] = [
+  {
+    id: "cert-101",
+    opportunityTitle: "Elderly Care Digital Literacy Workshop",
+    organisation: "Silver Age Care",
+    completedAt: "2026-10-10T16:00:00Z",
+    hoursVolunteered: 8,
+    verified: true,
+    certificateNumber: "LFV-2026-EDL-101",
+    fileUrl: null,
+  },
+  {
+    id: "cert-102",
+    opportunityTitle: "Monsoon Community Flood Relief Logistics",
+    organisation: "Amaanitvam Foundation",
+    completedAt: "2026-08-25T18:00:00Z",
+    hoursVolunteered: 16,
+    verified: true,
+    certificateNumber: "LFV-2026-MFR-044",
+    fileUrl: "https://example.com/certificates/lfv-2026-mfr-044.pdf",
+  },
+  {
+    id: "cert-103",
+    opportunityTitle: "Weekend Youth Reading Circle",
+    organisation: "Bright Futures Foundation",
+    completedAt: "2026-10-17T14:30:00Z",
+    hoursVolunteered: 12,
+    verified: false,
+    certificateNumber: "LFV-2026-YRC-PENDING",
+    fileUrl: null,
+  },
+];
+
 export interface ProfileCompletionItem {
   key: string;
   label: string;
@@ -136,6 +265,30 @@ export function getMockApplications(): Promise<Application[]> {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([...MOCK_DASHBOARD_APPLICATIONS]);
-    }, 200);
+    }, 150);
+  });
+}
+
+export function getMockBadges(): Promise<BadgeItem[]> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...MOCK_BADGES]);
+    }, 150);
+  });
+}
+
+export function getMockLeaderboard(period: "monthly" | "alltime"): Promise<LeaderboardEntry[]> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(period === "monthly" ? [...MOCK_LEADERBOARD_MONTHLY] : [...MOCK_LEADERBOARD_ALL_TIME]);
+    }, 150);
+  });
+}
+
+export function getMockCertificates(): Promise<Certificate[]> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...MOCK_CERTIFICATES]);
+    }, 150);
   });
 }

@@ -7,8 +7,8 @@
 
 ## Segment Status Overview
 - [x] **Segment 1 — Volunteer profile + dashboard**: Completed (Commit `72b8299`)
-- [x] **Segment 2 — Applications list and status display**: Completed
-- [ ] **Segment 3 — Badges, leaderboard and certificates**: Pending
+- [x] **Segment 2 — Applications list and status display**: Completed (Commit `cbd27bd`)
+- [x] **Segment 3 — Badges, leaderboard and certificates**: Completed
 - [ ] **Segment 4 — Reviews, integration cleanup and final validation**: Pending
 
 ## Segment 1 Implementation Details
@@ -24,19 +24,27 @@
 ## Segment 2 Implementation Details
 ### Implemented Routes & Components
 - `apps/web/src/app/volunteer/applications/page.tsx`: Dedicated volunteer applications tracking page with category/status metrics, tab filtering (All, Under Review, Confirmed, Completed, Archived), real-time search, interactive loading, error states, and empty states.
-- `apps/web/src/components/volunteer/application-card.tsx`: Modular application card supporting all project application statuses (`applied`, `shortlisted`, `selected`, `completed`, `rejected`, `withdrawn`, `pending`, `accepted`), showing next-step guidance, submitted pitch text toggle, and relevant contextual actions (e.g. withdraw, leave review, view drive).
-- `apps/web/src/types/volunteer.ts`: Enhanced `ApplicationStatusType` supporting the full backend entity enum values (`applied`, `shortlisted`, `selected`, `completed`, `rejected`) and volunteer actions (`withdrawn`).
-- `apps/web/src/lib/volunteer-mock-adapter.ts`: Added `getMockApplications()` with varied test data covering each application status and workflow stage.
+- `apps/web/src/components/volunteer/application-card.tsx`: Modular application card supporting all project application statuses (`applied`, `shortlisted`, `selected`, `completed`, `rejected`, `withdrawn`, `pending`, `accepted`), showing next-step guidance, submitted pitch text toggle, and relevant contextual actions.
+
+## Segment 3 Implementation Details
+### Implemented Routes & Components
+- `apps/web/src/components/volunteer/badge-shelf.tsx`: Reusable badge display component showing badge icon, title, description, category, and distinct visual treatment for unlocked vs locked states, with empty state handling.
+- `apps/web/src/app/volunteer/badges/page.tsx`: Gamification summary featuring volunteer impact score, tier progress bar (Newcomer, Helper, Champion, Legend), level requirements breakdown, achievements summary, embedded `BadgeShelf` with unlocked/in-progress filtering, and recent points activity feed.
+- `apps/web/src/app/volunteer/leaderboard/page.tsx`: Polished leaderboard page with distinct top-3 podium visual treatment (Champion, Runner Up, 3rd Place), monthly vs all-time timeframe filter, live volunteer search, and current volunteer rank highlighting.
+- `apps/web/src/app/volunteer/certificates/page.tsx`: Certificates showcase displaying completed opportunities, recognized hours, verification badges, credential identifiers, and download action with dedicated handling for both ready URLs and signed-copy pending states.
+- `apps/web/src/lib/volunteer-mock-adapter.ts`: Added mock datasets and helper functions for badges (`getMockBadges`), leaderboard (`getMockLeaderboard`), and certificates (`getMockCertificates`).
 
 ### Missing Backend APIs Documented
-- `GET /api/applications/my`: Missing volunteer-scoped applications list endpoint. The backend currently exposes `POST /api/applications` to submit applications and `PATCH /api/applications/:id/status` to change status, but lacks an endpoint for volunteers to retrieve their application history.
-- `GET /api/volunteers/profile`: Backend controller is currently a ping stub. Handled via `volunteer-mock-adapter.ts`.
-- `PUT/PATCH /api/volunteers/profile`: Endpoint not yet provisioned. Profile edits update local view state and alert the user that persistent sync is pending backend implementation.
+- `GET /api/gamification/badges` and `GET /api/gamification/points`: Backend gamification module currently provides only a `ping` controller stub. Data hydrates via `volunteer-mock-adapter.ts`.
+- `GET /api/leaderboard`: Missing backend ranking and aggregate leaderboard endpoint.
+- `GET /api/certificates`: Missing backend certificate generation and retrieval endpoints.
+- `GET /api/applications/my`: Missing volunteer-scoped applications list endpoint.
+- `GET /api/volunteers/profile` & `PUT/PATCH /api/volunteers/profile`: Handled via adapter until backend profile service is complete.
 
 ### Focused Validation Performed
-- Verified prop contracts and import consistency across `ApplicationCard`, `ApplicationsPage`, and `volunteer-mock-adapter`.
-- Checked that zero code comments exist in the new files (complying strictly with Rule 9).
-- Verified that Anish's foundation files and Segment 1 files were preserved intact.
+- Static contract verification ensuring all types, component props, and helper methods match across `BadgeShelf`, `BadgesPage`, `LeaderboardPage`, `CertificatesPage`, and `volunteer-mock-adapter`.
+- Code comment audit verifying zero code comments were added (strictly complying with Rule 9).
+- Verified Segment 1 and Segment 2 files remain untouched and intact.
 
 ### Next Steps
-- Execute Segment 3: Badges shelf, leaderboard, and certificates.
+- Execute Segment 4: Reviews form and review list, integration cleanup, and final validation.

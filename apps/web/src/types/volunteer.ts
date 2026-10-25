@@ -42,6 +42,7 @@ export interface BadgeItem {
   iconUrl: string;
   earned: boolean;
   earnedAt?: string;
+  category?: string;
 }
 
 export interface LeaderboardEntry {
@@ -51,6 +52,7 @@ export interface LeaderboardEntry {
   city: string | null;
   points: number;
   badgeCount: number;
+  avatarUrl?: string;
 }
 
 export interface Certificate {
@@ -60,6 +62,8 @@ export interface Certificate {
   completedAt: string;
   hoursVolunteered: number;
   verified: boolean;
+  fileUrl?: string | null;
+  certificateNumber?: string;
 }
 
 export interface ReviewItem {
