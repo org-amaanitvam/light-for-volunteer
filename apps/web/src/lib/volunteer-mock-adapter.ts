@@ -22,27 +22,65 @@ export const MOCK_DASHBOARD_APPLICATIONS: Application[] = [
     opportunityId: "opp-201",
     opportunityTitle: "Weekend Youth Reading Circle",
     organisation: "Bright Futures Foundation",
-    status: "accepted",
+    status: "selected",
     appliedAt: "2026-10-15T10:00:00Z",
     updatedAt: "2026-10-17T14:30:00Z",
+    location: "Bangalore, KA (On-site)",
+    category: "Education",
+    nextStep: "Attend mandatory volunteer orientation on Saturday at 10:00 AM.",
+    pitchText: "I have 2 years of teaching experience with underprivileged kids and can conduct story sessions.",
   },
   {
     id: "app-102",
     opportunityId: "opp-202",
     opportunityTitle: "Urban Tree Plantation & Care",
     organisation: "EcoGuard India",
-    status: "pending",
+    status: "applied",
     appliedAt: "2026-10-21T08:15:00Z",
     updatedAt: "2026-10-21T08:15:00Z",
+    location: "Cubbon Park, Bangalore",
+    category: "Environment",
+    nextStep: "Application received. Organization review in progress.",
+    pitchText: "Passionate about urban forestry and native tree conservation.",
   },
   {
     id: "app-103",
     opportunityId: "opp-203",
     opportunityTitle: "Elderly Care Digital Literacy Workshop",
     organisation: "Silver Age Care",
-    status: "accepted",
+    status: "completed",
     appliedAt: "2026-10-08T11:00:00Z",
     updatedAt: "2026-10-10T16:00:00Z",
+    location: "Indiranagar Community Hall",
+    category: "Community Welfare",
+    nextStep: "Drive concluded! Download verified participation certificate.",
+    pitchText: "Experienced in teaching smartphone and internet safety basics to seniors.",
+  },
+  {
+    id: "app-104",
+    opportunityId: "opp-204",
+    opportunityTitle: "Rural Health Awareness Drive Assistant",
+    organisation: "Swasthya Kalyan Trust",
+    status: "shortlisted",
+    appliedAt: "2026-10-12T09:30:00Z",
+    updatedAt: "2026-10-14T11:00:00Z",
+    location: "Kolar Rural District",
+    category: "Healthcare",
+    nextStep: "Selected for interview. The coordinator will reach out via WhatsApp/email.",
+    pitchText: "Certified first-aid responder with experience managing patient registration queues.",
+  },
+  {
+    id: "app-105",
+    opportunityId: "opp-205",
+    opportunityTitle: "Disaster Relief Supply Logistics",
+    organisation: "Apex Relief Taskforce",
+    status: "rejected",
+    appliedAt: "2026-09-20T14:00:00Z",
+    updatedAt: "2026-09-22T10:00:00Z",
+    location: "North Karnataka Command",
+    category: "Disaster Relief",
+    nextStep: "Cohort capacity filled for this round. Keep an eye out for upcoming deployments.",
+    pitchText: "Available for heavy material handling and ration packaging.",
   },
 ];
 
@@ -92,4 +130,12 @@ export function getMockDashboardStats(profile: VolunteerProfileData) {
     { label: "Impact Points", value: profile.points.toString(), icon: "🌟" },
     { label: "Average Rating", value: `${profile.ratingAvg.toFixed(1)} ★`, icon: "⭐" },
   ];
+}
+
+export function getMockApplications(): Promise<Application[]> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...MOCK_DASHBOARD_APPLICATIONS]);
+    }, 200);
+  });
 }

@@ -1,11 +1,25 @@
+export type ApplicationStatusType =
+  | "applied"
+  | "shortlisted"
+  | "selected"
+  | "completed"
+  | "rejected"
+  | "withdrawn"
+  | "pending"
+  | "accepted";
+
 export interface Application {
   id: string;
   opportunityId: string;
   opportunityTitle: string;
   organisation: string;
-  status: "pending" | "accepted" | "rejected" | "withdrawn";
+  status: ApplicationStatusType;
   appliedAt: string;
   updatedAt: string;
+  location?: string;
+  category?: string;
+  nextStep?: string;
+  pitchText?: string;
 }
 
 export interface VolunteerProfileData {
