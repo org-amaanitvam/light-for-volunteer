@@ -3,6 +3,7 @@ import type {
   BadgeItem,
   Certificate,
   LeaderboardEntry,
+  ReviewItem,
   VolunteerProfileData,
 } from "@/types/volunteer";
 import type { UserProfile } from "@/lib/api";
@@ -213,6 +214,28 @@ export const MOCK_CERTIFICATES: Certificate[] = [
   },
 ];
 
+export const MOCK_REVIEWS: ReviewItem[] = [
+  {
+    id: "rev-201",
+    opportunityTitle: "Elderly Care Digital Literacy Workshop",
+    organisation: "Silver Age Care",
+    rating: 5,
+    comment: "An exceptionally meaningful initiative. The senior participants were eager to learn digital tools, and the venue and teaching aids provided by the NGO coordinators were stellar.",
+    createdAt: "2026-10-11T10:30:00Z",
+    reviewerName: "Navya Anubhuti",
+    applicationId: "app-103",
+  },
+  {
+    id: "rev-202",
+    opportunityTitle: "Monsoon Community Flood Relief Logistics",
+    organisation: "Amaanitvam Foundation",
+    rating: 5,
+    comment: "Rigorous emergency logistics coordination. The safety protocols, hydration stations, and clear shift handovers made the strenuous work manageable and effective.",
+    createdAt: "2026-08-27T14:00:00Z",
+    reviewerName: "Navya Anubhuti",
+  },
+];
+
 export interface ProfileCompletionItem {
   key: string;
   label: string;
@@ -289,6 +312,14 @@ export function getMockCertificates(): Promise<Certificate[]> {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([...MOCK_CERTIFICATES]);
+    }, 150);
+  });
+}
+
+export function getMockReviews(): Promise<ReviewItem[]> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...MOCK_REVIEWS]);
     }, 150);
   });
 }
