@@ -74,7 +74,7 @@ export function ReviewForm({
       }
 
       const newReview: ReviewItem = {
-        id: `rev-${Date.now()}`,
+        id: `rev-${application.id}`,
         opportunityTitle: application.opportunityTitle,
         organisation: application.organisation,
         rating,

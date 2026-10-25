@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -32,13 +32,9 @@ const STATUS_BADGE: Record<
 
 export default function VolunteerDashboardPage() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<VolunteerProfileData>(MOCK_VOLUNTEER_PROFILE);
-  const [applications, setApplications] = useState<Application[]>(MOCK_DASHBOARD_APPLICATIONS);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
+  const [profile] = useState<VolunteerProfileData>(MOCK_VOLUNTEER_PROFILE);
+  const [applications] = useState<Application[]>(MOCK_DASHBOARD_APPLICATIONS);
+  const [isLoading] = useState(false);
 
   const completion = calculateProfileCompletion(user, profile);
   const stats = getMockDashboardStats(profile);
