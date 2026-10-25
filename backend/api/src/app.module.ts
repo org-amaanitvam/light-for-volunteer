@@ -24,6 +24,7 @@ import { SearchModule } from './modules/search/search.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 import { VolunteersModule } from './modules/volunteers/volunteers.module';
+import { ReportsModule } from './modules/reports/reports.module';
 /**
  * Global guard order: JWT auth → RBAC roles (registered inside AuthModule),
  * then throttling registered here. Route opt-outs: `@Public()`,
@@ -54,6 +55,7 @@ import { VolunteersModule } from './modules/volunteers/volunteers.module';
     NotificationsModule,
     StorageModule,
     SearchModule,
+    ReportsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
