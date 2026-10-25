@@ -73,4 +73,6 @@ export interface ReviewItem {
   rating: number;
   comment: string;
   createdAt: string;
+  reviewerName?: string;
+  applicationId?: string;
 }

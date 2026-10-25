@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Application, VolunteerProfileData } from "@/types/volunteer";
+import type { Application, ApplicationStatusType, VolunteerProfileData } from "@/types/volunteer";
 import {
   MOCK_DASHBOARD_APPLICATIONS,
   MOCK_VOLUNTEER_PROFILE,
@@ -21,11 +21,15 @@ import {
 } from "@/lib/volunteer-mock-adapter";
 
 const STATUS_BADGE: Record<
-  Application["status"],
+  ApplicationStatusType,
   { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "success" }
 > = {
+  applied: { label: "Under Review", variant: "secondary" },
   pending: { label: "Pending", variant: "secondary" },
+  shortlisted: { label: "Shortlisted", variant: "default" },
+  selected: { label: "Selected", variant: "success" },
   accepted: { label: "Accepted", variant: "success" },
+  completed: { label: "Completed", variant: "success" },
   rejected: { label: "Rejected", variant: "destructive" },
   withdrawn: { label: "Withdrawn", variant: "outline" },
 };
