@@ -10,7 +10,7 @@
 - [x] **Segment 1 — Volunteer profile + dashboard**: Completed (Commit `72b8299`)
 - [x] **Segment 2 — Applications list and status display**: Completed (Commit `cbd27bd`)
 - [x] **Segment 3 — Badges, leaderboard and certificates**: Completed (Commit `2fa4508`)
-- [x] **Segment 4 — Reviews, integration cleanup and final validation**: Completed
+- [x] **Segment 4 — Reviews, integration cleanup and final validation**: Completed (Commit `5d46350`)
 
 ## All Implemented Routes & Components
 ### Routes under `apps/web/src/app/volunteer/`
