@@ -5,7 +5,7 @@ import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ReviewOrganisationDto } from '../../dtos/organisation/review-organisation.dto';
 import { AdminService } from './admin.service';
-import { ReviewOpportunityDto } from 'src/dtos/opportunity/review-opportunity.dto';
+import { ReviewOpportunityDto } from '../../dtos/opportunity/review-opportunity.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()

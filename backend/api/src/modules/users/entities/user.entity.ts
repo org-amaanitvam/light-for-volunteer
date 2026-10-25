@@ -1,6 +1,6 @@
 import { DEFAULT_ROLE, ROLES, type Role } from '@lfv/types';
-import { Organisation } from 'src/database/entities/organisation.entity';
-import { VolunteerProfile } from 'src/database/entities/volunteer-profile.entity';
+import { Organisation } from '../../../database/entities/organisation.entity';
+import { VolunteerProfile } from '../../../database/entities/volunteer-profile.entity';
 import {
   Column,
   CreateDateColumn,
