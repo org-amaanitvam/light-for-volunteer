@@ -60,7 +60,6 @@ export class GamificationService {
 
     return this.dataSource.transaction(async (manager) => {
       const profileRepo = manager.getRepository(VolunteerProfile);
-      const transactionRepo = manager.getRepository(PointTransaction);
 
       const profile = await profileRepo.findOne({
         where: { user: { id: userId } },
