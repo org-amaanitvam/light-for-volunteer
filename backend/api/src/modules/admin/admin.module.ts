@@ -3,12 +3,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Organisation } from '../../database/entities/organisation.entity';
 import { Opportunity } from '../../database/entities/opportunity.entity';
+import { Report } from 'src/database/entities/report.entity';
+import { Review } from '../../database/entities/review.entity';
+import { Message } from '../../database/entities/message.entity';
 
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Organisation, Opportunity])],
+  imports: [TypeOrmModule.forFeature([Organisation, Opportunity, Report, Review, Message])],
   controllers: [AdminController],
   providers: [AdminService],
 })
