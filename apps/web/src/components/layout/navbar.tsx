@@ -15,12 +15,12 @@ export function Navbar() {
   const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
 
   const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Opportunities", href: "/#opportunities" },
-    { name: "About Us", href: "/about" },
-    { name: "Blog & Resources", href: "/blog" },
-    { name: "Contact", href: "/contact" },
-  ];
+{ name: "Home", href: "/" },
+{ name: "Opportunities", href: "/opportunities" },
+{ name: "About Us", href: "/about" },
+{ name: "Blog & Resources", href: "/blog" },
+{ name: "Contact", href: "/contact" },
+];
 
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 border-b border-sky-100/80 transition-all duration-200">
