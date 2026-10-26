@@ -25,6 +25,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
+  setUser: () => {},
+  logout: async () => {},
+  refreshProfile: async () => {},
+});
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const cached = api.getUser();
+  const [user, setUser] = useState<UserProfile | null>(() => cached ?? null);
+  const [loading, setLoading] = useState<boolean>(() => (cached ? false : true));
+
+  useEffect(() => {
+    let mounted = true;
 
     api
       .getMe()
@@ -44,6 +56,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       active = false;
+        if (mounted) setUser(u);
+      })
+      .catch(() => {
+        // Not logged in or expired
+        if (mounted) setUser(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
     };
   }, []);
 

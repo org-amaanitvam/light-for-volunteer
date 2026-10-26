@@ -6,6 +6,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { ReviewOrganisationDto } from '../../dtos/organisation/review-organisation.dto';
 import { AdminService } from './admin.service';
 import { ReviewOpportunityDto } from 'src/dtos/opportunity/review-opportunity.dto';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ResolveReportDto } from '../../dtos/report/resolve-report.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -52,4 +54,19 @@ export class AdminController {
     return this.service.reviewOpportunity(id, dto);
   }
 
+  @Roles('admin')
+  @Get('reports/pending')
+  getPendingReports() {
+    return this.service.getPendingReports();
+  }
+
+  @Roles('admin')
+  @Patch('reports/:id/resolve')
+  resolveReport(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('sub') adminId: string,
+    @Body() dto: ResolveReportDto,
+  ) {
+    return this.service.resolveReport(id, adminId, dto);
+  }
 }
