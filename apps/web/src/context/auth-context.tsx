@@ -14,6 +14,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  setUser: () => { },
+  logout: async () => { },
+  refreshProfile: async () => { },
+});
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let active = true;
   setUser: () => {},
   logout: async () => {},
   refreshProfile: async () => {},
@@ -30,6 +41,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api
       .getMe()
       .then((u) => {
+        if (active) {
+          setUser(u);
+        }
+      })
+      .catch(() => {
+        // Not logged in or expired
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
         if (mounted) setUser(u);
       })
       .catch(() => {
