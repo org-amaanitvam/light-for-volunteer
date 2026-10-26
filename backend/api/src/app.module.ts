@@ -56,6 +56,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     GamificationModule,
     MessagingModule,
     NotificationsModule,
+    ReportsModule,
     StorageModule,
     SearchModule,
     LeaderboardModule, // Suraj: leaderboard recalculation

@@ -20,17 +20,6 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    let active = true;
-  setUser: () => {},
-  logout: async () => {},
-  refreshProfile: async () => {},
-});
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
   const cached = api.getUser();
   const [user, setUser] = useState<UserProfile | null>(() => cached ?? null);
   const [loading, setLoading] = useState<boolean>(() => (cached ? false : true));
@@ -41,21 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api
       .getMe()
       .then((u) => {
-        if (active) {
-          setUser(u);
-        }
-      })
-      .catch(() => {
-        // Not logged in or expired
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
         if (mounted) setUser(u);
       })
       .catch(() => {
