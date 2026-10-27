@@ -3,300 +3,357 @@
 
 import { useMemo, useState } from "react";
 
-type ApplicantStatus = "Applied" | "Shortlisted" | "Selected" | "Rejected";
+type OrganisationStatus = "Pending" | "Verified" | "Rejected";
+type ListingStatus = "Pending" | "Approved" | "Rejected";
+type ReportStatus = "Pending" | "Dismissed" | "Removed";
 
-type Applicant = {
+type Organisation = {
   id: number;
   name: string;
   email: string;
-  skills: string[];
-  status: ApplicantStatus;
+  location: string;
+  category: string;
+  submitted: string;
+  status: OrganisationStatus;
 };
 
-type Opportunity = {
+type Listing = {
   id: number;
   title: string;
+  organisation: string;
   category: string;
   location: string;
-  date: string;
-  slots: number;
+  submitted: string;
+  status: ListingStatus;
   description: string;
-  status: "Open" | "Closed";
-  applicants: Applicant[];
 };
 
-const initialOpportunities: Opportunity[] = [
+type ReportedReview = {
+  id: number;
+  organisation: string;
+  reviewer: string;
+  rating: number;
+  comment: string;
+  reason: string;
+  submitted: string;
+  status: ReportStatus;
+};
+
+type Tab = "organisations" | "listings" | "reports";
+
+const initialOrganisations: Organisation[] = [
   {
     id: 1,
-    title: "Community Clean-up Drive",
-    category: "Environment",
-    location: "Hyderabad",
-    date: "2026-11-15",
-    slots: 15,
-    description: "Help clean public spaces and spread awareness about waste management.",
-    status: "Open",
-    applicants: [
-      { id: 101, name: "Ananya Rao", email: "ananya@example.com", skills: ["Teamwork", "Communication"], status: "Applied" },
-      { id: 102, name: "Rahul Kumar", email: "rahul@example.com", skills: ["Leadership"], status: "Applied" },
-      { id: 103, name: "Priya Sharma", email: "priya@example.com", skills: ["Event planning", "Social media"], status: "Shortlisted" },
-    ],
+    name: "Helping Hands Foundation",
+    email: "contact@helpinghands.org",
+    location: "Hyderabad, Telangana",
+    category: "Community Service",
+    submitted: "2026-10-20",
+    status: "Pending",
   },
   {
     id: 2,
-    title: "Teaching Children",
+    name: "Green Earth Initiative",
+    email: "hello@greenearth.org",
+    location: "Vijayawada, Andhra Pradesh",
+    category: "Environment",
+    submitted: "2026-10-21",
+    status: "Pending",
+  },
+  {
+    id: 3,
+    name: "Bright Future Trust",
+    email: "info@brightfuture.org",
+    location: "Visakhapatnam, Andhra Pradesh",
     category: "Education",
-    location: "Vijayawada",
-    date: "2026-11-22",
-    slots: 8,
-    description: "Support children with basic reading, writing and mathematics.",
-    status: "Open",
-    applicants: [
-      { id: 201, name: "Sneha Reddy", email: "sneha@example.com", skills: ["Teaching", "Patience"], status: "Applied" },
-      { id: 202, name: "Arjun Das", email: "arjun@example.com", skills: ["Mathematics"], status: "Selected" },
-    ],
+    submitted: "2026-10-18",
+    status: "Verified",
   },
 ];
 
-const categories = [
-  "Education",
-  "Environment",
-  "Healthcare",
-  "Community Service",
-  "Animal Welfare",
-  "Other",
+const initialListings: Listing[] = [
+  {
+    id: 101,
+    title: "Weekend Teaching Programme",
+    organisation: "Helping Hands Foundation",
+    category: "Education",
+    location: "Hyderabad",
+    submitted: "2026-10-22",
+    status: "Pending",
+    description:
+      "Volunteers will help school children with reading, writing and basic mathematics.",
+  },
+  {
+    id: 102,
+    title: "Community Clean-up Drive",
+    organisation: "Green Earth Initiative",
+    category: "Environment",
+    location: "Vijayawada",
+    submitted: "2026-10-23",
+    status: "Pending",
+    description:
+      "Help clean public spaces and promote responsible waste management.",
+  },
+  {
+    id: 103,
+    title: "Food Distribution Campaign",
+    organisation: "Bright Future Trust",
+    category: "Community Service",
+    location: "Visakhapatnam",
+    submitted: "2026-10-19",
+    status: "Approved",
+    description:
+      "Assist the organisation with distributing food packages to local communities.",
+  },
 ];
 
-const emptyForm = {
-  title: "",
-  category: "Community Service",
-  location: "",
-  date: "",
-  slots: "5",
-  description: "",
-};
+const initialReports: ReportedReview[] = [
+  {
+    id: 201,
+    organisation: "Helping Hands Foundation",
+    reviewer: "Anonymous Volunteer",
+    rating: 1,
+    comment: "The volunteering experience was disappointing.",
+    reason: "Potentially inappropriate content",
+    submitted: "2026-10-24",
+    status: "Pending",
+  },
+  {
+    id: 202,
+    organisation: "Green Earth Initiative",
+    reviewer: "Volunteer 24",
+    rating: 2,
+    comment: "The event details did not match my expectations.",
+    reason: "Reported as misleading",
+    submitted: "2026-10-25",
+    status: "Pending",
+  },
+];
 
-export default function OrganisationDashboard() {
-  const [opportunities, setOpportunities] =
-    useState<Opportunity[]>(initialOpportunities);
+const tabs: { id: Tab; label: string }[] = [
+  { id: "organisations", label: "Organisation Verification" },
+  { id: "listings", label: "Opportunity Reviews" },
+  { id: "reports", label: "Reported Reviews" },
+];
 
-  const [showForm, setShowForm] = useState(false);
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [activeApplicantListing, setActiveApplicantListing] =
-    useState<number | null>(null);
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    Pending: "bg-amber-100 text-amber-800",
+    Verified: "bg-green-100 text-green-800",
+    Approved: "bg-green-100 text-green-800",
+    Dismissed: "bg-green-100 text-green-800",
+    Rejected: "bg-red-100 text-red-800",
+    Removed: "bg-red-100 text-red-800",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+        styles[status] ?? "bg-slate-100 text-slate-700"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: number;
+  description: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-sm font-medium text-slate-500">{label}</p>
+      <p className="mt-3 text-3xl font-bold text-slate-900">{value}</p>
+      <p className="mt-2 text-xs text-slate-500">{description}</p>
+    </div>
+  );
+}
+
+export default function AdminPage() {
+  const [organisations, setOrganisations] =
+    useState<Organisation[]>(initialOrganisations);
+  const [listings, setListings] = useState<Listing[]>(initialListings);
+  const [reports, setReports] =
+    useState<ReportedReview[]>(initialReports);
+
+  const [activeTab, setActiveTab] = useState<Tab>("organisations");
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [message, setMessage] = useState("");
+  const [selectedListing, setSelectedListing] =
+    useState<Listing | null>(null);
 
-  const openCount = opportunities.filter(
-    (item) => item.status === "Open"
+  const pendingOrganisations = organisations.filter(
+    (item) => item.status === "Pending"
   ).length;
 
-  const totalApplicants = opportunities.reduce(
-    (total, item) => total + item.applicants.length,
-    0
+  const pendingListings = listings.filter(
+    (item) => item.status === "Pending"
+  ).length;
+
+  const pendingReports = reports.filter(
+    (item) => item.status === "Pending"
+  ).length;
+
+  const filteredOrganisations = useMemo(
+    () =>
+      organisations.filter((item) => {
+        const query = search.toLowerCase();
+
+        const matchesSearch =
+          item.name.toLowerCase().includes(query) ||
+          item.email.toLowerCase().includes(query) ||
+          item.location.toLowerCase().includes(query);
+
+        const matchesStatus =
+          statusFilter === "All" || item.status === statusFilter;
+
+        return matchesSearch && matchesStatus;
+      }),
+    [organisations, search, statusFilter]
   );
 
-  const selectedCount = opportunities.reduce(
-    (total, item) =>
-      total +
-      item.applicants.filter((applicant) => applicant.status === "Selected")
-        .length,
-    0
+  const filteredListings = useMemo(
+    () =>
+      listings.filter((item) => {
+        const query = search.toLowerCase();
+
+        const matchesSearch =
+          item.title.toLowerCase().includes(query) ||
+          item.organisation.toLowerCase().includes(query) ||
+          item.location.toLowerCase().includes(query);
+
+        const matchesStatus =
+          statusFilter === "All" || item.status === statusFilter;
+
+        return matchesSearch && matchesStatus;
+      }),
+    [listings, search, statusFilter]
   );
 
-  const filteredOpportunities = useMemo(() => {
-    return opportunities.filter((item) => {
-      const matchesSearch =
-        item.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.location.toLowerCase().includes(search.toLowerCase());
+  const filteredReports = useMemo(
+    () =>
+      reports.filter((item) => {
+        const query = search.toLowerCase();
 
-      const matchesFilter =
-        filter === "All" || item.status === filter;
+        const matchesSearch =
+          item.organisation.toLowerCase().includes(query) ||
+          item.reviewer.toLowerCase().includes(query) ||
+          item.reason.toLowerCase().includes(query);
 
-      return matchesSearch && matchesFilter;
-    });
-  }, [opportunities, search, filter]);
+        const matchesStatus =
+          statusFilter === "All" || item.status === statusFilter;
 
-  function updateForm(
-    field: keyof typeof emptyForm,
-    value: string
+        return matchesSearch && matchesStatus;
+      }),
+    [reports, search, statusFilter]
+  );
+
+  function changeTab(tab: Tab) {
+    setActiveTab(tab);
+    setSearch("");
+    setStatusFilter("All");
+    setMessage("");
+    setSelectedListing(null);
+  }
+
+  function updateOrganisation(
+    id: number,
+    status: OrganisationStatus
   ) {
-    setForm((previous) => ({ ...previous, [field]: value }));
-  }
+    const organisation = organisations.find((item) => item.id === id);
 
-  function startCreate() {
-    setForm(emptyForm);
-    setEditingId(null);
-    setStep(1);
-    setShowForm(true);
-    setMessage("");
-  }
-
-  function startEdit(opportunity: Opportunity) {
-    setForm({
-      title: opportunity.title,
-      category: opportunity.category,
-      location: opportunity.location,
-      date: opportunity.date,
-      slots: String(opportunity.slots),
-      description: opportunity.description,
-    });
-    setEditingId(opportunity.id);
-    setStep(1);
-    setShowForm(true);
-    setMessage("");
-  }
-
-  function continueForm() {
-    if (step === 1 && (!form.title.trim() || !form.category)) {
-      setMessage("Please enter an opportunity title and category.");
-      return;
-    }
-
-    if (
-      step === 2 &&
-      (!form.location.trim() ||
-        !form.date ||
-        form.date < new Date().toLocaleDateString("en-CA") ||
-        !Number.isInteger(Number(form.slots)) ||
-        Number(form.slots) < 1)
-    ) {
-      setMessage("Enter a valid location, future date and positive number of slots.");
-      return;
-    }
-
-    setMessage("");
-    setStep((previous) => Math.min(previous + 1, 3));
-  }
-
-  function saveOpportunity() {
-    if (!form.description.trim()) {
-      setMessage("Please add a description before publishing.");
-      return;
-    }
-
-    if (editingId !== null) {
-      setOpportunities((previous) =>
-        previous.map((item) =>
-          item.id === editingId
-            ? {
-                ...item,
-                title: form.title.trim(),
-                category: form.category,
-                location: form.location.trim(),
-                date: form.date,
-                slots: Number(form.slots),
-                description: form.description.trim(),
-              }
-            : item
-        )
-      );
-      setMessage("Opportunity updated successfully!");
-    } else {
-      const newOpportunity: Opportunity = {
-        id: Date.now(),
-        title: form.title.trim(),
-        category: form.category,
-        location: form.location.trim(),
-        date: form.date,
-        slots: Number(form.slots),
-        description: form.description.trim(),
-        status: "Open",
-        applicants: [],
-      };
-
-      setOpportunities((previous) => [newOpportunity, ...previous]);
-      setMessage("Opportunity published successfully!");
-    }
-
-    setShowForm(false);
-    setStep(1);
-    setForm(emptyForm);
-    setEditingId(null);
-  }
-
-  function toggleListing(id: number) {
-    setOpportunities((previous) =>
+    setOrganisations((previous) =>
       previous.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: item.status === "Open" ? "Closed" : "Open",
-            }
-          : item
+        item.id === id ? { ...item, status } : item
       )
+    );
+
+    setMessage(
+      organisation
+        ? `${organisation.name} marked as ${status.toLowerCase()}.`
+        : "Organisation updated."
     );
   }
 
-  function updateApplicant(
-    opportunityId: number,
-    applicantId: number,
-    status: ApplicantStatus
-  ) {
-    setOpportunities((previous) =>
+  function updateListing(id: number, status: ListingStatus) {
+    const listing = listings.find((item) => item.id === id);
+
+    setListings((previous) =>
       previous.map((item) =>
-        item.id === opportunityId
-          ? {
-              ...item,
-              applicants: item.applicants.map((applicant) =>
-                applicant.id === applicantId
-                  ? { ...applicant, status }
-                  : applicant
-              ),
-            }
-          : item
+        item.id === id ? { ...item, status } : item
       )
+    );
+
+    setSelectedListing(null);
+    setMessage(
+      listing
+        ? `"${listing.title}" marked as ${status.toLowerCase()}.`
+        : "Opportunity updated."
     );
   }
 
-  function applicantStatusClass(status: ApplicantStatus) {
-    switch (status) {
-      case "Selected":
-        return "bg-green-100 text-green-800";
-      case "Shortlisted":
-        return "bg-blue-100 text-blue-800";
-      case "Rejected":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-amber-100 text-amber-800";
-    }
+  function updateReport(id: number, status: ReportStatus) {
+    setReports((previous) =>
+      previous.map((item) =>
+        item.id === id ? { ...item, status } : item
+      )
+    );
+
+    setMessage(
+      status === "Dismissed"
+        ? "Report dismissed. The review remains unchanged."
+        : "Reported review marked for removal in this demo."
+    );
+  }
+
+  function resetFilters() {
+    setSearch("");
+    setStatusFilter("All");
   }
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-800 sm:px-8">
-      <div className="mx-auto max-w-6xl space-y-8">
+      <div className="mx-auto max-w-7xl space-y-8">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">
-              Organisation Portal
+            <p className="text-sm font-semibold uppercase tracking-wider text-indigo-700">
+              Platform Management
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">
-              Organisation Dashboard
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+              Admin Console
             </h1>
             <p className="mt-2 text-slate-500">
-              Manage opportunities, review applicants and select volunteers.
+              Review organisations, moderate opportunities and manage reports.
             </p>
           </div>
 
-          <button
-            onClick={startCreate}
-            className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-800"
-          >
-            + Create Opportunity
-          </button>
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-700">
+              A
+            </div>
+            <div>
+              <p className="font-semibold">Administrator</p>
+              <p className="text-xs text-slate-500">Demo admin session</p>
+            </div>
+          </div>
         </header>
 
         {message && (
           <div
             role="status"
-            className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900"
           >
-            {message}
+            <p>{message}</p>
             <button
               onClick={() => setMessage("")}
-              className="ml-3 font-semibold underline"
+              className="font-semibold underline"
             >
               Dismiss
             </button>
@@ -304,357 +361,397 @@ export default function OrganisationDashboard() {
         )}
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: "Total Opportunities", value: opportunities.length },
-            { label: "Open Opportunities", value: openCount },
-            { label: "Total Applicants", value: totalApplicants },
-            { label: "Volunteers Selected", value: selectedCount },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <p className="text-sm text-slate-500">{stat.label}</p>
-              <p className="mt-3 text-3xl font-bold">{stat.value}</p>
-            </div>
-          ))}
+          <StatCard
+            label="Total Organisations"
+            value={organisations.length}
+            description="Organisations in the demo"
+          />
+          <StatCard
+            label="Pending Verification"
+            value={pendingOrganisations}
+            description="Require verification review"
+          />
+          <StatCard
+            label="Pending Opportunities"
+            value={pendingListings}
+            description="Require listing approval"
+          />
+          <StatCard
+            label="Open Reports"
+            value={pendingReports}
+            description="Reported reviews to investigate"
+          />
         </section>
 
-        {showForm && (
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-bold">
-                  {editingId !== null ? "Edit Opportunity" : "Create Opportunity"}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Step {step} of 3
-                </p>
-              </div>
-              <button
-                onClick={() => setShowForm(false)}
-                className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100"
-                aria-label="Close form"
-              >
-                ✕
-              </button>
-            </div>
+        <section className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+          <div className="grid gap-2 md:grid-cols-3">
+            {tabs.map((tab) => {
+              const count =
+                tab.id === "organisations"
+                  ? pendingOrganisations
+                  : tab.id === "listings"
+                    ? pendingListings
+                    : pendingReports;
 
-            <div className="mt-5 flex gap-2" aria-label="Form progress">
-              {[1, 2, 3].map((number) => (
-                <div
-                  key={number}
-                  className={`h-2 flex-1 rounded-full ${
-                    number <= step ? "bg-emerald-600" : "bg-slate-200"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <div className="mt-6 space-y-5">
-              {step === 1 && (
-                <>
-                  <h3 className="font-semibold">Basic Information</h3>
-                  <label className="block text-sm font-medium">
-                    Opportunity title *
-                    <input
-                      value={form.title}
-                      onChange={(event) => updateForm("title", event.target.value)}
-                      placeholder="e.g. Weekend Teaching Programme"
-                      className="mt-2 w-full rounded-xl border border-slate-300 p-3 outline-none focus:border-emerald-600"
-                    />
-                  </label>
-
-                  <label className="block text-sm font-medium">
-                    Category *
-                    <select
-                      value={form.category}
-                      onChange={(event) => updateForm("category", event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-slate-300 p-3"
-                    >
-                      {categories.map((category) => (
-                        <option key={category}>{category}</option>
-                      ))}
-                    </select>
-                  </label>
-                </>
-              )}
-
-              {step === 2 && (
-                <>
-                  <h3 className="font-semibold">Location and Schedule</h3>
-                  <label className="block text-sm font-medium">
-                    Location *
-                    <input
-                      value={form.location}
-                      onChange={(event) => updateForm("location", event.target.value)}
-                      placeholder="City or venue"
-                      className="mt-2 w-full rounded-xl border border-slate-300 p-3"
-                    />
-                  </label>
-
-                  <label className="block text-sm font-medium">
-                    Opportunity date *
-                    <input
-                      type="date"
-                      min={new Date().toLocaleDateString("en-CA")}
-                      value={form.date}
-                      onChange={(event) => updateForm("date", event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-slate-300 p-3"
-                    />
-                  </label>
-
-                  <label className="block text-sm font-medium">
-                    Volunteer slots *
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={form.slots}
-                      onChange={(event) => updateForm("slots", event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-slate-300 p-3"
-                    />
-                  </label>
-                </>
-              )}
-
-              {step === 3 && (
-                <>
-                  <h3 className="font-semibold">Description and Review</h3>
-                  <label className="block text-sm font-medium">
-                    Opportunity description *
-                    <textarea
-                      rows={5}
-                      value={form.description}
-                      onChange={(event) => updateForm("description", event.target.value)}
-                      placeholder="Explain the activity, responsibilities and skills needed..."
-                      className="mt-2 w-full rounded-xl border border-slate-300 p-3"
-                    />
-                  </label>
-
-                  <div className="rounded-xl bg-slate-50 p-4 text-sm">
-                    <p><strong>Title:</strong> {form.title}</p>
-                    <p className="mt-2"><strong>Category:</strong> {form.category}</p>
-                    <p className="mt-2"><strong>Location:</strong> {form.location}</p>
-                    <p className="mt-2"><strong>Date:</strong> {form.date}</p>
-                    <p className="mt-2"><strong>Slots:</strong> {form.slots}</p>
-                  </div>
-                </>
-              )}
-
-              {message && (
-                <p role="alert" className="text-sm text-red-600">{message}</p>
-              )}
-
-              <div className="flex flex-wrap justify-between gap-3 border-t border-slate-100 pt-5">
+              return (
                 <button
-                  onClick={() => {
-                    if (step === 1) {
-                      setShowForm(false);
-                    } else {
-                      setStep((previous) => previous - 1);
-                      setMessage("");
-                    }
-                  }}
-                  className="rounded-xl border border-slate-300 px-4 py-2.5 font-medium hover:bg-slate-50"
+                  key={tab.id}
+                  onClick={() => changeTab(tab.id)}
+                  className={`flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
+                    activeTab === tab.id
+                      ? "bg-indigo-700 text-white"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
                 >
-                  {step === 1 ? "Cancel" : "Back"}
+                  <span>{tab.label}</span>
+                  <span
+                    className={`rounded-full px-2 py-1 text-xs ${
+                      activeTab === tab.id
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-slate-700"
+                    }`}
+                  >
+                    {count}
+                  </span>
                 </button>
+              );
+            })}
+          </div>
+        </section>
 
-                {step < 3 ? (
-                  <button
-                    onClick={continueForm}
-                    className="rounded-xl bg-emerald-700 px-5 py-2.5 font-semibold text-white hover:bg-emerald-800"
-                  >
-                    Continue →
-                  </button>
-                ) : (
-                  <button
-                    onClick={saveOpportunity}
-                    className="rounded-xl bg-emerald-700 px-5 py-2.5 font-semibold text-white hover:bg-emerald-800"
-                  >
-                    {editingId !== null ? "Save Changes" : "Publish Opportunity"}
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section className="space-y-4">
+        <section className="space-y-5">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-              <h2 className="text-2xl font-bold">Your Opportunities</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Manage listings and applicants from one place.
+              <h2 className="text-2xl font-bold text-slate-900">
+                {activeTab === "organisations"
+                  ? "Organisation Verification Queue"
+                  : activeTab === "listings"
+                    ? "Opportunity Review Queue"
+                    : "Reported Reviews"}
+              </h2>
+              <p className="mt-2 text-sm text-slate-500">
+                {activeTab === "organisations"
+                  ? "Check organisation details before approving verification."
+                  : activeTab === "listings"
+                    ? "Review opportunity details before publishing."
+                    : "Investigate reports and decide whether to dismiss or remove a review."}
               </p>
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search title or location..."
-                aria-label="Search opportunities"
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2.5"
-              />
-              <select
-                value={filter}
-                onChange={(event) => setFilter(event.target.value)}
-                aria-label="Filter opportunities"
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2.5"
-              >
-                <option>All</option>
-                <option>Open</option>
-                <option>Closed</option>
-              </select>
-            </div>
+            <button
+              onClick={resetFilters}
+              className="self-start rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium hover:bg-white sm:self-auto"
+            >
+              Clear filters
+            </button>
           </div>
 
-          {filteredOpportunities.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-              <p className="font-semibold">No opportunities found</p>
-              <p className="mt-2 text-sm text-slate-500">
-                Try a different search or create a new opportunity.
-              </p>
+          <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={
+                activeTab === "organisations"
+                  ? "Search organisation, email or location..."
+                  : activeTab === "listings"
+                    ? "Search opportunity or organisation..."
+                    : "Search reviewer, organisation or reason..."
+              }
+              aria-label="Search moderation records"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-indigo-600"
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              aria-label="Filter by status"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-3"
+            >
+              <option value="All">All statuses</option>
+              {(
+                activeTab === "organisations"
+                  ? ["Pending", "Verified", "Rejected"]
+                  : activeTab === "listings"
+                    ? ["Pending", "Approved", "Rejected"]
+                    : ["Pending", "Dismissed", "Removed"]
+              ).map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {activeTab === "organisations" && (
+            <div className="space-y-4">
+              {filteredOrganisations.map((organisation) => (
+                <article
+                  key={organisation.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+                >
+                  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                    <div className="flex gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-lg font-bold text-indigo-700">
+                        {organisation.name.charAt(0)}
+                      </div>
+
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-lg font-bold">
+                            {organisation.name}
+                          </h3>
+                          <StatusBadge status={organisation.status} />
+                        </div>
+                        <p className="mt-2 text-sm text-slate-500">
+                          {organisation.email}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {organisation.location}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                          <span className="rounded-lg bg-slate-100 px-3 py-1.5">
+                            {organisation.category}
+                          </span>
+                          <span className="rounded-lg bg-slate-100 px-3 py-1.5">
+                            Submitted: {organisation.submitted}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      {organisation.status !== "Verified" && (
+                        <button
+                          onClick={() =>
+                            updateOrganisation(organisation.id, "Verified")
+                          }
+                          className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+                        >
+                          Verify
+                        </button>
+                      )}
+
+                      {organisation.status !== "Rejected" && (
+                        <button
+                          onClick={() =>
+                            updateOrganisation(organisation.id, "Rejected")
+                          }
+                          className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+                        >
+                          Reject
+                        </button>
+                      )}
+
+                      {organisation.status !== "Pending" && (
+                        <button
+                          onClick={() =>
+                            updateOrganisation(organisation.id, "Pending")
+                          }
+                          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                        >
+                          Reset to Pending
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+
+              {filteredOrganisations.length === 0 && (
+                <EmptyState message="No organisations match your search or status filter." />
+              )}
             </div>
           )}
 
-          {filteredOpportunities.map((opportunity) => (
-            <article
-              key={opportunity.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
-            >
-              <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-bold">{opportunity.title}</h3>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        opportunity.status === "Open"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-slate-200 text-slate-700"
-                      }`}
-                    >
-                      {opportunity.status}
-                    </span>
-                  </div>
+          {activeTab === "listings" && (
+            <div className="space-y-4">
+              {filteredListings.map((listing) => (
+                <article
+                  key={listing.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+                >
+                  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-bold">{listing.title}</h3>
+                        <StatusBadge status={listing.status} />
+                      </div>
+                      <p className="mt-2 text-sm font-medium text-indigo-700">
+                        {listing.organisation}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-500">
+                        {listing.category} · {listing.location} · Submitted {listing.submitted}
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-slate-600">
+                        {listing.description}
+                      </p>
 
-                  <p className="mt-2 text-sm text-slate-500">
-                    {opportunity.category} · {opportunity.location} · {opportunity.date}
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
-                    {opportunity.description}
-                  </p>
+                      <button
+                        onClick={() =>
+                          setSelectedListing(
+                            selectedListing?.id === listing.id ? null : listing
+                          )
+                        }
+                        className="mt-3 text-sm font-semibold text-indigo-700 underline"
+                      >
+                        {selectedListing?.id === listing.id
+                          ? "Hide review details"
+                          : "View review details"}
+                      </button>
 
-                  <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                    <span>👥 {opportunity.applicants.length} applicants</span>
-                    <span>🎯 {opportunity.slots} volunteer slots</span>
-                    <span>
-                      ✓ {opportunity.applicants.filter((a) => a.status === "Selected").length} selected
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => startEdit(opportunity)}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => toggleListing(opportunity.id)}
-                    className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                      opportunity.status === "Open"
-                        ? "border border-red-200 text-red-700 hover:bg-red-50"
-                        : "bg-emerald-700 text-white hover:bg-emerald-800"
-                    }`}
-                  >
-                    {opportunity.status === "Open" ? "Close Listing" : "Reopen Listing"}
-                  </button>
-                  <button
-                    onClick={() =>
-                      setActiveApplicantListing(
-                        activeApplicantListing === opportunity.id
-                          ? null
-                          : opportunity.id
-                      )
-                    }
-                    className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
-                  >
-                    {activeApplicantListing === opportunity.id
-                      ? "Hide Applicants"
-                      : "View Applicants"}
-                  </button>
-                </div>
-              </div>
-
-              {activeApplicantListing === opportunity.id && (
-                <div className="mt-6 border-t border-slate-200 pt-5">
-                  <h4 className="font-bold">Applicants</h4>
-
-                  {opportunity.applicants.length === 0 ? (
-                    <p className="mt-3 text-sm text-slate-500">
-                      No applicants yet. Applicants will appear here when available.
-                    </p>
-                  ) : (
-                    <div className="mt-4 space-y-3">
-                      {opportunity.applicants.map((applicant) => (
-                        <div
-                          key={applicant.id}
-                          className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 p-4 lg:flex-row lg:items-center"
-                        >
-                          <div>
-                            <p className="font-semibold">{applicant.name}</p>
-                            <p className="mt-1 text-sm text-slate-500">{applicant.email}</p>
-                            <p className="mt-2 text-sm text-slate-600">
-                              Skills: {applicant.skills.join(", ")}
-                            </p>
-                            <span
-                              className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${applicantStatusClass(applicant.status)}`}
-                            >
-                              {applicant.status}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              disabled={applicant.status === "Shortlisted"}
-                              onClick={() => updateApplicant(opportunity.id, applicant.id, "Shortlisted")}
-                              className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-40"
-                            >
-                              Shortlist
-                            </button>
-                            <button
-                              disabled={applicant.status === "Selected"}
-                              onClick={() => updateApplicant(opportunity.id, applicant.id, "Selected")}
-                              className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-40"
-                            >
-                              Select
-                            </button>
-                            <button
-                              disabled={applicant.status === "Rejected"}
-                              onClick={() => updateApplicant(opportunity.id, applicant.id, "Rejected")}
-                              className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-40"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                      {selectedListing?.id === listing.id && (
+                        <div className="mt-3 rounded-xl bg-slate-50 p-4 text-sm">
+                          <p><strong>Listing ID:</strong> {listing.id}</p>
+                          <p className="mt-2">
+                            <strong>Category:</strong> {listing.category}
+                          </p>
+                          <p className="mt-2">
+                            <strong>Location:</strong> {listing.location}
+                          </p>
+                          <p className="mt-2">
+                            <strong>Description:</strong> {listing.description}
+                          </p>
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
+
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      {listing.status !== "Approved" && (
+                        <button
+                          onClick={() => updateListing(listing.id, "Approved")}
+                          className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+                        >
+                          Approve
+                        </button>
+                      )}
+
+                      {listing.status !== "Rejected" && (
+                        <button
+                          onClick={() => updateListing(listing.id, "Rejected")}
+                          className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+                        >
+                          Reject
+                        </button>
+                      )}
+
+                      {listing.status !== "Pending" && (
+                        <button
+                          onClick={() => updateListing(listing.id, "Pending")}
+                          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                        >
+                          Reset to Pending
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+
+              {filteredListings.length === 0 && (
+                <EmptyState message="No opportunities match your search or status filter." />
               )}
-            </article>
-          ))}
+            </div>
+          )}
+
+          {activeTab === "reports" && (
+            <div className="space-y-4">
+              {filteredReports.map((report) => (
+                <article
+                  key={report.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+                >
+                  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-bold">
+                          {report.organisation}
+                        </h3>
+                        <StatusBadge status={report.status} />
+                      </div>
+
+                      <p className="mt-2 text-sm text-slate-500">
+                        Reported by: {report.reviewer}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-500">
+                        Submitted: {report.submitted}
+                      </p>
+
+                      <div className="mt-4 rounded-xl bg-slate-50 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Reported review
+                        </p>
+                        <p className="mt-2 text-amber-600">
+                          {"★".repeat(report.rating)}
+                          <span className="text-slate-300">
+                            {"★".repeat(5 - report.rating)}
+                          </span>
+                          <span className="ml-2 text-sm text-slate-500">
+                            {report.rating}/5
+                          </span>
+                        </p>
+                        <p className="mt-2 text-sm leading-6">
+                          {report.comment}
+                        </p>
+                        <p className="mt-3 text-sm">
+                          <strong>Report reason:</strong> {report.reason}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      {report.status === "Pending" && (
+                        <>
+                          <button
+                            onClick={() => updateReport(report.id, "Dismissed")}
+                            className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+                          >
+                            Dismiss Report
+                          </button>
+                          <button
+                            onClick={() => updateReport(report.id, "Removed")}
+                            className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+                          >
+                            Mark for Removal
+                          </button>
+                        </>
+                      )}
+
+                      {report.status !== "Pending" && (
+                        <button
+                          onClick={() => updateReport(report.id, "Pending")}
+                          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                        >
+                          Reopen Report
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+
+              {filteredReports.length === 0 && (
+                <EmptyState message="No reports match your search or status filter." />
+              )}
+            </div>
+          )}
         </section>
 
-        <footer className="border-t border-slate-200 pt-5 text-center text-xs text-slate-500">
-          Demo dashboard · Data is stored in temporary page state and will reset on refresh.
+        <footer className="border-t border-slate-200 pt-5 text-center text-xs leading-5 text-slate-500">
+          Admin Console · Demonstration using mock data only.
+          <br />
+          Changes are temporary and will reset when the page is refreshed.
+          Production moderation requires authenticated admin access and backend persistence.
         </footer>
       </div>
     </main>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+      <p className="font-semibold text-slate-700">Nothing to display</p>
+      <p className="mt-2 text-sm text-slate-500">{message}</p>
+    </div>
   );
 }
