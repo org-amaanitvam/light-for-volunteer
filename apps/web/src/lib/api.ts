@@ -35,6 +35,138 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface OpportunityItem {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  skills_required?: string[];
+  skills?: string[];
+  location_type?: string;
+  locationType?: string;
+  city?: string | null;
+  location?: string | null;
+  duration?: string | null;
+  points_reward?: number;
+  pointsReward?: number;
+  openings?: number;
+  deadline?: string | null;
+  status: string;
+  organisation?: {
+    id: string;
+    org_name: string;
+    website?: string | null;
+    verification_status?: string;
+    rating_avg?: number;
+  };
+  org?: string;
+  applications_count?: number;
+  applicant_stats?: {
+    total: number;
+    applied: number;
+    shortlisted: number;
+    selected: number;
+    completed: number;
+    rejected: number;
+  };
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SearchFacets {
+  categories: Record<string, number>;
+  types: Record<string, number>;
+  locationTypes: Record<string, number>;
+}
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  facets?: SearchFacets;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
+export interface OpportunityQueryParams {
+  search?: string;
+  q?: string;
+  type?: string;
+  category?: string;
+  locationType?: string;
+  location_type?: string;
+  city?: string;
+  status?: string;
+  skills?: string;
+  orgId?: string;
+  organisationId?: string;
+  sortBy?: "newest" | "relevance" | "deadline_soon" | "points" | "deadline";
+  sortOrder?: "ASC" | "DESC" | "asc" | "desc";
+  page?: number | string;
+  limit?: number | string;
+  [key: string]: string | number | boolean | undefined | null;
+}
+
+export interface CreateOpportunityInput {
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  skillsRequired?: string[];
+  skills_required?: string[];
+  locationType?: string;
+  location_type?: string;
+  city?: string;
+  duration?: string;
+  pointsReward?: number;
+  points_reward?: number;
+  openings?: number;
+  deadline: string;
+  status?: string;
+  orgId?: string;
+  org_id?: string;
+  [key: string]: unknown;
+}
+
+export interface UpdateOpportunityInput {
+  title?: string;
+  description?: string;
+  type?: string;
+  category?: string;
+  skillsRequired?: string[];
+  skills_required?: string[];
+  locationType?: string;
+  location_type?: string;
+  city?: string;
+  duration?: string;
+  pointsReward?: number;
+  points_reward?: number;
+  openings?: number;
+  deadline?: string;
+  status?: string;
+  orgId?: string;
+  org_id?: string;
+  [key: string]: unknown;
+}
+
+export interface CategorySummary {
+  name: string;
+  count: number;
+  active: boolean;
+}
+
+export interface DeleteOpportunityResponse {
+  message: string;
+  id: string;
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 class ApiClient {
@@ -192,76 +324,76 @@ class ApiClient {
     }
   }
 
-  public async getOpportunities(params: Record<string, any> = {}): Promise<{ data: any[]; meta: any }> {
+  public async getOpportunities(params: OpportunityQueryParams = {}): Promise<PaginatedResponse<OpportunityItem>> {
     const qs = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') qs.append(k, String(v));
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
     });
-    const query = qs.toString() ? `?${qs.toString()}` : '';
-    return this.request<{ data: any[]; meta: any }>(`/opportunities${query}`);
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    return this.request<PaginatedResponse<OpportunityItem>>(`/opportunities${query}`);
   }
 
-  public async getOpportunityById(id: string): Promise<any> {
-    return this.request<any>(`/opportunities/${id}`);
+  public async getOpportunityById(id: string): Promise<OpportunityItem> {
+    return this.request<OpportunityItem>(`/opportunities/${id}`);
   }
 
-  public async getOpportunityCategories(): Promise<{ name: string; count: number; active: boolean }[]> {
-    return this.request<{ name: string; count: number; active: boolean }[]>('/opportunities/categories');
+  public async getOpportunityCategories(): Promise<CategorySummary[]> {
+    return this.request<CategorySummary[]>("/opportunities/categories");
   }
 
-  public async getMyOpportunities(): Promise<any[]> {
-    return this.request<any[]>('/opportunities/mine');
+  public async getMyOpportunities(): Promise<OpportunityItem[]> {
+    return this.request<OpportunityItem[]>("/opportunities/mine");
   }
 
-  public async createOpportunity(data: Record<string, any>): Promise<any> {
-    return this.request<any>('/opportunities', {
-      method: 'POST',
+  public async createOpportunity(data: CreateOpportunityInput): Promise<OpportunityItem> {
+    return this.request<OpportunityItem>("/opportunities", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  public async updateOpportunity(id: string, data: Record<string, any>): Promise<any> {
-    return this.request<any>(`/opportunities/${id}`, {
-      method: 'PATCH',
+  public async updateOpportunity(id: string, data: UpdateOpportunityInput): Promise<OpportunityItem> {
+    return this.request<OpportunityItem>(`/opportunities/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }
 
-  public async deleteOpportunity(id: string): Promise<{ message: string; id: string }> {
-    return this.request<{ message: string; id: string }>(`/opportunities/${id}`, {
-      method: 'DELETE',
+  public async deleteOpportunity(id: string): Promise<DeleteOpportunityResponse> {
+    return this.request<DeleteOpportunityResponse>(`/opportunities/${id}`, {
+      method: "DELETE",
     });
   }
 
-  public async submitOpportunityForReview(id: string): Promise<any> {
-    return this.request<any>(`/opportunities/${id}/submit`, {
-      method: 'POST',
+  public async submitOpportunityForReview(id: string): Promise<OpportunityItem> {
+    return this.request<OpportunityItem>(`/opportunities/${id}/submit`, {
+      method: "POST",
     });
   }
 
-  public async closeOpportunity(id: string): Promise<any> {
-    return this.request<any>(`/opportunities/${id}/close`, {
-      method: 'POST',
+  public async closeOpportunity(id: string): Promise<OpportunityItem> {
+    return this.request<OpportunityItem>(`/opportunities/${id}/close`, {
+      method: "POST",
     });
   }
 
-  public async reopenOpportunity(id: string): Promise<any> {
-    return this.request<any>(`/opportunities/${id}/reopen`, {
-      method: 'POST',
+  public async reopenOpportunity(id: string): Promise<OpportunityItem> {
+    return this.request<OpportunityItem>(`/opportunities/${id}/reopen`, {
+      method: "POST",
     });
   }
 
-  public async searchOpportunities(params: Record<string, any> = {}): Promise<{ data: any[]; meta: any }> {
+  public async searchOpportunities(params: OpportunityQueryParams = {}): Promise<PaginatedResponse<OpportunityItem>> {
     const qs = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') qs.append(k, String(v));
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
     });
-    const query = qs.toString() ? `?${qs.toString()}` : '';
-    return this.request<{ data: any[]; meta: any }>(`/search/opportunities${query}`);
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    return this.request<PaginatedResponse<OpportunityItem>>(`/search/opportunities${query}`);
   }
 
-  public async getSearchFacets(): Promise<any> {
-    return this.request<any>('/search/facets');
+  public async getSearchFacets(): Promise<SearchFacets> {
+    return this.request<SearchFacets>("/search/facets");
   }
 }
 

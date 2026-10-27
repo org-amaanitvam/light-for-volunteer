@@ -38,8 +38,8 @@ export class Opportunity {
   @Column({ type: 'enum', enum: OpportunityType })
   type: OpportunityType;
 
-  @Column({ nullable: true })
-  category: string;
+  @Column({ type: 'varchar', nullable: true })
+  category: string | null;
 
   @Column('simple-array', { nullable: true })
   skills_required: string[];
@@ -47,11 +47,11 @@ export class Opportunity {
   @Column({ type: 'enum', enum: LocationType })
   location_type: LocationType;
 
-  @Column({ nullable: true })
-  city: string;
+  @Column({ type: 'varchar', nullable: true })
+  city: string | null;
 
-  @Column({ nullable: true })
-  duration: string;
+  @Column({ type: 'varchar', nullable: true })
+  duration: string | null;
 
   @Column({ type: 'int', default: 0 })
   points_reward: number;

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
+import { OptionalAuth } from '../../common/decorators/optional-auth.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import type { JwtAccessPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -58,7 +59,7 @@ export class OpportunitiesController {
     return this.service.findMine(userId);
   }
 
-  @Public()
+  @OptionalAuth()
   @ApiOperation({ summary: 'Search and filter live opportunities' })
   @Get()
   findAll(
@@ -68,7 +69,7 @@ export class OpportunitiesController {
     return this.service.findAll(query, user);
   }
 
-  @Public()
+  @OptionalAuth()
   @ApiOperation({ summary: 'Get single opportunity by ID' })
   @Get(':id')
   findOne(

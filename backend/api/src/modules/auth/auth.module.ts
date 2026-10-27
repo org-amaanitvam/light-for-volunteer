@@ -10,6 +10,7 @@ import { AuthController } from './auth.controller';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { ExchangeService } from './services/exchange.service';
 import { FallbackSessionStore } from './services/fallback-session.store';
@@ -110,11 +111,12 @@ class RedisLifecycle implements OnModuleDestroy {
     GoogleStrategy,
     JwtAuthGuard,
     JwtRefreshGuard,
+    OptionalJwtAuthGuard,
     RolesGuard,
     GoogleAuthGuard,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  exports: [AuthService, SESSION_STORE, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, SESSION_STORE, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}
