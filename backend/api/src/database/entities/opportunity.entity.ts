@@ -60,7 +60,7 @@ export class Opportunity {
   openings: number;
 
   @Column({ type: 'date', nullable: true })
-  deadline: Date;
+  deadline: Date | null;
 
   @Column({ type: 'enum', enum: OpportunityStatus, default: OpportunityStatus.DRAFT })
   status: OpportunityStatus;

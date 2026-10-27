@@ -1,16 +1,64 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { Public } from '../../common/decorators/public.decorator';
+import {
+  Body,
+  Controller,
+  Delete,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { JwtAccessPayload } from '../auth/interfaces/jwt-payload.interface';
+
+import {
+  DeleteObjectDto,
+  PresignDownloadDto,
+  PresignUploadDto,
+} from '../../dtos/storage/storage.dto';
+
 import { StorageService } from './storage.service';
 
 @ApiTags('storage')
+@ApiBearerAuth()
 @Controller('storage')
 export class StorageController {
-  constructor(private readonly service: StorageService) {}
+  constructor(
+    private readonly service: StorageService,
+  ) {}
 
-  @Public()
-  @Get('ping')
-  ping() {
-    return { module: 'storage', status: 'ok', owner: 'Suryansh' };
+  @Post('presign-upload')
+  @ApiOperation({
+    summary: 'Generate a presigned S3 upload URL',
+  })
+  createUploadUrl(
+    @CurrentUser() user: JwtAccessPayload,
+    @Body() dto: PresignUploadDto,
+  ) {
+    return this.service.createUploadUrl(user, dto);
+  }
+
+  @Post('presign-download')
+  @ApiOperation({
+    summary: 'Generate a presigned S3 download URL',
+  })
+  createDownloadUrl(
+    @CurrentUser() user: JwtAccessPayload,
+    @Body() dto: PresignDownloadDto,
+  ) {
+    return this.service.createDownloadUrl(user, dto);
+  }
+
+  @Delete('object')
+  @ApiOperation({
+    summary: 'Delete an S3 object',
+  })
+  deleteObject(
+    @CurrentUser() user: JwtAccessPayload,
+    @Body() dto: DeleteObjectDto,
+  ) {
+    return this.service.deleteObject(user, dto);
   }
 }
