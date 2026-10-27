@@ -94,7 +94,6 @@ class ApiClient {
       headers,
     });
 
-    // If 401 unauthorized and we have a refresh token, try refreshing once
     if (response.status === 401 && tokens?.refreshToken && !endpoint.includes("/auth/refresh")) {
       const refreshed = await this.refreshToken(tokens.refreshToken);
       if (refreshed) {
@@ -191,6 +190,78 @@ class ApiClient {
       this.clearTokens();
       return null;
     }
+  }
+
+  public async getOpportunities(params: Record<string, any> = {}): Promise<{ data: any[]; meta: any }> {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') qs.append(k, String(v));
+    });
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+    return this.request<{ data: any[]; meta: any }>(`/opportunities${query}`);
+  }
+
+  public async getOpportunityById(id: string): Promise<any> {
+    return this.request<any>(`/opportunities/${id}`);
+  }
+
+  public async getOpportunityCategories(): Promise<{ name: string; count: number; active: boolean }[]> {
+    return this.request<{ name: string; count: number; active: boolean }[]>('/opportunities/categories');
+  }
+
+  public async getMyOpportunities(): Promise<any[]> {
+    return this.request<any[]>('/opportunities/mine');
+  }
+
+  public async createOpportunity(data: Record<string, any>): Promise<any> {
+    return this.request<any>('/opportunities', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async updateOpportunity(id: string, data: Record<string, any>): Promise<any> {
+    return this.request<any>(`/opportunities/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async deleteOpportunity(id: string): Promise<{ message: string; id: string }> {
+    return this.request<{ message: string; id: string }>(`/opportunities/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  public async submitOpportunityForReview(id: string): Promise<any> {
+    return this.request<any>(`/opportunities/${id}/submit`, {
+      method: 'POST',
+    });
+  }
+
+  public async closeOpportunity(id: string): Promise<any> {
+    return this.request<any>(`/opportunities/${id}/close`, {
+      method: 'POST',
+    });
+  }
+
+  public async reopenOpportunity(id: string): Promise<any> {
+    return this.request<any>(`/opportunities/${id}/reopen`, {
+      method: 'POST',
+    });
+  }
+
+  public async searchOpportunities(params: Record<string, any> = {}): Promise<{ data: any[]; meta: any }> {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') qs.append(k, String(v));
+    });
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+    return this.request<{ data: any[]; meta: any }>(`/search/opportunities${query}`);
+  }
+
+  public async getSearchFacets(): Promise<any> {
+    return this.request<any>('/search/facets');
   }
 }
 

@@ -1,6 +1,13 @@
+
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+
 import { api, UserProfile } from "@/lib/api";
 
 interface AuthContextType {
@@ -14,26 +21,25 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  setUser: () => { },
-  logout: async () => { },
-  refreshProfile: async () => { },
-});
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    let active = true;
   setUser: () => {},
   logout: async () => {},
   refreshProfile: async () => {},
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const cached = api.getUser();
-  const [user, setUser] = useState<UserProfile | null>(() => cached ?? null);
-  const [loading, setLoading] = useState<boolean>(() => (cached ? false : true));
+
+  const [user, setUser] = useState<UserProfile | null>(
+    () => cached ?? null
+  );
+
+  const [loading, setLoading] = useState<boolean>(
+    () => (cached ? false : true)
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -41,29 +47,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api
       .getMe()
       .then((u) => {
-        if (active) {
+        if (mounted) {
           setUser(u);
         }
       })
       .catch(() => {
-        // Not logged in or expired
+        // Not logged in or session expired.
+        if (mounted) {
+          setUser(null);
+        }
       })
       .finally(() => {
-        if (active) {
+        if (mounted) {
           setLoading(false);
         }
-      });
-
-    return () => {
-      active = false;
-        if (mounted) setUser(u);
-      })
-      .catch(() => {
-        // Not logged in or expired
-        if (mounted) setUser(null);
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
       });
 
     return () => {
@@ -103,3 +100,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+

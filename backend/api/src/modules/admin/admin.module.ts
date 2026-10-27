@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Organisation } from '../../database/entities/organisation.entity';
 import { Opportunity } from '../../database/entities/opportunity.entity';
-import { Report } from 'src/database/entities/report.entity';
+import { Report } from '../../database/entities/report.entity';
 import { Review } from '../../database/entities/review.entity';
 import { Message } from '../../database/entities/message.entity';
 
