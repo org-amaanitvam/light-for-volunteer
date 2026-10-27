@@ -1,5 +1,13 @@
-import { 
-  Entity, PrimaryGeneratedColumn, Column,OneToMany, ManyToOne, JoinColumn 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Organisation } from './organisation.entity';
 import { OpportunityType } from '../enums/opportunity-type.enum';
@@ -8,11 +16,16 @@ import { OpportunityStatus } from '../enums/opportunity-status.enum';
 import { Application } from './application.entity';
 
 @Entity('opportunities')
+@Index(['status'])
+@Index(['category'])
+@Index(['type'])
+@Index(['location_type'])
+@Index(['deadline'])
 export class Opportunity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Organisation, org => org.opportunities,{ onDelete: 'CASCADE' })
+  @ManyToOne(() => Organisation, (org) => org.opportunities, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'org_id' })
   organisation: Organisation;
 
@@ -25,8 +38,8 @@ export class Opportunity {
   @Column({ type: 'enum', enum: OpportunityType })
   type: OpportunityType;
 
-  @Column({ nullable: true })
-  category: string;
+  @Column({ type: 'varchar', nullable: true })
+  category: string | null;
 
   @Column('simple-array', { nullable: true })
   skills_required: string[];
@@ -34,11 +47,11 @@ export class Opportunity {
   @Column({ type: 'enum', enum: LocationType })
   location_type: LocationType;
 
-  @Column({ nullable: true })
-  city: string;
+  @Column({ type: 'varchar', nullable: true })
+  city: string | null;
 
-  @Column({ nullable: true })
-  duration: string;
+  @Column({ type: 'varchar', nullable: true })
+  duration: string | null;
 
   @Column({ type: 'int', default: 0 })
   points_reward: number;
@@ -47,11 +60,17 @@ export class Opportunity {
   openings: number;
 
   @Column({ type: 'date', nullable: true })
-  deadline: Date;
+  deadline: Date | null;
 
   @Column({ type: 'enum', enum: OpportunityStatus, default: OpportunityStatus.DRAFT })
   status: OpportunityStatus;
 
-  @OneToMany(() => Application, application => application.opportunity)
+  @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  updated_at: Date;
+
+  @OneToMany(() => Application, (application) => application.opportunity)
   applications: Application[];
 }

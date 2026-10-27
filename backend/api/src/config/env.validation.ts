@@ -48,4 +48,11 @@ export const envValidationSchema = Joi.object({
   ADMIN_EMAIL: Joi.string().email().allow('').optional(),
   ADMIN_PASSWORD: Joi.string().allow('').optional(),
   ADMIN_NAME: Joi.string().allow('').default('Platform Admin'),
+  STORAGE_PROVIDER: Joi.string().valid('r2').default('r2'),
+  R2_ACCOUNT_ID: Joi.string().required(),
+  R2_REGION: Joi.string().default('auto'),
+  R2_ENDPOINT: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
+  R2_BUCKET_NAME: Joi.string().min(3).required(),
+  R2_ACCESS_KEY_ID: Joi.string().min(1).required(),
+  R2_SECRET_ACCESS_KEY: Joi.string().min(1).required(),
 }).unknown(true);

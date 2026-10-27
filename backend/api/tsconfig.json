@@ -2,8 +2,8 @@
   "extends": "../../packages/tsconfig/base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution":"node",
-    "types": ["node"],
+    "moduleResolution": "node",
+    "types": ["node", "jest"],
     "target": "ES2022",
     "lib": ["ES2022"],
     "esModuleInterop": true,
@@ -15,6 +15,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "paths": {
+      "@lfv/types": ["../../packages/types/src/index.ts"],
       "src/*": ["./src/*"],
       "*": ["./node_modules/*"]
     },

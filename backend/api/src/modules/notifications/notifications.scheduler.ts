@@ -72,6 +72,7 @@ export class NotificationsScheduler {
           const volunteerId = (app.volunteer as { id: string })?.id;
           if (!volunteerId) continue;
 
+          if (!opp.deadline) continue;
           const deadline = new Date(opp.deadline);
           const hoursLeft = Math.round(
             (deadline.getTime() - now.getTime()) / (1000 * 60 * 60),
