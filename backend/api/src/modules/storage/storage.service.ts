@@ -30,20 +30,22 @@ export class StorageService {
   private readonly downloadUrlExpiresIn = 300;
 
   constructor(private readonly configService: ConfigService) {
-    const region = this.configService.getOrThrow<string>('storage.region');
+const region = this.configService.getOrThrow<string>('storage.region');
+const endpoint = this.configService.getOrThrow<string>('storage.endpoint');
 
-    this.bucket = this.configService.getOrThrow<string>('storage.bucket');
+this.bucket = this.configService.getOrThrow<string>('storage.bucket');
 
-    this.s3 = new S3Client({
-      region,
-      credentials: {
-        accessKeyId:
-          this.configService.getOrThrow<string>('storage.accessKeyId'),
-        secretAccessKey:
-          this.configService.getOrThrow<string>('storage.secretAccessKey'),
-      },
-    });
-  }
+this.s3 = new S3Client({
+region,
+endpoint,
+forcePathStyle: true,
+credentials: {
+accessKeyId: this.configService.getOrThrow<string>('storage.accessKeyId'),
+secretAccessKey: this.configService.getOrThrow<string>('storage.secretAccessKey'),
+},
+});
+}
+
 
   async createUploadUrl(
     user: JwtAccessPayload,

@@ -23,3 +23,11 @@ process.env.GOOGLE_CLIENT_ID = '';
 process.env.GOOGLE_CLIENT_SECRET = '';
 process.env.ADMIN_EMAIL ||= '';
 process.env.ADMIN_PASSWORD ||= '';
+
+process.env.STORAGE_PROVIDER ||= 'r2';
+process.env.R2_ACCOUNT_ID ||= 'test-account-id';
+process.env.R2_REGION ||= 'auto';
+process.env.R2_BUCKET_NAME ||= 'test-storage-bucket';
+process.env.R2_ENDPOINT ||= 'https://test-account-id.r2.cloudflarestorage.com';
+process.env.R2_ACCESS_KEY_ID ||= 'testing-access-key-id';
+process.env.R2_SECRET_ACCESS_KEY ||= 'testing-secret-access-key';

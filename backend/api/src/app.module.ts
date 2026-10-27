@@ -2,6 +2,7 @@ import './config/load-env';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -16,6 +17,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
+import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OpportunitiesModule } from './modules/opportunities/opportunities.module';
@@ -25,6 +27,7 @@ import { SearchModule } from './modules/search/search.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 import { VolunteersModule } from './modules/volunteers/volunteers.module';
+import { ReportsModule } from './modules/reports/reports.module';
 /**
  * Global guard order: JWT auth → RBAC roles (registered inside AuthModule),
  * then throttling registered here. Route opt-outs: `@Public()`,
@@ -46,6 +49,7 @@ import { VolunteersModule } from './modules/volunteers/volunteers.module';
     ThrottlerModule.forRoot([
       { ttl: 60_000, limit: Number(process.env.THROTTLE_GLOBAL_LIMIT ?? 100) },
     ]),
+    ScheduleModule.forRoot(), // Suraj: cron for deadline reminders & leaderboard recalc
     DatabaseModule,
     UsersModule,
     AuthModule,
@@ -61,6 +65,7 @@ import { VolunteersModule } from './modules/volunteers/volunteers.module';
     NotificationsModule,
     StorageModule,
     SearchModule,
+    LeaderboardModule, // Suraj: leaderboard recalculation
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
