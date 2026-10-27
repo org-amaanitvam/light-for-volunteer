@@ -30,31 +30,49 @@ export class CreateOpportunityDto {
   @IsNotEmpty()
   category: string;
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  skillsRequired: string[];
+  skillsRequired?: string[];
 
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skills_required?: string[];
+
+  @IsOptional()
   @IsEnum(LocationType)
-  @IsNotEmpty()
-  locationType: LocationType;
+  locationType?: LocationType;
+
+  @IsOptional()
+  @IsEnum(LocationType)
+  location_type?: LocationType;
 
   @IsOptional()
   @IsString()
   city?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  duration: string;
+  duration?: string;
 
+  @IsOptional()
   @IsInt()
   @Min(0)
   @Type(() => Number)
-  pointsReward: number;
+  pointsReward?: number;
 
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  points_reward?: number;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  openings: number;
+  openings?: number = 1;
 
   @Type(() => Date)
   @IsDate()
@@ -63,4 +81,12 @@ export class CreateOpportunityDto {
   @IsOptional()
   @IsEnum(OpportunityStatus)
   status?: OpportunityStatus = OpportunityStatus.DRAFT;
+
+  @IsOptional()
+  @IsString()
+  orgId?: string;
+
+  @IsOptional()
+  @IsString()
+  org_id?: string;
 }
