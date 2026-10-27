@@ -14,7 +14,6 @@ import { Organisation } from '../../database/entities/organisation.entity';
 import { Application } from '../../database/entities/application.entity';
 import { User } from '../users/entities/user.entity';
 import { OpportunityStatus } from '../../database/enums/opportunity-status.enum';
-import { OpportunityType } from '../../database/enums/opportunity-type.enum';
 import { LocationType } from '../../database/enums/location-type.enum';
 import { NotificationType } from '../../database/enums/notification-type.enum';
 import { CreateOpportunityDto } from '../../dtos/opportunity/create-opportunity.dto';

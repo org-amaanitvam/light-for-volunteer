@@ -39,7 +39,7 @@ export class Opportunity {
   type: OpportunityType;
 
   @Column({ nullable: true })
-  category: string;
+  category: string | null;
 
   @Column('simple-array', { nullable: true })
   skills_required: string[];
@@ -48,10 +48,10 @@ export class Opportunity {
   location_type: LocationType;
 
   @Column({ nullable: true })
-  city: string;
+  city: string | null;
 
   @Column({ nullable: true })
-  duration: string;
+  duration: string | null;
 
   @Column({ type: 'int', default: 0 })
   points_reward: number;
