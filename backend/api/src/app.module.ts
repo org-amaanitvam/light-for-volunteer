@@ -59,6 +59,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     StorageModule,
     SearchModule,
     LeaderboardModule, // Suraj: leaderboard recalculation
+    ReportsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
