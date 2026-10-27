@@ -8,8 +8,7 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo \"@lfv/types: no lint configured\""
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "prepare": "npm run build",
   "devDependencies": {

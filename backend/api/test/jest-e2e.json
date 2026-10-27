@@ -7,6 +7,10 @@
     "^.+\\.ts$": ["ts-jest", { "tsconfig": "tsconfig.json" }]
   },
   "setupFiles": ["<rootDir>/test/setup-env.ts"],
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1",
+    "^@lfv/types$": "<rootDir>/../../packages/types/src/index.ts"
+  },
   "testTimeout": 30000,
   "maxWorkers": 1,
   "reporters": ["default"]
