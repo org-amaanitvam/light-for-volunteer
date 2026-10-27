@@ -47,10 +47,10 @@ export class Opportunity {
   @Column({ type: 'enum', enum: LocationType })
   location_type: LocationType;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   city: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   duration: string | null;
 
   @Column({ type: 'int', default: 0 })
