@@ -17,6 +17,7 @@ import {
   DeleteObjectDto,
   PresignDownloadDto,
   PresignUploadDto,
+  VerifyUploadDto,
 } from '../../dtos/storage/storage.dto';
 
 import { StorageService } from './storage.service';
@@ -61,4 +62,15 @@ export class StorageController {
   ) {
     return this.service.deleteObject(user, dto);
   }
+  
+@Post('verify-upload')
+@ApiOperation({
+  summary: 'Verify an uploaded storage object',
+})
+verifyUpload(
+  @CurrentUser() user: JwtAccessPayload,
+  @Body() dto: VerifyUploadDto,
+) {
+  return this.service.verifyUpload(user, dto.key);
+}
 }

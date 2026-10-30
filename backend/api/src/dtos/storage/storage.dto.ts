@@ -5,6 +5,8 @@ import {
   IsString,
   MaxLength,
   Min,
+  Max,
+  Matches,
 } from 'class-validator';
 
 export enum StoragePurpose {
@@ -29,11 +31,15 @@ export class PresignUploadDto {
   fileName!: string;
 
   @ApiProperty({
-    example: 'application/pdf',
-  })
-  @IsString()
-  @MaxLength(100)
-  contentType!: string;
+  example: 'application/pdf',
+})
+@IsString()
+@MaxLength(100)
+@Matches(
+  /^(application\/pdf|image\/jpeg|image\/png|image\/webp)$/,
+  { message: 'Unsupported file type' },
+)
+contentType!: string;
 
   @ApiProperty({
     example: 524288,
@@ -41,6 +47,7 @@ export class PresignUploadDto {
   })
   @IsInt()
   @Min(1)
+  @Max(10 * 1024 * 1024)
   fileSize!: number;
 }
 
@@ -54,6 +61,15 @@ export class PresignDownloadDto {
 }
 
 export class DeleteObjectDto {
+  @ApiProperty({
+    example: 'resumes/user-id/file-id.pdf',
+  })
+  @IsString()
+  @MaxLength(1024)
+  key!: string;
+}
+
+export class VerifyUploadDto {
   @ApiProperty({
     example: 'resumes/user-id/file-id.pdf',
   })

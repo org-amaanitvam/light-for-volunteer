@@ -9,6 +9,7 @@ import { extname } from 'path';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -79,7 +80,7 @@ secretAccessKey: this.configService.getOrThrow<string>('storage.secretAccessKey'
     user: JwtAccessPayload,
     dto: PresignDownloadDto,
   ) {
-    this.assertKeyAccess(user, dto.key);
+    this.assertKeyAccess(user, dto.key, 'download');
 
     const command = new GetObjectCommand({
       Bucket: this.bucket,
@@ -101,7 +102,7 @@ secretAccessKey: this.configService.getOrThrow<string>('storage.secretAccessKey'
     user: JwtAccessPayload,
     dto: DeleteObjectDto,
   ) {
-    this.assertKeyAccess(user, dto.key);
+    this.assertKeyAccess(user, dto.key, 'delete');
 
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,
@@ -252,27 +253,123 @@ secretAccessKey: this.configService.getOrThrow<string>('storage.secretAccessKey'
   }
 
   private assertKeyAccess(
-    user: JwtAccessPayload,
-    key: string,
-  ) {
-    if (user.role === 'admin') {
+  user: JwtAccessPayload,
+  key: string,
+  action: 'download' | 'delete',
+) {
+  // Admin can access all storage objects.
+  if (user.role === 'admin') {
+    return;
+  }
+
+  // Organisations can download all documents,
+  // but can delete only their own verification documents.
+  if (user.role === 'organisation') {
+    if (action === 'download') {
       return;
     }
 
+    const ownVerificationPrefix =
+      `verification-documents/${user.sub}/`;
+
+    if (key.startsWith(ownVerificationPrefix)) {
+      return;
+    }
+
+    throw new ForbiddenException(
+      'Organisations can delete only their own verification documents',
+    );
+  }
+
+  // Volunteers can access only their own resumes and portfolios.
+  if (user.role === 'volunteer') {
     const allowedPrefixes = [
       `resumes/${user.sub}/`,
       `portfolio/${user.sub}/`,
-      `verification-documents/${user.sub}/`,
     ];
 
     const hasAccess = allowedPrefixes.some((prefix) =>
       key.startsWith(prefix),
     );
 
-    if (!hasAccess) {
-      throw new ForbiddenException(
-        'You do not have access to this file',
-      );
+    if (hasAccess) {
+      return;
     }
   }
+
+  throw new ForbiddenException(
+    'You do not have permission to access this file',
+  );
+}
+  
+
+  async verifyUpload(
+  user: JwtAccessPayload,
+  key: string,
+) {
+  this.assertKeyAccess(user, key, 'download');
+
+  const object = await this.s3.send(
+    new HeadObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    }),
+  );
+
+  if (!object.ContentLength || object.ContentLength <= 0) {
+    throw new BadRequestException(
+      'Uploaded file is empty or its size could not be verified',
+    );
+  }
+
+  const prefix = `resumes/${user.sub}/`;
+  const portfolioPrefix = `portfolio/${user.sub}/`;
+  const verificationPrefix = `verification-documents/${user.sub}/`;
+
+  let purpose: StoragePurpose;
+
+  if (key.startsWith(prefix)) {
+    purpose = StoragePurpose.RESUME;
+  } else if (key.startsWith(portfolioPrefix)) {
+    purpose = StoragePurpose.PORTFOLIO;
+  } else if (key.startsWith(verificationPrefix)) {
+    purpose = StoragePurpose.VERIFICATION;
+  } else if (user.role === 'admin' || user.role === 'organisation') {
+    // These users may inspect objects belonging to other users.
+    // Their purpose must be inferred from the object key.
+    if (key.startsWith('resumes/')) {
+      purpose = StoragePurpose.RESUME;
+    } else if (key.startsWith('portfolio/')) {
+      purpose = StoragePurpose.PORTFOLIO;
+    } else if (key.startsWith('verification-documents/')) {
+      purpose = StoragePurpose.VERIFICATION;
+    } else {
+      throw new BadRequestException('Invalid storage key');
+    }
+  } else {
+    throw new ForbiddenException('You cannot verify this file');
+  }
+
+  const maxSize = this.getMaxFileSize(purpose);
+
+  if (object.ContentLength > maxSize) {
+    await this.s3.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      }),
+    );
+
+    throw new BadRequestException(
+      'Uploaded file exceeds the allowed size limit',
+    );
+  }
+
+  return {
+    success: true,
+    key,
+    size: object.ContentLength,
+    contentType: object.ContentType,
+  };
+}
 }
