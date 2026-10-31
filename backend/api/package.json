@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
-    "start": "node dist/main",
-    "start:prod": "node dist/main",
+    "start": "node dist/backend/api/src/main.js",
+    "start:prod": "node dist/backend/api/src/main.js",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:e2e": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --config test/jest-e2e.json --runInBand",

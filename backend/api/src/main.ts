@@ -16,11 +16,33 @@ async function bootstrap(): Promise<void> {
   app.use(helmet());
 
   const config = app.get(ConfigService);
-  const webOrigin = config.get<string>('app.webOrigin') ?? 'http://localhost:3000';
+  const webOrigin = config.get<string>('app.webOrigin'); //?? 'http://localhost:3000';
   const port = config.get<number>('app.port') ?? 3001;
+  const nodeEnv = process.env.NODE_ENV ?? 'development';
 
   // CORS locked to the frontend origin (bearer tokens, no cookies → no
   // credentials needed).
+
+  if (nodeEnv === 'production') {
+  if (!webOrigin) {
+    throw new Error('WEB_ORIGIN must be configured in production');
+  }
+
+  if (
+    webOrigin.includes('localhost') ||
+    webOrigin.includes('127.0.0.1')
+  ) {
+    throw new Error(
+      'Localhost WEB_ORIGIN is not allowed in production',
+    );
+  }
+}
+
+app.enableCors({
+  origin: webOrigin ?? 'http://localhost:3000',
+  credentials: false,
+});
+
   app.enableCors({ origin: [webOrigin], credentials: false });
 
   app.useGlobalPipes(
