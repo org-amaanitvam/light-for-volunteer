@@ -14,6 +14,10 @@ export const envValidationSchema = Joi.object({
     .uri({ scheme: ['http', 'https'] })
     .default('http://localhost:3000'),
 
+  DATABASE_URL: Joi.string()
+    .uri({ scheme: ['postgres', 'postgresql'] })
+    .allow('')
+    .optional(),
   DATABASE_HOST: Joi.string().default('localhost'),
   DATABASE_PORT: Joi.number().port().default(5432),
   DATABASE_USER: Joi.string().default('lfv'),

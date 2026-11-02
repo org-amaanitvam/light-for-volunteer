@@ -34,6 +34,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1145.0",
     "@aws-sdk/s3-request-presigner": "^3.1145.0",
+    "@neon/config": "^1.10.0",
+    "@neon/env": "^1.6.8",
     "@nestjs/mapped-types": "^12.0.0",
     "@nestjs/typeorm": "^12.0.2",
     "class-transformer": "^0.5.1",
