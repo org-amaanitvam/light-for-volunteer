@@ -34,4 +34,16 @@ export class SignupDto {
   @IsString()
   @MaxLength(32)
   role?: string;
+
+  @ApiPropertyOptional({ maxLength: 32 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  phone?: string;
+
+  @ApiPropertyOptional({ maxLength: 128 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  city?: string;
 }

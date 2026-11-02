@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ReviewForm } from "@/components/volunteer/review-form";
 import { ReviewList } from "@/components/volunteer/review-list";
 import type { Application, ReviewItem } from "@/types/volunteer";
-import { getMockApplications, getMockReviews } from "@/lib/volunteer-mock-adapter";
+import { api } from "@/lib/api";
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
@@ -15,23 +15,21 @@ export default function ReviewsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
+    void loadData();
+    const timer = window.setInterval(() => void loadData(), 20_000);
+    window.addEventListener("focus", loadData);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", loadData); };
   }, []);
 
-  function loadData() {
-    setLoading(true);
+  async function loadData() {
     setError(null);
-
-    Promise.all([getMockReviews(), getMockApplications()])
-      .then(([revData, appData]) => {
-        setReviews(revData);
-        setApplications(appData);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Unable to load reviews and drive records. Please retry.");
-        setLoading(false);
-      });
+    try {
+      const [revData, appData] = await Promise.all([api.request<ReviewItem[]>("/reviews/mine"), api.getMyApplications()]);
+      setReviews(revData);
+      setApplications(appData.map((item) => ({ id: item.id, opportunityId: item.opportunity_id, opportunityTitle: item.opportunity_title, organisation: item.organisation, status: item.status, appliedAt: item.applied_at, updatedAt: item.applied_at, pitchText: item.pitch_text })));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to load reviews and drive records. Please retry.");
+    } finally { setLoading(false); }
   }
 
   function handleReviewSubmitted(newReview: ReviewItem) {
@@ -123,7 +121,7 @@ export default function ReviewsPage() {
       <div className="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 text-xs text-slate-500">
         <p className="font-semibold text-slate-700">Reviews Backend Integration Note:</p>
         <p className="mt-0.5">
-          Reviews are submitted to the actual backend endpoint `POST /api/reviews`. Because the backend lacks a volunteer-scoped review query route (`GET /api/reviews/my`), initial review history is hydrated from the volunteer mock adapter and seamlessly appended with your live submissions during the session.
+          Reviews and completed applications are loaded from your account. Submissions are stored by the API and refresh with your application history.
         </p>
       </div>
     </div>

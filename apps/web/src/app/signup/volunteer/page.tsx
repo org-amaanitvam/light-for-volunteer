@@ -36,7 +36,11 @@ export default function VolunteerSignupPage() {
         city: city || undefined,
       });
       setUser(res.user);
-      router.push("/");
+      const requestedNext = new URLSearchParams(window.location.search).get("next");
+      const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+        ? requestedNext
+        : "/volunteer/dashboard";
+      router.push(next);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);

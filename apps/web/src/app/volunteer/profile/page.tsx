@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import {
   Card,
@@ -12,9 +12,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 import type { VolunteerProfileData } from "@/types/volunteer";
 import {
-  MOCK_VOLUNTEER_PROFILE,
   calculateProfileCompletion,
 } from "@/lib/volunteer-mock-adapter";
 
@@ -40,7 +40,8 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function VolunteerProfilePage() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<VolunteerProfileData>(MOCK_VOLUNTEER_PROFILE);
+  const [profile, setProfile] = useState<VolunteerProfileData>({ headline: null, about: null, skills: [], portfolioLinks: [], points: 0, ratingAvg: 0, badges: [], resumeUrl: null, totalHours: 0 });
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,6 +53,19 @@ export default function VolunteerProfilePage() {
     portfolioInput: profile.portfolioLinks.join(", "),
     resumeUrl: profile.resumeUrl ?? "",
   });
+
+  useEffect(() => {
+    let active = true;
+    api.getVolunteerProfile().then((data) => {
+      if (!active) return;
+      const loaded = { headline: data.headline, about: data.about, skills: data.skills || [], portfolioLinks: data.portfolioLinks || [], points: data.points, ratingAvg: data.ratingAvg, badges: data.badges || [], resumeUrl: data.resumeUrl, totalHours: data.totalHours };
+      setProfile(loaded);
+      setForm({ headline: loaded.headline || "", about: loaded.about || "", skillsInput: loaded.skills.join(", "), portfolioInput: loaded.portfolioLinks.join(", "), resumeUrl: loaded.resumeUrl || "" });
+    }).catch((error: unknown) => {
+      if (active) setSaveStatus(error instanceof Error ? error.message : "Could not load your profile.");
+    }).finally(() => { if (active) setLoadingProfile(false); });
+    return () => { active = false; };
+  }, []);
 
   const completion = calculateProfileCompletion(user, profile);
 
@@ -97,7 +111,7 @@ export default function VolunteerProfilePage() {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
 
@@ -111,19 +125,14 @@ export default function VolunteerProfilePage() {
       .map((l) => l.trim())
       .filter(Boolean);
 
-    setProfile((prev) => ({
-      ...prev,
-      headline: form.headline.trim(),
-      about: form.about.trim(),
-      skills: parsedSkills,
-      portfolioLinks: parsedLinks,
-      resumeUrl: form.resumeUrl.trim() || null,
-    }));
-
-    setEditing(false);
-    setSaveStatus(
-      "Local profile preview updated. Note: Persistent saving will activate once the backend volunteer profile PUT/PATCH endpoint is available."
-    );
+    try {
+      const saved = await api.updateVolunteerProfile({ headline: form.headline.trim(), about: form.about.trim(), skills: parsedSkills, portfolioLinks: parsedLinks, resumeUrl: form.resumeUrl.trim() || null });
+      setProfile({ headline: saved.headline, about: saved.about, skills: saved.skills || [], portfolioLinks: saved.portfolioLinks || [], points: saved.points, ratingAvg: saved.ratingAvg, badges: saved.badges || [], resumeUrl: saved.resumeUrl, totalHours: saved.totalHours });
+      setEditing(false);
+      setSaveStatus("Your profile was saved.");
+    } catch (error) {
+      setSaveStatus(error instanceof Error ? error.message : "Could not save your profile.");
+    }
   }
 
   function handleCancel() {

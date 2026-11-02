@@ -38,11 +38,6 @@ async function bootstrap(): Promise<void> {
   }
 }
 
-app.enableCors({
-  origin: webOrigin ?? 'http://localhost:3000',
-  credentials: false,
-});
-
   app.enableCors({ origin: [webOrigin], credentials: false });
 
   app.useGlobalPipes(

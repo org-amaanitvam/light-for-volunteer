@@ -28,11 +28,25 @@ export class ReviewsService {
     private readonly applicationRepo: Repository<Application>,
   ) {}
 
-  async create(givenById: string, dto: CreateReviewDto) {
-    if (givenById === dto.givenTo) {
-      throw new BadRequestException('You cannot review yourself');
-    }
+  async findMine(userId: string) {
+    const reviews = await this.reviewRepo.find({
+      where: { given_by: { id: userId } },
+      relations: { application: { opportunity: { organisation: true } }, given_to: true },
+      order: { created_at: 'DESC' },
+    });
+    return reviews.map((review) => ({
+      id: review.id,
+      applicationId: review.application?.id,
+      opportunityTitle: review.application?.opportunity?.title ?? 'Opportunity',
+      organisation: review.application?.opportunity?.organisation?.org_name ?? 'Organisation',
+      rating: review.rating,
+      comment: review.comment,
+      createdAt: review.created_at,
+      reviewerName: 'You',
+    }));
+  }
 
+  async create(givenById: string, dto: CreateReviewDto) {
     const application = await this.applicationRepo.findOne({
         where: { id: dto.applicationId },
         relations: {
@@ -55,14 +69,20 @@ export class ReviewsService {
       );
     }
 
+    if (application.volunteer.id !== givenById) {
+      throw new ForbiddenException('Only the volunteer who completed this application can submit this review');
+    }
+    const givenToId = application.opportunity.organisation.user.id;
+    if (givenById === givenToId) throw new BadRequestException('You cannot review yourself');
+
     const participants = [
       application.volunteer.id,
-      application.opportunity.organisation.user.id, // TO CONFIRM
+      givenToId,
     ];
 
     if (
       !participants.includes(givenById) ||
-      !participants.includes(dto.givenTo)
+      !participants.includes(givenToId)
     ) {
       throw new ForbiddenException(
         'Only participants of this application can review each other',
@@ -73,7 +93,7 @@ export class ReviewsService {
       where: {
         application: { id: dto.applicationId },
         given_by: { id: givenById },
-        given_to: { id: dto.givenTo },
+        given_to: { id: givenToId },
       },
     });
 
@@ -87,7 +107,7 @@ export class ReviewsService {
       this.reviewRepo.create({
         application: { id: dto.applicationId },
         given_by: { id: givenById },
-        given_to: { id: dto.givenTo },
+        given_to: { id: givenToId },
         rating: dto.rating,
         comment: dto.comment,
       }),
@@ -97,7 +117,7 @@ export class ReviewsService {
       id: saved.id,
       applicationId: dto.applicationId,
       givenBy: givenById,
-      givenTo: dto.givenTo,
+      givenTo: givenToId,
       rating: saved.rating,
       comment: saved.comment,
     };

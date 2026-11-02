@@ -10,6 +10,8 @@ import { VolunteerProfile } from '../../database/entities/volunteer-profile.enti
 export interface LeaderboardEntry {
   rank: number;
   userId: string;
+  name: string;
+  city: string | null;
   headline: string | null;
   points: number;
   badges: string[];
@@ -58,6 +60,8 @@ export class LeaderboardService {
       this.cache = profiles.map((p, index) => ({
         rank: index + 1,
         userId: p.user?.id ?? p.id,
+        name: p.user?.name ?? 'Volunteer',
+        city: p.user?.city ?? null,
         headline: p.headline,
         points: p.points,
         badges: p.badges ?? [],
@@ -78,10 +82,11 @@ export class LeaderboardService {
   /**
    * Paginated leaderboard.
    */
-  getLeaderboard(
+  async getLeaderboard(
     page: number = 1,
     limit: number = 25,
-  ): { entries: LeaderboardEntry[]; total: number; lastRecalculated: Date | null } {
+  ): Promise<{ entries: LeaderboardEntry[]; total: number; lastRecalculated: Date | null }> {
+    await this.recalculate();
     const start = (page - 1) * limit;
     const entries = this.cache.slice(start, start + limit);
     return {
@@ -94,9 +99,10 @@ export class LeaderboardService {
   /**
    * Get a specific user's rank. Returns `null` if not on the leaderboard.
    */
-  getRank(
+  async getRank(
     userId: string,
-  ): { rank: number; entry: LeaderboardEntry } | null {
+  ): Promise<{ rank: number; entry: LeaderboardEntry } | null> {
+    await this.recalculate();
     const entry = this.cache.find((e) => e.userId === userId);
     if (!entry) return null;
     return { rank: entry.rank, entry };

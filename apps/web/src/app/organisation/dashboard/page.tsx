@@ -1,115 +1,67 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
-
-type ApplicantStatus =
-  | "Applied"
-  | "Shortlisted"
-  | "Selected"
-  | "Rejected";
-
-type Applicant = {
-  id: number;
-  name: string;
-  email: string;
-  skills: string[];
-  status: ApplicantStatus;
-};
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, ApplicationItem, OpportunityItem } from "@/lib/api";
+import { useAuth } from "@/context/auth-context";
 
 type Opportunity = {
-  id: number;
+  id: string;
   title: string;
   category: string;
   location: string;
   date: string;
   slots: number;
   description: string;
-  status: "Open" | "Closed";
-  applicants: Applicant[];
+  status: string;
+  applicantCount: number;
+  selectedCount: number;
 };
 
-const initialOpportunities: Opportunity[] = [
-  {
-    id: 1,
-    title: "Community Clean-up Drive",
-    category: "Environment",
-    location: "Hyderabad",
-    date: "2026-11-15",
-    slots: 15,
-    description:
-      "Help clean public spaces and spread awareness about waste management.",
-    status: "Open",
-    applicants: [
-      {
-        id: 101,
-        name: "Ananya Rao",
-        email: "ananya@example.com",
-        skills: ["Teamwork", "Communication"],
-        status: "Applied",
-      },
-      {
-        id: 102,
-        name: "Rahul Kumar",
-        email: "rahul@example.com",
-        skills: ["Leadership"],
-        status: "Applied",
-      },
-      {
-        id: 103,
-        name: "Priya Sharma",
-        email: "priya@example.com",
-        skills: ["Event planning", "Social media"],
-        status: "Shortlisted",
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Teaching Children",
-    category: "Education",
-    location: "Vijayawada",
-    date: "2026-11-22",
-    slots: 8,
-    description:
-      "Support children with basic reading, writing and mathematics.",
-    status: "Open",
-    applicants: [
-      {
-        id: 201,
-        name: "Sneha Reddy",
-        email: "sneha@example.com",
-        skills: ["Teaching", "Patience"],
-        status: "Applied",
-      },
-      {
-        id: 202,
-        name: "Arjun Das",
-        email: "arjun@example.com",
-        skills: ["Mathematics"],
-        status: "Selected",
-      },
-    ],
-  },
-];
-
 const categories = [
-  "Education",
+  "Education & Literacy",
   "Environment",
   "Healthcare",
-  "Community Service",
+  "Community Outreach",
   "Animal Welfare",
   "Other",
 ];
 
 const emptyForm = {
   title: "",
-  category: "Community Service",
+  category: "Community Outreach",
   location: "",
   date: "",
   slots: "5",
   description: "",
 };
+
+function toDashboardOpportunity(item: OpportunityItem): Opportunity {
+  return {
+    id: item.id,
+    title: item.title,
+    category: item.category,
+    location: item.city || item.locationType || item.location_type || "Remote",
+    date: (item.deadline || "").slice(0, 10),
+    slots: item.openings || 1,
+    description: item.description,
+    status: item.status.toLowerCase(),
+    applicantCount: item.applications_count ?? item.applicant_stats?.total ?? 0,
+    selectedCount: item.applicant_stats?.selected ?? 0,
+  };
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    live: "Open",
+    pending_review: "Pending review",
+    draft: "Draft",
+    closed: "Closed",
+    rejected: "Rejected",
+  };
+  return labels[status] || status;
+}
 
 function getTodayISO() {
   const today = new Date();
@@ -121,34 +73,88 @@ function getTodayISO() {
 }
 
 export default function OrganisationDashboard() {
-  const [opportunities, setOpportunities] =
-    useState<Opportunity[]>(initialOpportunities);
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [activeApplicantListing, setActiveApplicantListing] =
-    useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [activeApplicantListing, setActiveApplicantListing] = useState<string | null>(null);
+  const [applicants, setApplicants] = useState<Record<string, ApplicationItem[]>>({});
+  const [applicantLoading, setApplicantLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [message, setMessage] = useState("");
 
+  async function toggleApplicants(opportunityId: string) {
+    if (activeApplicantListing === opportunityId) {
+      setActiveApplicantListing(null);
+      return;
+    }
+    setActiveApplicantListing(opportunityId);
+    setApplicantLoading(true);
+    try {
+      const result = await api.getOpportunityApplicants(opportunityId);
+      setApplicants((previous) => ({ ...previous, [opportunityId]: result }));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not load applicants.");
+    } finally {
+      setApplicantLoading(false);
+    }
+  }
+
+  async function changeApplicantStatus(applicationId: string, status: ApplicationItem["status"], opportunityId: string) {
+    try {
+      const updated = await api.updateApplicationStatus(applicationId, status);
+      setApplicants((previous) => ({
+        ...previous,
+        [opportunityId]: (previous[opportunityId] || []).map((item) => item.id === updated.id ? { ...item, ...updated, volunteer: item.volunteer } : item),
+      }));
+      setMessage(`Applicant status updated to ${status}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not update applicant status.");
+    }
+  }
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) router.replace("/login");
+    else if (user.role !== "organisation") router.replace("/");
+  }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (authLoading || user?.role !== "organisation") return;
+    let mounted = true;
+    api.getMyOpportunities()
+      .then((items) => {
+        if (mounted) setOpportunities(items.map(toDashboardOpportunity));
+      })
+      .catch((error: unknown) => {
+        if (mounted) setMessage(error instanceof Error ? error.message : "Could not load your opportunities.");
+      })
+      .finally(() => {
+        if (mounted) setDataLoading(false);
+      });
+    return () => { mounted = false; };
+  }, [authLoading, user]);
+
   const openCount = opportunities.filter(
-    (item) => item.status === "Open"
+    (item) => item.status === "live"
   ).length;
 
   const totalApplicants = opportunities.reduce(
-    (total, item) => total + item.applicants.length,
+    (total, item) => total + item.applicantCount,
     0
   );
 
   const selectedCount = opportunities.reduce(
     (total, item) =>
       total +
-      item.applicants.filter(
-        (applicant) => applicant.status === "Selected"
-      ).length,
+      item.selectedCount,
     0
   );
 
@@ -160,8 +166,7 @@ export default function OrganisationDashboard() {
         item.title.toLowerCase().includes(query) ||
         item.location.toLowerCase().includes(query);
 
-      const matchesFilter =
-        filter === "All" || item.status === filter;
+      const matchesFilter = filter === "All" || item.status === filter;
 
       return matchesSearch && matchesFilter;
     });
@@ -233,7 +238,7 @@ export default function OrganisationDashboard() {
     setStep((previous) => Math.min(previous + 1, 3));
   }
 
-  function saveOpportunity() {
+  async function saveOpportunity() {
     if (!form.description.trim()) {
       setMessage("Please add a description before publishing.");
       return;
@@ -252,101 +257,63 @@ export default function OrganisationDashboard() {
       return;
     }
 
-    if (editingId !== null) {
-      setOpportunities((previous) =>
-        previous.map((item) =>
-          item.id === editingId
-            ? {
-                ...item,
-                title: form.title.trim(),
-                category: form.category,
-                location: form.location.trim(),
-                date: form.date,
-                slots: Number(form.slots),
-                description: form.description.trim(),
-              }
-            : item
-        )
-      );
+    setSaving(true);
+    setMessage("");
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      type: "Volunteering",
+      category: form.category,
+      locationType: "On-site",
+      city: form.location.trim(),
+      duration: "Flexible",
+      openings: Number(form.slots),
+      deadline: form.date,
+    };
 
-      setMessage("Opportunity updated successfully!");
-    } else {
-      const newOpportunity: Opportunity = {
-        id: Date.now(),
-        title: form.title.trim(),
-        category: form.category,
-        location: form.location.trim(),
-        date: form.date,
-        slots: Number(form.slots),
-        description: form.description.trim(),
-        status: "Open",
-        applicants: [],
-      };
+    try {
+      if (editingId !== null) {
+        const updated = await api.updateOpportunity(editingId, payload);
+        setOpportunities((previous) => previous.map((item) => item.id === editingId ? toDashboardOpportunity(updated) : item));
+        setMessage("Opportunity changes saved.");
+      } else {
+        const created = await api.createOpportunity({ ...payload, status: "draft" });
+        const submitted = await api.submitOpportunityForReview(created.id);
+        setOpportunities((previous) => [toDashboardOpportunity(submitted), ...previous]);
+        setMessage("Submitted for review. Volunteers will see it after an admin approves it.");
+      }
 
-      setOpportunities((previous) => [
-        newOpportunity,
-        ...previous,
-      ]);
-
-      setMessage("Opportunity published successfully!");
+      setShowForm(false);
+      setStep(1);
+      setForm({ ...emptyForm });
+      setEditingId(null);
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "Could not save the opportunity.");
+    } finally {
+      setSaving(false);
     }
-
-    setShowForm(false);
-    setStep(1);
-    setForm({ ...emptyForm });
-    setEditingId(null);
   }
 
-  function toggleListing(id: number) {
-    setOpportunities((previous) =>
-      previous.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status:
-                item.status === "Open" ? "Closed" : "Open",
-            }
-          : item
-      )
-    );
-
-    setMessage("Listing status updated successfully.");
-  }
-
-  function updateApplicant(
-    opportunityId: number,
-    applicantId: number,
-    status: ApplicantStatus
-  ) {
-    setOpportunities((previous) =>
-      previous.map((item) =>
-        item.id === opportunityId
-          ? {
-              ...item,
-              applicants: item.applicants.map((applicant) =>
-                applicant.id === applicantId
-                  ? { ...applicant, status }
-                  : applicant
-              ),
-            }
-          : item
-      )
-    );
-
-    setMessage(`Applicant status updated to ${status}.`);
-  }
-
-  function applicantStatusClass(status: ApplicantStatus) {
-    switch (status) {
-      case "Selected":
-        return "bg-green-100 text-green-800";
-      case "Shortlisted":
-        return "bg-blue-100 text-blue-800";
-      case "Rejected":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-amber-100 text-amber-800";
+  async function toggleListing(id: string) {
+    const opportunity = opportunities.find((item) => item.id === id);
+    if (!opportunity) return;
+    try {
+      const updated = opportunity.status === "live"
+        ? await api.closeOpportunity(id)
+        : await api.reopenOpportunity(id);
+      setOpportunities((previous) => previous.map((item) => item.id === id ? toDashboardOpportunity(updated) : item));
+      setMessage("Listing status updated.");
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "Could not update the listing.");
     }
+  }
+
+  if (authLoading) {
+    return <div className="flex min-h-[50vh] items-center justify-center text-sm text-slate-500">Loading organisation dashboard…</div>;
+  }
+  if (!user || user.role !== "organisation") return null;
+  if (dataLoading) {
+    return <div className="flex min-h-[50vh] items-center justify-center text-sm text-slate-500">Loading organisation dashboard…</div>;
   }
 
   return (
@@ -354,17 +321,13 @@ export default function OrganisationDashboard() {
       <div className="mx-auto max-w-6xl space-y-8">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">
-              Organisation Portal
-            </p>
+            <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Organisation Portal</p>
 
             <h1 className="mt-2 text-3xl font-bold tracking-tight">
               Organisation Dashboard
             </h1>
 
-            <p className="mt-2 text-slate-500">
-              Manage opportunities, review applicants and select volunteers.
-            </p>
+            <p className="mt-2 text-slate-500">Create opportunities, track review status and monitor applications.</p>
           </div>
 
           <button
@@ -621,11 +584,12 @@ export default function OrganisationDashboard() {
                 ) : (
                   <button
                     onClick={saveOpportunity}
-                    className="rounded-xl bg-emerald-700 px-5 py-2.5 font-semibold text-white hover:bg-emerald-800"
+                    disabled={saving}
+                    className="rounded-xl bg-emerald-700 px-5 py-2.5 font-semibold text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60"
                   >
                     {editingId !== null
                       ? "Save Changes"
-                      : "Publish Opportunity"}
+                      : saving ? "Submitting…" : "Submit for Review"}
                   </button>
                 )}
               </div>
@@ -641,7 +605,7 @@ export default function OrganisationDashboard() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Manage listings and applicants from one place.
+                Create listings and track their review and application counts.
               </p>
             </div>
 
@@ -661,8 +625,11 @@ export default function OrganisationDashboard() {
                 className="rounded-xl border border-slate-300 bg-white px-3 py-2.5"
               >
                 <option value="All">All Statuses</option>
-                <option value="Open">Open</option>
-                <option value="Closed">Closed</option>
+                <option value="live">Open</option>
+                <option value="pending_review">Pending review</option>
+                <option value="draft">Draft</option>
+                <option value="closed">Closed</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
           </div>
@@ -693,12 +660,12 @@ export default function OrganisationDashboard() {
 
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        opportunity.status === "Open"
+                        opportunity.status === "live"
                           ? "bg-green-100 text-green-800"
                           : "bg-slate-200 text-slate-700"
                       }`}
                     >
-                      {opportunity.status}
+                      {statusLabel(opportunity.status)}
                     </span>
                   </div>
 
@@ -713,7 +680,7 @@ export default function OrganisationDashboard() {
 
                   <div className="mt-4 flex flex-wrap gap-4 text-sm">
                     <span>
-                      👥 {opportunity.applicants.length} applicants
+                      👥 {opportunity.applicantCount} applicants
                     </span>
 
                     <span>
@@ -721,14 +688,7 @@ export default function OrganisationDashboard() {
                     </span>
 
                     <span>
-                      ✓{" "}
-                      {
-                        opportunity.applicants.filter(
-                          (applicant) =>
-                            applicant.status === "Selected"
-                        ).length
-                      }{" "}
-                      selected
+                      ✓ {opportunity.selectedCount} selected
                     </span>
                   </div>
                 </div>
@@ -743,25 +703,20 @@ export default function OrganisationDashboard() {
 
                   <button
                     onClick={() => toggleListing(opportunity.id)}
+                    disabled={opportunity.status !== "live" && opportunity.status !== "closed"}
                     className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                      opportunity.status === "Open"
+                      opportunity.status === "live"
                         ? "border border-red-200 text-red-700 hover:bg-red-50"
                         : "bg-emerald-700 text-white hover:bg-emerald-800"
                     }`}
                   >
-                    {opportunity.status === "Open"
+                    {opportunity.status === "live"
                       ? "Close Listing"
-                      : "Reopen Listing"}
+                      : opportunity.status === "closed" ? "Reopen Listing" : "Status managed by review"}
                   </button>
 
                   <button
-                    onClick={() =>
-                      setActiveApplicantListing(
-                        activeApplicantListing === opportunity.id
-                          ? null
-                          : opportunity.id
-                      )
-                    }
+                    onClick={() => void toggleApplicants(opportunity.id)}
                     className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
                   >
                     {activeApplicantListing === opportunity.id
@@ -775,84 +730,26 @@ export default function OrganisationDashboard() {
                 <div className="mt-6 border-t border-slate-200 pt-5">
                   <h4 className="font-bold">Applicants</h4>
 
-                  {opportunity.applicants.length === 0 ? (
-                    <p className="mt-3 text-sm text-slate-500">
-                      No applicants yet. Applicants will appear here when available.
-                    </p>
-                  ) : (
-                    <div className="mt-4 space-y-3">
-                      {opportunity.applicants.map((applicant) => (
-                        <div
-                          key={applicant.id}
-                          className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 p-4 lg:flex-row lg:items-center"
-                        >
-                          <div>
-                            <p className="font-semibold">
-                              {applicant.name}
-                            </p>
-
-                            <p className="mt-1 text-sm text-slate-500">
-                              {applicant.email}
-                            </p>
-
-                            <p className="mt-2 text-sm text-slate-600">
-                              Skills: {applicant.skills.join(", ")}
-                            </p>
-
-                            <span
-                              className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${applicantStatusClass(applicant.status)}`}
-                            >
-                              {applicant.status}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              disabled={applicant.status === "Shortlisted"}
-                              onClick={() =>
-                                updateApplicant(
-                                  opportunity.id,
-                                  applicant.id,
-                                  "Shortlisted"
-                                )
-                              }
-                              className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-40"
-                            >
-                              Shortlist
-                            </button>
-
-                            <button
-                              disabled={applicant.status === "Selected"}
-                              onClick={() =>
-                                updateApplicant(
-                                  opportunity.id,
-                                  applicant.id,
-                                  "Selected"
-                                )
-                              }
-                              className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-40"
-                            >
-                              Select
-                            </button>
-
-                            <button
-                              disabled={applicant.status === "Rejected"}
-                              onClick={() =>
-                                updateApplicant(
-                                  opportunity.id,
-                                  applicant.id,
-                                  "Rejected"
-                                )
-                              }
-                              className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-40"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                  {applicantLoading && <p className="mt-3 text-sm text-slate-500">Loading applicants…</p>}
+                  {!applicantLoading && (applicants[opportunity.id] || []).length === 0 && <p className="mt-3 text-sm text-slate-500">No applicants yet.</p>}
+                  <div className="mt-3 divide-y divide-slate-200">
+                    {(applicants[opportunity.id] || []).map((application) => (
+                      <div key={application.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-semibold">{application.volunteer?.name || "Volunteer"}</p>
+                          <p className="text-sm text-slate-500">{application.volunteer?.email} · {application.volunteer?.city || "Location not provided"}</p>
+                          <p className="mt-1 text-sm text-slate-700">{application.pitch_text}</p>
+                          <p className="mt-1 text-xs capitalize text-slate-500">Status: {application.status}</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        <div className="flex flex-wrap gap-2">
+                          {application.status === "applied" && <button onClick={() => void changeApplicantStatus(application.id, "shortlisted", opportunity.id)} className="rounded-lg border px-3 py-2 text-sm">Shortlist</button>}
+                          {(application.status === "applied" || application.status === "shortlisted") && <button onClick={() => void changeApplicantStatus(application.id, "selected", opportunity.id)} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white">Select</button>}
+                          {application.status === "selected" && <button onClick={() => void changeApplicantStatus(application.id, "completed", opportunity.id)} className="rounded-lg bg-sky-700 px-3 py-2 text-sm text-white">Mark completed</button>}
+                          {!(["completed", "rejected"].includes(application.status)) && <button onClick={() => void changeApplicantStatus(application.id, "rejected", opportunity.id)} className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700">Reject</button>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </article>
@@ -860,7 +757,7 @@ export default function OrganisationDashboard() {
         </section>
 
         <footer className="border-t border-slate-200 pt-5 text-center text-xs text-slate-500">
-          Demo dashboard · Mock data is stored in page state and resets on refresh.
+          New listings are reviewed by an administrator before volunteers can see them.
         </footer>
       </div>
     </main>

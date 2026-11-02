@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -15,104 +15,44 @@ import {
   HeartHandshake,
   X,
 } from "lucide-react";
+import { api, OpportunityItem } from "@/lib/api";
 
-const opportunities = [
-  {
-    id: "opp-1",
-    title: "Youth Coding & Digital Literacy Mentor",
-    org: "Hope EdTech Foundation",
-    category: "Education & Literacy",
-    skills: ["Teaching", "Programming", "Communication"],
-    location: "New Delhi",
-    locationType: "Hybrid",
-    duration: "3 months",
-    deadline: "2026-11-15",
-    commitment: "4 hrs/week",
-    type: "Volunteer",
-    description:
-      "Help young students develop coding skills and improve their digital literacy.",
-  },
-  {
-    id: "opp-2",
-    title: "Urban Tree Plantation Volunteer",
-    org: "Green Canopy Project",
-    category: "Environment & Climate",
-    skills: ["Teamwork", "Communication"],
-    location: "Bengaluru",
-    locationType: "On-site",
-    duration: "1 month",
-    deadline: "2026-11-20",
-    commitment: "Weekends",
-    type: "Volunteer",
-    description:
-      "Participate in tree plantation drives and community environmental awareness.",
-  },
-  {
-    id: "opp-3",
-    title: "Community Health Camp Assistant",
-    org: "Aarogya Seva Trust",
-    category: "Healthcare & Mental Health",
-    skills: ["Communication", "Teamwork"],
-    location: "Mumbai",
-    locationType: "On-site",
-    duration: "2 weeks",
-    deadline: "2026-11-10",
-    commitment: "6 hrs/week",
-    type: "Volunteer",
-    description:
-      "Support community health camps and help coordinate public health activities.",
-  },
-  {
-    id: "opp-4",
-    title: "Frontend Development Intern",
-    org: "Digital Change Initiative",
-    category: "Education & Literacy",
-    skills: ["React", "JavaScript", "Programming"],
-    location: "Remote",
-    locationType: "Remote",
-    duration: "3 months",
-    deadline: "2026-12-05",
-    commitment: "10 hrs/week",
-    type: "Internship",
-    description:
-      "Build accessible web experiences for nonprofit educational initiatives.",
-  },
-  {
-    id: "opp-5",
-    title: "Animal Welfare Community Volunteer",
-    org: "Paws and Care Foundation",
-    category: "Animal Welfare",
-    skills: ["Teamwork", "Communication"],
-    location: "Pune",
-    locationType: "On-site",
-    duration: "1 month",
-    deadline: "2026-11-25",
-    commitment: "Weekends",
-    type: "Volunteer",
-    description:
-      "Help organise animal welfare awareness campaigns and community activities.",
-  },
-  {
-    id: "opp-6",
-    title: "Social Impact Project Mentor",
-    org: "Community Growth Network",
-    category: "Community Outreach",
-    skills: ["Leadership", "Communication", "Teaching"],
-    location: "Remote",
-    locationType: "Remote",
-    duration: "6 months",
-    deadline: "2026-12-15",
-    commitment: "3 hrs/week",
-    type: "Mentorship",
-    description:
-      "Guide volunteers as they plan and deliver meaningful community projects.",
-  },
-];
+type OpportunityCard = {
+  id: string;
+  title: string;
+  org: string;
+  category: string;
+  skills: string[];
+  location: string;
+  locationType: string;
+  duration: string;
+  deadline: string;
+  commitment: string;
+  type: string;
+  description: string;
+};
+
+function toOpportunityCard(item: OpportunityItem): OpportunityCard {
+  return {
+    id: item.id,
+    title: item.title,
+    org: item.organisation?.org_name || "Social impact organisation",
+    category: item.category,
+    skills: item.skills_required || item.skills || [],
+    location: item.city || item.location || "Remote",
+    locationType: item.location_type || item.locationType || "Remote",
+    duration: item.duration || "Flexible",
+    deadline: (item.deadline || "").slice(0, 10),
+    commitment: `${item.openings || 1} opening${item.openings === 1 ? "" : "s"}`,
+    type: item.type,
+    description: item.description,
+  };
+}
 
 const categories = [
   "Education & Literacy",
-  "Environment & Climate",
-  "Healthcare & Mental Health",
+  "Environment",
+  "Healthcare",
   "Animal Welfare",
   "Community Outreach",
 ];
@@ -130,6 +70,9 @@ const skills = [
 const durations = ["2 weeks", "1 month", "3 months", "6 months"];
 
 export default function OpportunitiesPage() {
+  const [opportunities, setOpportunities] = useState<OpportunityCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [skill, setSkill] = useState("");
@@ -138,6 +81,34 @@ export default function OpportunitiesPage() {
   const [deadline, setDeadline] = useState("");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const result = await api.getOpportunities({ limit: 100, sortBy: "newest" });
+        if (active) {
+          setOpportunities(result.data.map(toOpportunityCard));
+          setLoadError("");
+        }
+      } catch (error) {
+        if (active) {
+          setLoadError(error instanceof Error ? error.message : "Could not load opportunities.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    void load();
+    window.addEventListener("focus", load);
+    const refreshTimer = window.setInterval(load, 20_000);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", load);
+      window.clearInterval(refreshTimer);
+    };
+  }, []);
+
   const filteredOpportunities = useMemo(() => {
     return opportunities.filter((opp) => {
       const searchText =
@@ -145,7 +116,7 @@ export default function OpportunitiesPage() {
 
       return (
         searchText.includes(query.toLowerCase().trim()) &&
-        (!category || opp.category === category) &&
+        (!category || opp.category.toLowerCase().includes(category.toLowerCase())) &&
         (!skill || opp.skills.includes(skill)) &&
         (!locationType || opp.locationType === locationType) &&
         (!duration || opp.duration === duration) &&
@@ -395,10 +366,9 @@ export default function OpportunitiesPage() {
           <div>
             <div className="mb-5 flex items-center justify-between gap-3">
               <p className="text-sm text-slate-600">
-                <span className="font-bold text-slate-900">
-                  {filteredOpportunities.length}
-                </span>{" "}
-                opportunities found
+                {loading
+                  ? "Loading approved opportunities…"
+                  : `${filteredOpportunities.length} opportunities found`}
               </p>
 
               <button
@@ -409,7 +379,15 @@ export default function OpportunitiesPage() {
               </button>
             </div>
 
-            {filteredOpportunities.length === 0 ? (
+            {loadError ? (
+              <div className="rounded-2xl border border-red-200 bg-white px-6 py-12 text-center text-sm text-red-700">
+                Opportunities could not be loaded. {loadError}
+              </div>
+            ) : loading ? (
+              <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500">
+                Loading approved opportunities…
+              </div>
+            ) : filteredOpportunities.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
                 <Search className="mx-auto mb-4 text-slate-400" size={36} />
                 <h3 className="text-lg font-bold text-slate-900">
@@ -470,7 +448,7 @@ export default function OpportunitiesPage() {
                         <Clock size={17} className="shrink-0 text-sky-500" />
                         {opp.commitment} · {opp.duration}
                       </div>
-                      <div className="flex items-center gap-2">
+                      {opp.deadline && <div className="flex items-center gap-2">
                         <CalendarDays
                           size={17}
                           className="shrink-0 text-sky-500"
@@ -483,7 +461,7 @@ export default function OpportunitiesPage() {
                           month: "short",
                           year: "numeric",
                         })}
-                      </div>
+                      </div>}
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-2">
@@ -506,7 +484,7 @@ export default function OpportunitiesPage() {
                         href={`/opportunities/${opp.id}`}
                         className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
                       >
-                        View details <ArrowRight size={16} />
+                        View details & apply <ArrowRight size={16} />
                       </Link>
                     </div>
                   </article>

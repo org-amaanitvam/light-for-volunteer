@@ -4,7 +4,7 @@
   "private": true,
   "description": "Light For Volunteer backend API (NestJS + TypeORM + PostgreSQL + Redis)",
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "ts-node -T src/main.ts",
     "build": "nest build",
     "start": "node dist/backend/api/src/main.js",
     "start:prod": "node dist/backend/api/src/main.js",

@@ -74,6 +74,49 @@ export interface OpportunityItem {
   updated_at?: string;
 }
 
+export interface ApplicationItem {
+  id: string;
+  opportunity_id: string;
+  opportunity_title: string;
+  organisation: string;
+  volunteer_id: string;
+  pitch_text: string;
+  status: "applied" | "shortlisted" | "selected" | "completed" | "rejected";
+  applied_at: string;
+  volunteer?: { id: string; name: string; email: string; city?: string | null };
+}
+
+export interface VolunteerProfileItem {
+  id: string;
+  headline: string | null;
+  about: string | null;
+  skills: string[];
+  portfolioLinks: string[];
+  points: number;
+  ratingAvg: number;
+  badges: string[];
+  resumeUrl: string | null;
+  totalHours: number;
+}
+
+export interface GamificationItem {
+  points: number;
+  badges: string[];
+  recentTransactions: { eventType: string; points: number; createdAt: string }[];
+}
+
+export interface OrganisationProfileItem {
+  id: string;
+  orgName: string;
+  about: string | null;
+  website: string | null;
+  registrationType: string | null;
+  registrationId: string | null;
+  verificationDocUrl: string | null;
+  verificationStatus: string;
+  ratingAvg: number;
+}
+
 export interface SearchFacets {
   categories: Record<string, number>;
   types: Record<string, number>;
@@ -167,7 +210,7 @@ export interface DeleteOpportunityResponse {
   id: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3001/api" : "")).replace(/\/+$/, "");
 
 class ApiClient {
   private getTokens(): AuthTokens | null {
@@ -211,6 +254,9 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_URL must be set to the deployed API URL ending in /api before building the production web app.");
+    }
     const tokens = this.getTokens();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -343,6 +389,82 @@ class ApiClient {
 
   public async getMyOpportunities(): Promise<OpportunityItem[]> {
     return this.request<OpportunityItem[]>("/opportunities/mine");
+  }
+
+  public async createApplication(opportunityId: string, pitchText: string): Promise<ApplicationItem> {
+    return this.request<ApplicationItem>("/applications", {
+      method: "POST",
+      body: JSON.stringify({ opportunityId, pitchText }),
+    });
+  }
+
+  public async getMyApplications(): Promise<ApplicationItem[]> {
+    return this.request<ApplicationItem[]>("/applications/mine");
+  }
+
+  public async getOpportunityApplicants(opportunityId: string): Promise<ApplicationItem[]> {
+    return this.request<ApplicationItem[]>(`/applications/opportunity/${opportunityId}`);
+  }
+
+  public async updateApplicationStatus(
+    applicationId: string,
+    status: ApplicationItem["status"],
+  ): Promise<ApplicationItem> {
+    return this.request<ApplicationItem>(`/applications/${applicationId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  public async getVolunteerProfile(): Promise<VolunteerProfileItem> {
+    return this.request<VolunteerProfileItem>("/volunteers/profile");
+  }
+
+  public async updateVolunteerProfile(data: Partial<Pick<VolunteerProfileItem, "headline" | "about" | "skills" | "portfolioLinks" | "resumeUrl">>): Promise<VolunteerProfileItem> {
+    return this.request<VolunteerProfileItem>("/volunteers/profile", { method: "PATCH", body: JSON.stringify(data) });
+  }
+
+  public async getMyGamification(): Promise<GamificationItem> {
+    return this.request<GamificationItem>("/gamification/me");
+  }
+
+  public async getPendingOpportunities(): Promise<OpportunityItem[]> {
+    return this.request<OpportunityItem[]>("/admin/opportunities/pending");
+  }
+
+  public async reviewOpportunity(id: string, status: "approved" | "rejected"): Promise<OpportunityItem> {
+    return this.request<OpportunityItem>(`/admin/opportunities/${id}/review`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  public async getPendingOrganisations(): Promise<{ id: string; org_name: string; about: string | null; registration_type: string | null; verification_status: string; user?: { name: string; email: string; city: string | null } }[]> {
+    return this.request("/admin/organisations/pending");
+  }
+
+  public async getMyOrganisation(): Promise<OrganisationProfileItem> {
+    return this.request("/organisations/me");
+  }
+
+  public async createMyOrganisation(data: { orgName: string; about?: string; website?: string; registrationType?: string }): Promise<OrganisationProfileItem> {
+    return this.request("/organisations", { method: "POST", body: JSON.stringify(data) });
+  }
+
+  public async updateMyOrganisation(data: { orgName?: string; about?: string; website?: string; registrationType?: string }): Promise<OrganisationProfileItem> {
+    return this.request("/organisations/me", { method: "PATCH", body: JSON.stringify(data) });
+  }
+
+  public async reviewOrganisation(id: string, status: "verified" | "rejected"): Promise<unknown> {
+    return this.request(`/admin/organisations/${id}/verify`, { method: "PATCH", body: JSON.stringify({ status }) });
+  }
+
+  public async getPendingReports(): Promise<{ id: string; target_type: string; target_id: string; reason: string; created_at: string; reporter?: { name: string } }[]> {
+    return this.request("/admin/reports/pending");
+  }
+
+  public async resolveReport(id: string, action: "dismiss_report" | "remove_content"): Promise<unknown> {
+    return this.request(`/admin/reports/${id}/resolve`, { method: "PATCH", body: JSON.stringify({ action }) });
   }
 
   public async createOpportunity(data: CreateOpportunityInput): Promise<OpportunityItem> {
