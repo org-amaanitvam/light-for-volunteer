@@ -115,6 +115,7 @@ export interface OrganisationProfileItem {
   verificationDocUrl: string | null;
   verificationStatus: string;
   ratingAvg: number;
+  reviewCount: number;
 }
 
 export interface SearchFacets {
@@ -439,7 +440,7 @@ class ApiClient {
     });
   }
 
-  public async getPendingOrganisations(): Promise<{ id: string; org_name: string; about: string | null; registration_type: string | null; verification_status: string; user?: { name: string; email: string; city: string | null } }[]> {
+  public async getPendingOrganisations(): Promise<{ id: string; org_name: string; about: string | null; registration_type: string | null; verification_status: string; verification_doc_url: string | null; user?: { name: string; email: string; city: string | null } }[]> {
     return this.request("/admin/organisations/pending");
   }
 
@@ -447,12 +448,42 @@ class ApiClient {
     return this.request("/organisations/me");
   }
 
-  public async createMyOrganisation(data: { orgName: string; about?: string; website?: string; registrationType?: string }): Promise<OrganisationProfileItem> {
+  public async createMyOrganisation(data: { orgName: string; about?: string; website?: string; registrationType?: string; verificationDocUrl?: string }): Promise<OrganisationProfileItem> {
     return this.request("/organisations", { method: "POST", body: JSON.stringify(data) });
   }
 
-  public async updateMyOrganisation(data: { orgName?: string; about?: string; website?: string; registrationType?: string }): Promise<OrganisationProfileItem> {
+  public async updateMyOrganisation(data: { orgName?: string; about?: string; website?: string; registrationType?: string; verificationDocUrl?: string }): Promise<OrganisationProfileItem> {
     return this.request("/organisations/me", { method: "PATCH", body: JSON.stringify(data) });
+  }
+
+  public async resubmitMyOrganisation(): Promise<OrganisationProfileItem> {
+    return this.request("/organisations/me/resubmit", { method: "POST" });
+  }
+
+  public async uploadVerificationDocument(file: File): Promise<string> {
+    if (file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) {
+      throw new Error("Choose a PDF verification document.");
+    }
+    if (file.size <= 0 || file.size > 10 * 1024 * 1024) {
+      throw new Error("The PDF must be between 1 byte and 10 MB.");
+    }
+    const signed = await this.request<{ uploadUrl: string; key: string; contentType: string }>("/storage/presign-upload", {
+      method: "POST",
+      body: JSON.stringify({ purpose: "verification", fileName: file.name, contentType: file.type, fileSize: file.size }),
+    });
+    const uploaded = await fetch(signed.uploadUrl, { method: "PUT", headers: { "Content-Type": signed.contentType }, body: file });
+    if (!uploaded.ok) throw new Error(`R2 upload failed (${uploaded.status}). Check the bucket CORS policy and try again.`);
+    await this.request("/storage/verify-upload", { method: "POST", body: JSON.stringify({ key: signed.key }) });
+    return signed.key;
+  }
+
+  public async getStorageDownloadUrl(key: string): Promise<string> {
+    const result = await this.request<{ downloadUrl: string }>("/storage/presign-download", { method: "POST", body: JSON.stringify({ key }) });
+    return result.downloadUrl;
+  }
+
+  public async deleteStorageObject(key: string): Promise<void> {
+    await this.request("/storage/object", { method: "DELETE", body: JSON.stringify({ key }) });
   }
 
   public async reviewOrganisation(id: string, status: "verified" | "rejected"): Promise<unknown> {

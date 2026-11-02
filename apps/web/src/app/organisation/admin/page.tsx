@@ -18,6 +18,7 @@ type Organisation = {
   category: string;
   submitted: string;
   status: OrganisationStatus;
+  verificationDocUrl: string | null;
 };
 
 type Listing = {
@@ -126,7 +127,7 @@ export default function AdminPage() {
     if (authLoading || user?.role !== "admin") return;
     Promise.all([api.getPendingOrganisations(), api.getPendingOpportunities(), api.getPendingReports()])
       .then(([orgItems, opportunityItems, reportItems]) => {
-        setOrganisations(orgItems.map((item) => ({ id: item.id, name: item.org_name, email: item.user?.email || "", location: item.user?.city || "", category: item.registration_type || "Organisation", submitted: "", status: "Pending" })));
+        setOrganisations(orgItems.map((item) => ({ id: item.id, name: item.org_name, email: item.user?.email || "", location: item.user?.city || "", category: item.registration_type || "Organisation", submitted: "", status: "Pending", verificationDocUrl: item.verification_doc_url })));
         setListings(opportunityItems.map(toAdminListing));
         setReports(reportItems.map((item) => ({ id: item.id, organisation: `${item.target_type} ${item.target_id.slice(0, 8)}`, reviewer: item.reporter?.name || "Account holder", rating: 0, comment: `Reported ${item.target_type} content`, reason: item.reason, submitted: item.created_at.slice(0, 10), status: "Pending" })));
       })
@@ -216,6 +217,22 @@ export default function AdminPage() {
       setMessage(organisation ? `${organisation.name} marked as ${status.toLowerCase()}.` : "Organisation updated.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not update organisation verification.");
+    }
+  }
+
+  async function openVerificationDocument(key: string) {
+    const documentWindow = window.open("about:blank", "_blank");
+    if (!documentWindow) {
+      setMessage("Allow pop-ups to view the verification document.");
+      return;
+    }
+    try {
+      const url = key.startsWith("https://") ? key : await api.getStorageDownloadUrl(key);
+      documentWindow.opener = null;
+      documentWindow.location.href = url;
+    } catch (error) {
+      documentWindow.close();
+      setMessage(error instanceof Error ? error.message : "Could not open the verification document.");
     }
   }
 
@@ -455,6 +472,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 lg:justify-end">
+                      {organisation.verificationDocUrl && <button onClick={() => void openVerificationDocument(organisation.verificationDocUrl!)} className="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">View verification PDF</button>}
                       {organisation.status !== "Verified" && (
                         <button
                           onClick={() =>
