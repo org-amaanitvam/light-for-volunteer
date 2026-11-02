@@ -28,6 +28,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 import { VolunteersModule } from './modules/volunteers/volunteers.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { HealthController } from './modules/health/health.controller';
 /**
  * Global guard order: JWT auth → RBAC roles (registered inside AuthModule),
  * then throttling registered here. Route opt-outs: `@Public()`,
@@ -69,6 +70,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     LeaderboardModule, // Suraj: leaderboard recalculation
     ReportsModule,
   ],
+  controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

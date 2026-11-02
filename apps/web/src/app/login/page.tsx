@@ -26,7 +26,15 @@ export default function LoginPage() {
     try {
       const res = await api.login({ email, password });
       setUser(res.user);
-      router.push("/");
+      const requestedNext = new URLSearchParams(window.location.search).get("next");
+      const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+        ? requestedNext
+        : res.user.role === "admin"
+          ? "/organisation/admin"
+          : res.user.role === "organisation"
+            ? "/organisation/dashboard"
+            : "/volunteer/dashboard";
+      router.push(next);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);

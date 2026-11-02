@@ -26,7 +26,7 @@ export function ReviewForm({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const eligibleApplications = completedApplications.filter(
-    (app) => app.status === "completed" || app.status === "selected" || app.status === "accepted"
+    (app) => app.status === "completed"
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -60,28 +60,20 @@ export function ReviewForm({
     setIsSubmitting(true);
 
     try {
-      try {
-        await api.request("/reviews", {
-          method: "POST",
-          body: JSON.stringify({
-            applicationId: application.id,
-            opportunityId: application.opportunityId,
-            rating,
-            comment: comment.trim(),
-          }),
-        });
-      } catch {
-      }
+      const saved = await api.request<{ id: string; applicationId: string }>("/reviews", {
+        method: "POST",
+        body: JSON.stringify({ applicationId: application.id, rating, comment: comment.trim() }),
+      });
 
       const newReview: ReviewItem = {
-        id: `rev-${application.id}`,
+        id: saved.id,
         opportunityTitle: application.opportunityTitle,
         organisation: application.organisation,
         rating,
         comment: comment.trim(),
         createdAt: new Date().toISOString(),
         reviewerName: "You",
-        applicationId: application.id,
+        applicationId: saved.applicationId,
       };
 
       if (onReviewSubmitted) {

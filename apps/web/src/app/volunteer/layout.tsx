@@ -36,7 +36,7 @@ export default function VolunteerLayout({
     return null;
   }
 
-  if (user.role !== "volunteer") {
+  if (user.role !== "volunteer" && user.role !== "mentor") {
     return (
       <div className="flex min-h-[70vh] items-center justify-center p-4">
         <Card className="max-w-md border-amber-200 bg-amber-50/40 text-center shadow-lg">
@@ -44,10 +44,10 @@ export default function VolunteerLayout({
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
               🛡️
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Volunteer Role Required</h2>
+            <h2 className="text-xl font-bold text-slate-900">Volunteer or Mentor Role Required</h2>
             <p className="mt-2 text-sm text-slate-600">
               You are signed in as <span className="font-semibold text-slate-800">{user.email}</span> with the role{" "}
-              <span className="font-semibold capitalize text-sky-700">{user.role}</span>. This portal is reserved for volunteers.
+              <span className="font-semibold capitalize text-sky-700">{user.role}</span>. This portal is available to volunteers and mentors.
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <Button variant="outline" onClick={() => router.push("/")}>

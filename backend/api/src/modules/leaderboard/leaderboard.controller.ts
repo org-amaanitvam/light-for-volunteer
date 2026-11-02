@@ -41,13 +41,13 @@ export class LeaderboardController {
 
   @Get('my-rank')
   @ApiOperation({ summary: 'Current user\'s rank on the leaderboard' })
-  myRank(@CurrentUser() user: JwtAccessPayload) {
-    return this.service.getRank(user.sub) ?? { rank: null, entry: null };
+  async myRank(@CurrentUser() user: JwtAccessPayload) {
+    return (await this.service.getRank(user.sub)) ?? { rank: null, entry: null };
   }
 
   @Get('rank/:userId')
   @ApiOperation({ summary: 'Get a specific user\'s rank' })
-  userRank(@Param('userId', ParseUUIDPipe) userId: string) {
-    return this.service.getRank(userId) ?? { rank: null, entry: null };
+  async userRank(@Param('userId', ParseUUIDPipe) userId: string) {
+    return (await this.service.getRank(userId)) ?? { rank: null, entry: null };
   }
 }

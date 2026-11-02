@@ -14,6 +14,12 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
 
+  const dashboardHref = user?.role === "organisation"
+    ? "/organisation/dashboard"
+    : user?.role === "admin"
+      ? "/organisation/admin"
+      : "/volunteer/dashboard";
+
   const navLinks = [
 { name: "Home", href: "/" },
 { name: "Opportunities", href: "/opportunities" },
@@ -93,7 +99,7 @@ export function Navbar() {
                     </div>
 
                     <Link
-                      href="/dashboard"
+                      href={dashboardHref}
                       onClick={() => setAuthDropdownOpen(false)}
                       className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-sky-50 rounded-xl transition"
                     >
@@ -204,6 +210,13 @@ export function Navbar() {
                 <div className="text-xs font-medium text-slate-500">
                   Signed in as: <span className="font-semibold text-slate-800">{user.email}</span>
                 </div>
+                <Link
+                  href={dashboardHref}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-sky-200 px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-50"
+                >
+                  <User className="h-4 w-4" /> My Profile / Dashboard
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"

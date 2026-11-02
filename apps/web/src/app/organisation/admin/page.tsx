@@ -1,14 +1,17 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, OpportunityItem } from "@/lib/api";
+import { useAuth } from "@/context/auth-context";
 
 type OrganisationStatus = "Pending" | "Verified" | "Rejected";
 type ListingStatus = "Pending" | "Approved" | "Rejected";
 type ReportStatus = "Pending" | "Dismissed" | "Removed";
 
 type Organisation = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   location: string;
@@ -18,7 +21,7 @@ type Organisation = {
 };
 
 type Listing = {
-  id: number;
+  id: string;
   title: string;
   organisation: string;
   category: string;
@@ -29,7 +32,7 @@ type Listing = {
 };
 
 type ReportedReview = {
-  id: number;
+  id: string;
   organisation: string;
   reviewer: string;
   rating: number;
@@ -41,94 +44,18 @@ type ReportedReview = {
 
 type Tab = "organisations" | "listings" | "reports";
 
-const initialOrganisations: Organisation[] = [
-  {
-    id: 1,
-    name: "Helping Hands Foundation",
-    email: "contact@helpinghands.org",
-    location: "Hyderabad, Telangana",
-    category: "Community Service",
-    submitted: "2026-10-20",
+function toAdminListing(item: OpportunityItem): Listing {
+  return {
+    id: item.id,
+    title: item.title,
+    organisation: item.organisation?.org_name || "Organisation",
+    category: item.category,
+    location: item.city || item.locationType || item.location_type || "Remote",
+    submitted: (item.created_at || "").slice(0, 10),
     status: "Pending",
-  },
-  {
-    id: 2,
-    name: "Green Earth Initiative",
-    email: "hello@greenearth.org",
-    location: "Vijayawada, Andhra Pradesh",
-    category: "Environment",
-    submitted: "2026-10-21",
-    status: "Pending",
-  },
-  {
-    id: 3,
-    name: "Bright Future Trust",
-    email: "info@brightfuture.org",
-    location: "Visakhapatnam, Andhra Pradesh",
-    category: "Education",
-    submitted: "2026-10-18",
-    status: "Verified",
-  },
-];
-
-const initialListings: Listing[] = [
-  {
-    id: 101,
-    title: "Weekend Teaching Programme",
-    organisation: "Helping Hands Foundation",
-    category: "Education",
-    location: "Hyderabad",
-    submitted: "2026-10-22",
-    status: "Pending",
-    description:
-      "Volunteers will help school children with reading, writing and basic mathematics.",
-  },
-  {
-    id: 102,
-    title: "Community Clean-up Drive",
-    organisation: "Green Earth Initiative",
-    category: "Environment",
-    location: "Vijayawada",
-    submitted: "2026-10-23",
-    status: "Pending",
-    description:
-      "Help clean public spaces and promote responsible waste management.",
-  },
-  {
-    id: 103,
-    title: "Food Distribution Campaign",
-    organisation: "Bright Future Trust",
-    category: "Community Service",
-    location: "Visakhapatnam",
-    submitted: "2026-10-19",
-    status: "Approved",
-    description:
-      "Assist the organisation with distributing food packages to local communities.",
-  },
-];
-
-const initialReports: ReportedReview[] = [
-  {
-    id: 201,
-    organisation: "Helping Hands Foundation",
-    reviewer: "Anonymous Volunteer",
-    rating: 1,
-    comment: "The volunteering experience was disappointing.",
-    reason: "Potentially inappropriate content",
-    submitted: "2026-10-24",
-    status: "Pending",
-  },
-  {
-    id: 202,
-    organisation: "Green Earth Initiative",
-    reviewer: "Volunteer 24",
-    rating: 2,
-    comment: "The event details did not match my expectations.",
-    reason: "Reported as misleading",
-    submitted: "2026-10-25",
-    status: "Pending",
-  },
-];
+    description: item.description,
+  };
+}
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "organisations", label: "Organisation Verification" },
@@ -176,11 +103,11 @@ function StatCard({
 }
 
 export default function AdminPage() {
-  const [organisations, setOrganisations] =
-    useState<Organisation[]>(initialOrganisations);
-  const [listings, setListings] = useState<Listing[]>(initialListings);
-  const [reports, setReports] =
-    useState<ReportedReview[]>(initialReports);
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const [organisations, setOrganisations] = useState<Organisation[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [reports, setReports] = useState<ReportedReview[]>([]);
 
   const [activeTab, setActiveTab] = useState<Tab>("organisations");
   const [search, setSearch] = useState("");
@@ -188,6 +115,23 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [selectedListing, setSelectedListing] =
     useState<Listing | null>(null);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) router.replace("/login");
+    else if (user.role !== "admin") router.replace("/");
+  }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (authLoading || user?.role !== "admin") return;
+    Promise.all([api.getPendingOrganisations(), api.getPendingOpportunities(), api.getPendingReports()])
+      .then(([orgItems, opportunityItems, reportItems]) => {
+        setOrganisations(orgItems.map((item) => ({ id: item.id, name: item.org_name, email: item.user?.email || "", location: item.user?.city || "", category: item.registration_type || "Organisation", submitted: "", status: "Pending" })));
+        setListings(opportunityItems.map(toAdminListing));
+        setReports(reportItems.map((item) => ({ id: item.id, organisation: `${item.target_type} ${item.target_id.slice(0, 8)}`, reviewer: item.reporter?.name || "Account holder", rating: 0, comment: `Reported ${item.target_type} content`, reason: item.reason, submitted: item.created_at.slice(0, 10), status: "Pending" })));
+      })
+      .catch((error: unknown) => setMessage(error instanceof Error ? error.message : "Could not load pending opportunities."));
+  }, [authLoading, user]);
 
   const pendingOrganisations = organisations.filter(
     (item) => item.status === "Pending"
@@ -263,60 +207,51 @@ export default function AdminPage() {
     setSelectedListing(null);
   }
 
-  function updateOrganisation(
-    id: number,
-    status: OrganisationStatus
-  ) {
+  async function updateOrganisation(id: string, status: OrganisationStatus) {
     const organisation = organisations.find((item) => item.id === id);
-
-    setOrganisations((previous) =>
-      previous.map((item) =>
-        item.id === id ? { ...item, status } : item
-      )
-    );
-
-    setMessage(
-      organisation
-        ? `${organisation.name} marked as ${status.toLowerCase()}.`
-        : "Organisation updated."
-    );
+    if (status === "Pending") return;
+    try {
+      await api.reviewOrganisation(id, status.toLowerCase() as "verified" | "rejected");
+      setOrganisations((previous) => previous.filter((item) => item.id !== id));
+      setMessage(organisation ? `${organisation.name} marked as ${status.toLowerCase()}.` : "Organisation updated.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not update organisation verification.");
+    }
   }
 
-  function updateListing(id: number, status: ListingStatus) {
+  async function updateListing(id: string, status: ListingStatus) {
     const listing = listings.find((item) => item.id === id);
-
-    setListings((previous) =>
-      previous.map((item) =>
-        item.id === id ? { ...item, status } : item
-      )
-    );
-
-    setSelectedListing(null);
-    setMessage(
-      listing
-        ? `"${listing.title}" marked as ${status.toLowerCase()}.`
-        : "Opportunity updated."
-    );
+    try {
+      await api.reviewOpportunity(id, status === "Approved" ? "approved" : "rejected");
+      setListings((previous) => previous.map((item) => item.id === id ? { ...item, status } : item));
+      setSelectedListing(null);
+      setMessage(listing
+        ? status === "Approved"
+          ? `"${listing.title}" approved and published for volunteers.`
+          : `"${listing.title}" rejected.`
+        : "Opportunity updated.");
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "Could not review the opportunity.");
+    }
   }
 
-  function updateReport(id: number, status: ReportStatus) {
-    setReports((previous) =>
-      previous.map((item) =>
-        item.id === id ? { ...item, status } : item
-      )
-    );
-
-    setMessage(
-      status === "Dismissed"
-        ? "Report dismissed. The review remains unchanged."
-        : "Reported review marked for removal in this demo."
-    );
+  async function updateReport(id: string, status: ReportStatus) {
+    if (status === "Pending") return;
+    try {
+      await api.resolveReport(id, status === "Dismissed" ? "dismiss_report" : "remove_content");
+      setReports((previous) => previous.filter((item) => item.id !== id));
+      setMessage(status === "Dismissed" ? "Report dismissed. The reported content remains." : "Report resolved and reported content removed.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not resolve report.");
+    }
   }
 
   function resetFilters() {
     setSearch("");
     setStatusFilter("All");
   }
+
+  if (authLoading || !user || user.role !== "admin") return null;
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-800 sm:px-8">
@@ -362,9 +297,9 @@ export default function AdminPage() {
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Total Organisations"
+            label="Awaiting Organisations"
             value={organisations.length}
-            description="Organisations in the demo"
+            description="Returned from the verification queue"
           />
           <StatCard
             label="Pending Verification"
@@ -503,10 +438,10 @@ export default function AdminPage() {
                           <StatusBadge status={organisation.status} />
                         </div>
                         <p className="mt-2 text-sm text-slate-500">
-                          {organisation.email}
+                          {organisation.email || "Contact details are not included in the verification queue."}
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          {organisation.location}
+                          {organisation.location || "Location not provided"}
                         </p>
                         <div className="mt-3 flex flex-wrap gap-2 text-xs">
                           <span className="rounded-lg bg-slate-100 px-3 py-1.5">
@@ -542,16 +477,6 @@ export default function AdminPage() {
                         </button>
                       )}
 
-                      {organisation.status !== "Pending" && (
-                        <button
-                          onClick={() =>
-                            updateOrganisation(organisation.id, "Pending")
-                          }
-                          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-                        >
-                          Reset to Pending
-                        </button>
-                      )}
                     </div>
                   </div>
                 </article>
@@ -634,14 +559,6 @@ export default function AdminPage() {
                         </button>
                       )}
 
-                      {listing.status !== "Pending" && (
-                        <button
-                          onClick={() => updateListing(listing.id, "Pending")}
-                          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-                        >
-                          Reset to Pending
-                        </button>
-                      )}
                     </div>
                   </div>
                 </article>
@@ -677,21 +594,8 @@ export default function AdminPage() {
                       </p>
 
                       <div className="mt-4 rounded-xl bg-slate-50 p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Reported review
-                        </p>
-                        <p className="mt-2 text-amber-600">
-                          {"★".repeat(report.rating)}
-                          <span className="text-slate-300">
-                            {"★".repeat(5 - report.rating)}
-                          </span>
-                          <span className="ml-2 text-sm text-slate-500">
-                            {report.rating}/5
-                          </span>
-                        </p>
-                        <p className="mt-2 text-sm leading-6">
-                          {report.comment}
-                        </p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reported content</p>
+                        <p className="mt-2 text-sm leading-6">{report.comment} · Reference {report.organisation}</p>
                         <p className="mt-3 text-sm">
                           <strong>Report reason:</strong> {report.reason}
                         </p>
@@ -716,14 +620,6 @@ export default function AdminPage() {
                         </>
                       )}
 
-                      {report.status !== "Pending" && (
-                        <button
-                          onClick={() => updateReport(report.id, "Pending")}
-                          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-                        >
-                          Reopen Report
-                        </button>
-                      )}
                     </div>
                   </div>
                 </article>
@@ -737,10 +633,7 @@ export default function AdminPage() {
         </section>
 
         <footer className="border-t border-slate-200 pt-5 text-center text-xs leading-5 text-slate-500">
-          Admin Console · Demonstration using mock data only.
-          <br />
-          Changes are temporary and will reset when the page is refreshed.
-          Production moderation requires authenticated admin access and backend persistence.
+          Organisation verification, opportunity review, and report resolution are saved through the API.
         </footer>
       </div>
     </main>

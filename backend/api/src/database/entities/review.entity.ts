@@ -1,5 +1,5 @@
 import { 
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn 
+  Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn
 } from 'typeorm';
 import { Application } from './application.entity';
 import { User } from '../../modules/users/entities/user.entity';
@@ -18,6 +18,9 @@ export class Review {
 
   @Column({ type: 'text', nullable: true })
   comment: string;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  created_at: Date;
 
   @ManyToOne(() => User,{ onDelete: 'CASCADE' })
   @JoinColumn({ name: 'given_by' })

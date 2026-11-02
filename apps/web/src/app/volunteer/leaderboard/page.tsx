@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { LeaderboardEntry } from "@/types/volunteer";
-import { getMockLeaderboard } from "@/lib/volunteer-mock-adapter";
+import { api } from "@/lib/api";
 
 const PODIUM_CONFIG = [
   {
@@ -45,28 +45,26 @@ const PODIUM_CONFIG = [
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
-  const [period, setPeriod] = useState<"monthly" | "alltime">("monthly");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    loadLeaderboard();
-  }, [period]);
+    void loadLeaderboard();
+    const timer = window.setInterval(() => void loadLeaderboard(), 30_000);
+    window.addEventListener("focus", loadLeaderboard);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", loadLeaderboard); };
+  }, []);
 
-  function loadLeaderboard() {
-    setLoading(true);
+  async function loadLeaderboard() {
     setError(null);
-    getMockLeaderboard(period)
-      .then((data) => {
-        setEntries(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Unable to load leaderboard. Please retry.");
-        setLoading(false);
-      });
+    try {
+      const data = await api.request<{ entries: { rank: number; userId: string; name: string; city: string | null; points: number; badges: string[] }[] }>("/leaderboard?page=1&limit=100");
+      setEntries(data.entries.map((item) => ({ rank: item.rank, volunteerId: item.userId, name: item.name, city: item.city, points: item.points, badgeCount: item.badges.length })));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to load leaderboard. Please retry.");
+    } finally { setLoading(false); }
   }
 
   const filteredEntries = entries.filter(
@@ -89,32 +87,7 @@ export default function LeaderboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-2xl border border-sky-100 bg-white p-1 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setPeriod("monthly")}
-              className={`rounded-xl px-4 py-1.5 text-xs font-bold transition ${
-                period === "monthly"
-                  ? "bg-sky-500 text-white shadow-sm"
-                  : "text-slate-600 hover:text-sky-700"
-              }`}
-            >
-              This Month
-            </button>
-            <button
-              type="button"
-              onClick={() => setPeriod("alltime")}
-              className={`rounded-xl px-4 py-1.5 text-xs font-bold transition ${
-                period === "alltime"
-                  ? "bg-sky-500 text-white shadow-sm"
-                  : "text-slate-600 hover:text-sky-700"
-              }`}
-            >
-              All Time
-            </button>
-          </div>
-        </div>
+        <span className="rounded-xl border border-sky-100 bg-white px-4 py-2 text-xs font-bold text-slate-600">All-time points</span>
       </div>
 
       {!loading && !error && topThree.length === 3 && !searchQuery && (
@@ -204,7 +177,7 @@ export default function LeaderboardPage() {
           <div>
             <CardTitle className="text-lg">Rankings Table</CardTitle>
             <CardDescription>
-              Showing volunteers ranked by total impact points for {period === "monthly" ? "this calendar month" : "all time"}.
+              Showing volunteers ranked by their current total impact points.
             </CardDescription>
           </div>
           <div className="w-full sm:w-64">
@@ -300,10 +273,7 @@ export default function LeaderboardPage() {
       </Card>
 
       <div className="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 text-xs text-slate-500">
-        <p className="font-semibold text-slate-700">Leaderboard Architecture Note:</p>
-        <p className="mt-0.5">
-          Leaderboard entries hydrate via the dedicated mock leaderboard adapter. There is currently no backend ranking service or query endpoint (`GET /api/leaderboard`). Once the gamification service exposes competitive aggregate queries, this page will switch to live socket/REST data.
-        </p>
+        <p>Rankings refresh from current volunteer points every 30 seconds while this page is open.</p>
       </div>
     </div>
   );

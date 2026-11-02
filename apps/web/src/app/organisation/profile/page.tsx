@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 type Review = {
   id: number;
@@ -12,49 +13,43 @@ type Review = {
 };
 
 const initialProfile = {
-  name: "Helping Hands Foundation",
-  email: "contact@helpinghands.org",
-  phone: "+91 98765 43210",
-  website: "https://example.org",
-  location: "Hyderabad, Telangana, India",
-  category: "Community Service",
-  established: "2018",
-  description:
-    "We work with local communities to improve access to education, healthcare and essential resources. Our mission is to create meaningful volunteering opportunities and make a positive social impact.",
+  name: "",
+  email: "",
+  phone: "",
+  website: "",
+  location: "",
+  category: "Organisation",
+  established: "",
+  description: "",
 };
-
-const initialReviews: Review[] = [
-  {
-    id: 1,
-    reviewer: "Ananya R.",
-    rating: 5,
-    date: "2026-10-12",
-    comment:
-      "A wonderful volunteering experience. The team was supportive and well organised.",
-  },
-  {
-    id: 2,
-    reviewer: "Rahul K.",
-    rating: 4,
-    date: "2026-10-08",
-    comment:
-      "Meaningful work and friendly coordinators. I would happily volunteer again.",
-  },
-  {
-    id: 3,
-    reviewer: "Priya S.",
-    rating: 5,
-    date: "2026-09-28",
-    comment:
-      "I really enjoyed working with the community and learning from the team.",
-  },
-];
 
 export default function OrganisationProfilePage() {
   const [profile, setProfile] = useState(initialProfile);
-  const [reviews] = useState(initialReviews);
+  const [savedProfile, setSavedProfile] = useState(initialProfile);
+  const [reviews] = useState<Review[]>([]);
+  const [verificationStatus, setVerificationStatus] = useState("pending");
+  const [loading, setLoading] = useState(true);
+  const [profileExists, setProfileExists] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    api.getMyOrganisation().then((data) => {
+      if (!active) return;
+      const loaded = { ...initialProfile, name: data.orgName, website: data.website || "", description: data.about || "", category: data.registrationType || "Organisation" };
+      setProfile(loaded);
+      setSavedProfile(loaded);
+      setVerificationStatus(data.verificationStatus);
+      setProfileExists(true);
+    }).catch((error: unknown) => {
+      if (active && error instanceof Error && /not found|not been created/i.test(error.message)) {
+        setMessage("Your organisation details are not set up yet. Fill them in and save to create the profile.");
+        setIsEditing(true);
+      } else if (active) setMessage(error instanceof Error ? error.message : "Could not load organisation profile.");
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const averageRating =
     reviews.length > 0
@@ -69,20 +64,29 @@ export default function OrganisationProfilePage() {
     }));
   }
 
-  function saveProfile(event: React.FormEvent<HTMLFormElement>) {
+  async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!profile.name.trim() || !profile.email.trim()) {
-      setMessage("Organisation name and email are required.");
+    if (!profile.name.trim()) {
+      setMessage("Organisation name is required.");
       return;
     }
 
-    setIsEditing(false);
-    setMessage("Profile changes saved in this demo.");
+    try {
+      const data = { orgName: profile.name.trim(), about: profile.description, website: profile.website, registrationType: profile.category };
+      const saved = profileExists ? await api.updateMyOrganisation(data) : await api.createMyOrganisation(data);
+      const updated = { ...profile, name: saved.orgName, website: saved.website || "", description: saved.about || "", category: saved.registrationType || "Organisation" };
+      setProfile(updated);
+      setSavedProfile(updated);
+      setVerificationStatus(saved.verificationStatus);
+      setProfileExists(true);
+      setIsEditing(false);
+      setMessage("Organisation profile saved.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not save organisation profile."); }
   }
 
   function cancelEditing() {
-    setProfile(initialProfile);
+    setProfile(savedProfile);
     setIsEditing(false);
     setMessage("");
   }
@@ -142,7 +146,7 @@ export default function OrganisationProfilePage() {
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800">
-                  Verification: Pending
+                  Verification: {verificationStatus}
                 </span>
                 <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
                   {profile.category}
@@ -154,7 +158,7 @@ export default function OrganisationProfilePage() {
               {profile.name}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              <span aria-hidden="true">📍</span> {profile.location}
+              {profile.location && <><span aria-hidden="true">📍</span> {profile.location}</>}
             </p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -205,7 +209,7 @@ export default function OrganisationProfilePage() {
                 label="Contact Email"
                 type="email"
                 value={profile.email}
-                disabled={!isEditing}
+                disabled
                 onChange={(value) => updateField("email", value)}
                 required
               />
@@ -213,7 +217,7 @@ export default function OrganisationProfilePage() {
               <Field
                 label="Phone Number"
                 value={profile.phone}
-                disabled={!isEditing}
+                disabled
                 onChange={(value) => updateField("phone", value)}
               />
 
@@ -228,7 +232,7 @@ export default function OrganisationProfilePage() {
               <Field
                 label="Location"
                 value={profile.location}
-                disabled={!isEditing}
+                disabled
                 onChange={(value) => updateField("location", value)}
               />
 
@@ -236,34 +240,11 @@ export default function OrganisationProfilePage() {
                 label="Year Established"
                 type="number"
                 value={profile.established}
-                disabled={!isEditing}
+                disabled
                 onChange={(value) => updateField("established", value)}
               />
 
-              <label className="block text-sm font-medium sm:col-span-2">
-                Organisation Category
-                <select
-                  value={profile.category}
-                  disabled={!isEditing}
-                  onChange={(event) =>
-                    updateField("category", event.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3 disabled:bg-slate-50 disabled:text-slate-500"
-                >
-                  {[
-                    "Community Service",
-                    "Education",
-                    "Environment",
-                    "Healthcare",
-                    "Animal Welfare",
-                    "Other",
-                  ].map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Field label="Registration Type" value={profile.category} disabled={!isEditing} onChange={(value) => updateField("category", value)} />
 
               <label className="block text-sm font-medium sm:col-span-2">
                 About the Organisation
@@ -323,7 +304,7 @@ export default function OrganisationProfilePage() {
                   ★★★★★
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
-                  Based on {reviews.length} demo reviews
+                  Based on {reviews.length} reviews
                 </p>
               </div>
 
@@ -337,6 +318,7 @@ export default function OrganisationProfilePage() {
             </div>
           </div>
 
+          {reviews.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">No reviews have been submitted for this organisation yet.</p>}
           {reviews.map((review) => (
             <article
               key={review.id}
@@ -369,9 +351,7 @@ export default function OrganisationProfilePage() {
         </section>
 
         <footer className="border-t border-slate-200 pt-5 text-center text-xs text-slate-500">
-          Organisation Profile · Demo data only.
-          <br />
-          Connect the backend to persist changes and load verified organisation details and real reviews.
+          {loading ? "Loading organisation profile…" : "Organisation profile data is saved through the API. Review history will appear when the review listing API is available."}
         </footer>
       </div>
     </main>

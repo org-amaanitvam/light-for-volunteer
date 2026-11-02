@@ -37,6 +37,7 @@ export class AdminService {
       where: {
         verification_status: VerificationStatus.PENDING,
       },
+      relations: { user: true },
       select: {
         id: true,
         org_name: true,
@@ -47,6 +48,7 @@ export class AdminService {
         verification_doc_url: true,
         verification_status: true,
         rating_avg: true,
+        user: { id: true, name: true, email: true, city: true },
       },
       order: {
         org_name: 'ASC',

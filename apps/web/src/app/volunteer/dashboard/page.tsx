@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -13,12 +13,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Application, ApplicationStatusType, VolunteerProfileData } from "@/types/volunteer";
-import {
-  MOCK_DASHBOARD_APPLICATIONS,
-  MOCK_VOLUNTEER_PROFILE,
-  calculateProfileCompletion,
-  getMockDashboardStats,
-} from "@/lib/volunteer-mock-adapter";
+import { calculateProfileCompletion } from "@/lib/volunteer-mock-adapter";
+import { api } from "@/lib/api";
 
 const STATUS_BADGE: Record<
   ApplicationStatusType,
@@ -36,12 +32,30 @@ const STATUS_BADGE: Record<
 
 export default function VolunteerDashboardPage() {
   const { user } = useAuth();
-  const [profile] = useState<VolunteerProfileData>(MOCK_VOLUNTEER_PROFILE);
-  const [applications] = useState<Application[]>(MOCK_DASHBOARD_APPLICATIONS);
-  const [isLoading] = useState(false);
+  const [profile, setProfile] = useState<VolunteerProfileData>({ headline: null, about: null, skills: [], portfolioLinks: [], points: 0, ratingAvg: 0, badges: [], resumeUrl: null, totalHours: 0 });
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([api.getVolunteerProfile(), api.getMyApplications()]).then(([p, items]) => {
+      if (!active) return;
+      setProfile({ headline: p.headline, about: p.about, skills: p.skills || [], portfolioLinks: p.portfolioLinks || [], points: p.points, ratingAvg: p.ratingAvg, badges: p.badges || [], resumeUrl: p.resumeUrl, totalHours: p.totalHours });
+      setApplications(items.map((item) => ({ id: item.id, opportunityId: item.opportunity_id, opportunityTitle: item.opportunity_title, organisation: item.organisation, status: item.status, appliedAt: item.applied_at, updatedAt: item.applied_at, pitchText: item.pitch_text })));
+    }).catch((error: unknown) => {
+      if (active) setLoadError(error instanceof Error ? error.message : "Could not load your dashboard.");
+    }).finally(() => { if (active) setIsLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const completion = calculateProfileCompletion(user, profile);
-  const stats = getMockDashboardStats(profile);
+  const stats = [
+    { label: "Applications", value: applications.length, icon: "📋" },
+    { label: "Selected", value: applications.filter((item) => item.status === "selected").length, icon: "🤝" },
+    { label: "Impact Points", value: profile.points, icon: "⭐" },
+    { label: "Verified Hours", value: profile.totalHours, icon: "⏱️" },
+  ];
 
   if (isLoading) {
     return (
@@ -53,6 +67,7 @@ export default function VolunteerDashboardPage() {
 
   return (
     <div className="space-y-8">
+      {loadError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{loadError}</p>}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-600 via-sky-500 to-cyan-500 p-6 sm:p-8 text-white shadow-xl shadow-sky-500/15">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -241,12 +256,6 @@ export default function VolunteerDashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 text-xs text-slate-500">
-        <p className="font-semibold text-slate-700">Architecture Adapter Notice:</p>
-        <p className="mt-0.5">
-          Volunteer statistics and recent applications currently hydrate from the dedicated mock data adapter until the backend volunteer profile and application query endpoints are provisioned.
-        </p>
-      </div>
     </div>
   );
 }

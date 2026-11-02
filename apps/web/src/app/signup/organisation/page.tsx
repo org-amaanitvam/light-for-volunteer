@@ -39,15 +39,16 @@ export default function OrganisationSignupPage() {
 
     try {
       const res = await api.signup({
-        name: `${contactPerson} (${orgName})`,
+        name: contactPerson.trim(),
         email,
         password,
         role: "organisation",
         phone: phone || undefined,
         city: city || undefined,
       });
+      await api.createMyOrganisation({ orgName: orgName.trim() });
       setUser(res.user);
-      router.push("/");
+      router.push("/organisation/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);

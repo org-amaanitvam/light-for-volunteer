@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Sparkles,
@@ -9,10 +9,8 @@ import {
   MapPin,
   Building2,
   Calendar,
-  Users,
   Award,
   BookOpen,
-  Heart,
   ChevronRight,
   TrendingUp,
   ShieldCheck,
@@ -22,70 +20,60 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { api, OpportunityItem } from "@/lib/api";
 
 const CATEGORIES = [
   { name: "All", count: "120+" },
-  { name: "Education & Literacy", count: "45" },
-  { name: "Environment & Climate", count: "32" },
-  { name: "Healthcare & Mental Health", count: "28" },
-  { name: "Animal Welfare", count: "15" },
-  { name: "Community Outreach", count: "30" },
-];
-
-const FEATURED_OPPORTUNITIES = [
-  {
-    id: "opp-1",
-    title: "Youth Coding & Digital Literacy Mentor",
-    org: "Hope EdTech Foundation",
-    location: "New Delhi (Hybrid)",
-    category: "Education & Literacy",
-    commitment: "4 hrs/week",
-    stipend: "Verified Certificate & Letter of Recommendation",
-    spotsLeft: 3,
-    urgent: true,
-  },
-  {
-    id: "opp-2",
-    title: "Urban Tree Plantation & Soil Revival Volunteer",
-    org: "Green Canopy Project",
-    location: "Bengaluru, Karnataka",
-    category: "Environment & Climate",
-    commitment: "Weekend Drive",
-    stipend: "Volunteer T-Shirt & Impact Badge",
-    spotsLeft: 12,
-    urgent: false,
-  },
-  {
-    id: "opp-3",
-    title: "Community Nutrition & Health Camp Assistant",
-    org: "Aarogya Seva Trust",
-    location: "Mumbai, Maharashtra",
-    category: "Healthcare & Mental Health",
-    commitment: "6 hrs/week",
-    stipend: "Field Experience Certificate",
-    spotsLeft: 5,
-    urgent: false,
-  },
-];
-
-const STATS = [
-  { label: "Active Volunteers", value: "8,500+", icon: Users },
-  { label: "Partner NGOs & Non-profits", value: "320+", icon: Building2 },
-  { label: "Hours of Social Impact", value: "45,000+", icon: Heart },
-  { label: "Badges & Certificates Issued", value: "6,200+", icon: Award },
+  { name: "Education & Literacy", count: "" },
+  { name: "Environment", count: "" },
+  { name: "Healthcare", count: "" },
+  { name: "Animal Welfare", count: "" },
+  { name: "Community Outreach", count: "" },
 ];
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [opportunities, setOpportunities] = useState<OpportunityItem[]>([]);
+  const [opportunitiesLoading, setOpportunitiesLoading] = useState(true);
+  const [opportunitiesError, setOpportunitiesError] = useState(false);
 
-  const filteredOpportunities = FEATURED_OPPORTUNITIES.filter((opp) => {
+  useEffect(() => {
+    let mounted = true;
+    const loadOpportunities = async () => {
+      try {
+        const result = await api.getOpportunities({ limit: 6, sortBy: "newest" });
+        if (mounted) {
+          setOpportunities(result.data);
+          setOpportunitiesError(false);
+        }
+      } catch {
+        if (mounted) setOpportunitiesError(true);
+      } finally {
+        if (mounted) setOpportunitiesLoading(false);
+      }
+    };
+
+    void loadOpportunities();
+    const refreshOnFocus = () => void loadOpportunities();
+    window.addEventListener("focus", refreshOnFocus);
+    const refreshTimer = window.setInterval(loadOpportunities, 20_000);
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", refreshOnFocus);
+      window.clearInterval(refreshTimer);
+    };
+  }, []);
+
+  const filteredOpportunities = opportunities.filter((opp) => {
     const matchesCat =
       selectedCategory === "All" || opp.category === selectedCategory;
+    const location = opp.city || opp.locationType || opp.location_type || "Remote";
+    const orgName = opp.organisation?.org_name || "Social impact organisation";
     const matchesQuery =
       opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      opp.org.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      opp.location.toLowerCase().includes(searchQuery.toLowerCase());
+      orgName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      location.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesQuery;
   });
 
@@ -171,30 +159,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats Counter Section */}
-      <section className="border-y border-sky-100 bg-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
-            {STATS.map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="flex flex-col items-center text-center p-3">
-                  <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-3">
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    {stat.value}
-                  </span>
-                  <span className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                    {stat.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       {/* Opportunities Section */}
       <section id="opportunities" className="py-20 bg-slate-50/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -229,6 +193,15 @@ export default function HomePage() {
             </div>
           </div>
 
+          <div className="mb-5 flex justify-end">
+            <Link
+              href="/opportunities"
+              className="text-sm font-semibold text-sky-700 hover:text-sky-900 hover:underline"
+            >
+              Browse all opportunities <ChevronRight className="inline h-4 w-4" />
+            </Link>
+          </div>
+
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredOpportunities.map((opp) => (
@@ -241,11 +214,6 @@ export default function HomePage() {
                     <Badge variant="secondary" className="bg-sky-100 text-sky-800 text-xs">
                       {opp.category}
                     </Badge>
-                    {opp.urgent && (
-                      <Badge variant="destructive" className="text-[10px] uppercase">
-                        Urgent
-                      </Badge>
-                    )}
                   </div>
 
                   <h3 className="text-lg font-bold text-slate-900 group-hover:text-sky-600 transition">
@@ -255,15 +223,15 @@ export default function HomePage() {
                   <div className="mt-3 space-y-2 text-xs text-slate-600">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-3.5 h-3.5 text-sky-500" />
-                      <span className="font-semibold text-slate-700">{opp.org}</span>
+                      <span className="font-semibold text-slate-700">{opp.organisation?.org_name || "Social impact organisation"}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-sky-500" />
-                      <span>{opp.location}</span>
+                      <span>{opp.city || opp.locationType || opp.location_type || "Remote"}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5 text-sky-500" />
-                      <span>Commitment: {opp.commitment}</span>
+                      <span>Commitment: {opp.duration || "Flexible"}</span>
                     </div>
                   </div>
 
@@ -271,21 +239,32 @@ export default function HomePage() {
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500">Perks:</span>
                       <span className="text-sky-700 font-medium truncate max-w-[180px]">
-                        {opp.stipend}
+                        {opp.pointsReward || opp.points_reward
+                          ? `${opp.pointsReward || opp.points_reward} impact points`
+                          : opp.type}
                       </span>
                     </div>
                   </div>
                 </CardContent>
 
                 <div className="p-6 pt-0">
-                  <Link href={`/signup/volunteer?role=volunteer&apply=${opp.id}`}>
+                  <Link href={`/opportunities/${opp.id}`}>
                     <Button className="w-full bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-semibold">
-                      Apply as Volunteer <ChevronRight className="w-4 h-4 ml-1" />
+                      View opportunity <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   </Link>
                 </div>
               </Card>
             ))}
+            {opportunitiesLoading && (
+              <p className="col-span-full py-8 text-center text-sm text-slate-500">Loading approved opportunities…</p>
+            )}
+            {!opportunitiesLoading && opportunitiesError && (
+              <p className="col-span-full py-8 text-center text-sm text-red-600">Opportunities are unavailable right now. Please try again shortly.</p>
+            )}
+            {!opportunitiesLoading && !opportunitiesError && filteredOpportunities.length === 0 && (
+              <p className="col-span-full py-8 text-center text-sm text-slate-500">No approved opportunities match your search yet.</p>
+            )}
           </div>
         </div>
       </section>

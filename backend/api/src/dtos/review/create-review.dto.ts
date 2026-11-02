@@ -6,6 +6,7 @@ export class CreateReviewDto {
   @IsNotEmpty()
   applicationId: string;
 
+  @IsOptional()
   @IsUUID()
   @IsNotEmpty()
   givenTo: string;

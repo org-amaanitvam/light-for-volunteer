@@ -13,11 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BadgeShelf } from "@/components/volunteer/badge-shelf";
 import type { BadgeItem } from "@/types/volunteer";
-import {
-  MOCK_VOLUNTEER_PROFILE,
-  MOCK_ACTIVITY_FEED,
-  getMockBadges,
-} from "@/lib/volunteer-mock-adapter";
+import { api, GamificationItem } from "@/lib/api";
 
 const LEVEL_TIERS = [
   { label: "Newcomer", min: 0, max: 99, icon: "🌱", color: "text-slate-600" },
@@ -31,25 +27,27 @@ export default function BadgesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "earned" | "unearned">("all");
-
-  const points = MOCK_VOLUNTEER_PROFILE.points;
+  const [activity, setActivity] = useState<GamificationItem["recentTransactions"]>([]);
+  const [points, setPoints] = useState(0);
+  const [profileStats, setProfileStats] = useState({ totalHours: 0, ratingAvg: 0 });
 
   useEffect(() => {
-    loadBadges();
+    void loadBadges();
   }, []);
 
-  function loadBadges() {
-    setLoading(true);
+  async function loadBadges() {
     setError(null);
-    getMockBadges()
-      .then((data) => {
-        setBadges(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to load badge shelf. Please try again.");
-        setLoading(false);
-      });
+    try {
+      const [data, profile] = await Promise.all([api.getMyGamification(), api.getVolunteerProfile()]);
+      setPoints(data.points);
+      setProfileStats({ totalHours: profile.totalHours, ratingAvg: profile.ratingAvg });
+      setActivity(data.recentTransactions || []);
+      setBadges((data.badges || []).map((code) => ({ id: code, code, title: code.replace(/[_-]/g, " "), criteria: "Earned through volunteer activity", iconUrl: "", earned: true })));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Failed to load badge shelf. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const currentLevel =
@@ -174,13 +172,13 @@ export default function BadgesPage() {
             <div className="flex items-center justify-between border-b border-sky-50 pb-3 text-xs">
               <span className="text-slate-600">Verified Service</span>
               <span className="font-extrabold text-slate-900">
-                {MOCK_VOLUNTEER_PROFILE.totalHours} Hours
+                {profileStats.totalHours} Hours
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-600">Quality Rating</span>
               <span className="font-extrabold text-amber-600">
-                ★ {MOCK_VOLUNTEER_PROFILE.ratingAvg.toFixed(1)} / 5.0
+                ★ {profileStats.ratingAvg.toFixed(1)} / 5.0
               </span>
             </div>
           </CardContent>
@@ -271,12 +269,12 @@ export default function BadgesPage() {
         </CardHeader>
         <CardContent>
           <ul className="divide-y divide-sky-50 text-xs">
-            {MOCK_ACTIVITY_FEED.map((item, idx) => (
-              <li key={idx} className="flex items-center justify-between py-3">
+            {activity.map((item, idx) => (
+              <li key={`${item.eventType}-${item.createdAt}-${idx}`} className="flex items-center justify-between py-3">
                 <div className="space-y-0.5">
-                  <p className="font-semibold text-slate-800">{item.action}</p>
+                  <p className="font-semibold capitalize text-slate-800">{item.eventType.replace(/[_-]/g, " ")}</p>
                   <p className="text-[11px] text-slate-400">
-                    {new Date(item.date).toLocaleDateString("en-IN", {
+                    {new Date(item.createdAt).toLocaleDateString("en-IN", {
                       day: "numeric",
                       month: "short",
                       year: "numeric",
@@ -293,10 +291,7 @@ export default function BadgesPage() {
       </Card>
 
       <div className="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 text-xs text-slate-500">
-        <p className="font-semibold text-slate-700">Gamification Architecture Note:</p>
-        <p className="mt-0.5">
-          Badge requirements and points data are populated via the gamification adapter. The backend currently contains the TypeORM `badges` entity and a controller stub (`GET /api/gamification/ping`). Live score calculation and real-time badge distribution will bind once the gamification engine is finalized.
-        </p>
+        <p>Your points, earned badges, and recent point transactions are loaded from your account.</p>
       </div>
     </div>
   );

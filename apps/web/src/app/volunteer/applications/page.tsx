@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApplicationCard } from "@/components/volunteer/application-card";
 import type { Application } from "@/types/volunteer";
-import { getMockApplications } from "@/lib/volunteer-mock-adapter";
+import { api } from "@/lib/api";
 
 type FilterTab = "all" | "active" | "selected" | "completed" | "closed";
 
@@ -17,49 +17,36 @@ export default function ApplicationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    loadApplications();
+    void loadApplications();
+    const refreshTimer = window.setInterval(() => void loadApplications(), 20_000);
+    window.addEventListener("focus", loadApplications);
+    return () => {
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", loadApplications);
+    };
   }, []);
 
-  function loadApplications() {
-    setLoading(true);
+  async function loadApplications() {
     setError(null);
-    getMockApplications()
-      .then((data) => {
-        setApplications(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to load applications. Please check your network and try again.");
-        setLoading(false);
-      });
-  }
-
-  function handleWithdraw(id: string) {
-    const target = applications.find((a) => a.id === id);
-    if (!target) return;
-
-    const confirmed = window.confirm(
-      `Are you sure you want to withdraw your application for "${target.opportunityTitle}"?`
-    );
-    if (!confirmed) return;
-
-    setApplications((prev) =>
-      prev.map((app) =>
-        app.id === id
-          ? {
-              ...app,
-              status: "withdrawn",
-              updatedAt: new Date().toISOString(),
-              nextStep: "You withdrew this application.",
-            }
-          : app
-      )
-    );
-
-    setNotice(`Application for "${target.opportunityTitle}" has been withdrawn.`);
+    try {
+      const data = await api.getMyApplications();
+      setApplications(data.map((item) => ({
+        id: item.id,
+        opportunityId: item.opportunity_id,
+        opportunityTitle: item.opportunity_title,
+        organisation: item.organisation,
+        status: item.status,
+        appliedAt: item.applied_at,
+        updatedAt: item.applied_at,
+        pitchText: item.pitch_text,
+      })));
+    } catch {
+      setError("Failed to load applications. Please check your network and try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const counts = {
@@ -112,19 +99,6 @@ export default function ApplicationsPage() {
           </Button>
         </Link>
       </div>
-
-      {notice && (
-        <div className="flex items-center justify-between rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-          <span>{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            className="text-xs font-bold text-sky-700 hover:text-sky-900"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="border-sky-100/80">
@@ -277,16 +251,13 @@ export default function ApplicationsPage() {
       {!loading && !error && filteredApplications.length > 0 && (
         <div className="space-y-4">
           {filteredApplications.map((app) => (
-            <ApplicationCard key={app.id} application={app} onWithdraw={handleWithdraw} />
+            <ApplicationCard key={app.id} application={app} />
           ))}
         </div>
       )}
 
       <div className="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 text-xs text-slate-500">
-        <p className="font-semibold text-slate-700">API Integration Adapter Note:</p>
-        <p className="mt-0.5">
-          Applications are hydrated via the isolated volunteer applications mock adapter because the backend currently provides `POST /api/applications` for submission but lacks a dedicated `GET /api/applications/my` volunteer listing endpoint. Once the query endpoint is deployed, this adapter will connect directly to the API client.
-        </p>
+        <p>Application status refreshes from your account data each time you open this page.</p>
       </div>
     </div>
   );
