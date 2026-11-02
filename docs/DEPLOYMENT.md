@@ -5,6 +5,7 @@ The web and API are separate Node services in this monorepo. Deploy the reposito
 ## Required production services
 
 - A managed PostgreSQL database reachable from the API service.
+- Neon works through `DATABASE_URL`; the API prefers it over the separate database fields.
 - A public web origin and a public API origin with HTTPS.
 - Cloudflare R2 credentials scoped to the `light-for-volunteer` bucket.
 - Redis is optional; when `REDIS_URL` is empty the API uses its PostgreSQL refresh-session fallback.
@@ -19,7 +20,8 @@ Set these in the hosting provider’s secret/environment settings, not in source
 | `WEB_ORIGIN` | Exact HTTPS frontend origin, with no path |
 | `NEXT_PUBLIC_API_URL` | HTTPS API origin ending in `/api`; set before building the web app |
 | `PORT` | The port assigned by the host, or `3001` |
-| `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME` | Managed PostgreSQL connection values |
+| `DATABASE_URL` | Optional full PostgreSQL connection string (e.g. Neon; takes precedence over the separate fields) |
+| `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME` | Managed PostgreSQL connection values when `DATABASE_URL` is not set |
 | `DATABASE_SYNC` | `false` |
 | `DATABASE_MIGRATIONS_RUN` | `false`; run migrations as a release step |
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | Separate random secrets, each at least 32 characters |
@@ -31,6 +33,8 @@ Set these in the hosting provider’s secret/environment settings, not in source
 If Google sign-in is enabled, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL` to `https://<api-host>/api/auth/google/callback`, and register that callback with Google. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` only for the one-time admin seed step; do not leave the admin password in the running service environment after seeding.
 
 ## Build and start commands
+
+For Neon, create a project and copy its pooled connection string from the Connect panel. Store it as the API service's `DATABASE_URL` environment variable. Keep the `sslmode=require` query parameter in the URL; Neon requires TLS for database connections. Do not add the database URL to the web service.
 
 From the repository root, configure the web service with:
 
@@ -47,13 +51,29 @@ Start: npm run start:prod --workspace @lfv/api
 Health check: /api/health
 ```
 
-Use a release/pre-deploy command for database changes:
+For paid Render web services, use this pre-deploy command for database changes:
 
 ```text
 npm run db:migrate
 ```
 
-Run the migration command once against the production database before switching traffic. Take a database backup first. Do not enable TypeORM schema synchronization in production.
+For Render Free, pre-deploy commands aren't available. Use this API Start Command for the first deploy so the schema is ready before the API starts:
+
+```text
+npm run db:migrate && npm run start:prod --workspace @lfv/api
+```
+
+The migration runner records completed migrations, so subsequent starts don't re-apply them. Keep `DATABASE_SYNC=false` and `DATABASE_MIGRATIONS_RUN=false` in production. For a paid service, run the migration as a pre-deploy command once per deploy instead.
+
+To seed the first admin on Free, temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME`, and use this Start Command for one deploy:
+
+```text
+npm run db:migrate && npm run seed:admin --workspace @lfv/api && npm run start:prod --workspace @lfv/api
+```
+
+After Render reports the API is live, remove the admin credentials from its environment and restore the normal Start Command above. Never commit these credentials.
+
+Take a database backup before production migrations. Do not enable TypeORM schema synchronization in production.
 
 ## Before opening the site
 
