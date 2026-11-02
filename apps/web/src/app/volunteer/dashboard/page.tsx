@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Application, ApplicationStatusType, VolunteerProfileData } from "@/types/volunteer";
-import { calculateProfileCompletion } from "@/lib/volunteer-mock-adapter";
+import { calculateProfileCompletion } from "@/lib/volunteer-utils";
 import { api } from "@/lib/api";
 
 const STATUS_BADGE: Record<

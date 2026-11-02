@@ -58,6 +58,6 @@ export class ApplicationsController {
     @CurrentUser() user: JwtAccessPayload,
     @Body() body: UpdateApplicationStatusDto,
   ) {
-    return this.service.updateStatus(id, body.status, user.sub, user.role);
+    return this.service.updateStatus(id, body.status, user.sub, user.role, body.hoursCompleted);
   }
 }

@@ -26,4 +26,10 @@ export class Application {
 
   @CreateDateColumn()
   applied_at: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  completed_at: Date | null;
+
+  @Column({ type: 'int', default: 0 })
+  completed_hours: number;
 }

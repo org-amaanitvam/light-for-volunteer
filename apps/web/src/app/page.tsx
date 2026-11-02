@@ -70,10 +70,9 @@ export default function HomePage() {
       selectedCategory === "All" || opp.category === selectedCategory;
     const location = opp.city || opp.locationType || opp.location_type || "Remote";
     const orgName = opp.organisation?.org_name || "Social impact organisation";
-    const matchesQuery =
-      opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      orgName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      location.toLowerCase().includes(searchQuery.toLowerCase());
+    const normalizedQuery = searchQuery.toLowerCase().trim();
+    const searchable = [opp.title, opp.description, orgName, location, opp.category, ...(opp.skills_required || opp.skills || [])].join(" ").toLowerCase();
+    const matchesQuery = searchable.includes(normalizedQuery);
     return matchesCat && matchesQuery;
   });
 
@@ -133,7 +132,7 @@ export default function HomePage() {
                   className="pl-10 h-12 bg-slate-50/50 border-sky-100 text-sm placeholder:text-slate-400"
                 />
               </div>
-              <Button className="w-full sm:w-auto h-12 px-6 bg-sky-500 hover:bg-sky-600 text-white font-semibold">
+              <Button onClick={() => document.getElementById("opportunities")?.scrollIntoView({ behavior: "smooth" })} className="w-full sm:w-auto h-12 px-6 bg-sky-500 hover:bg-sky-600 text-white font-semibold">
                 Explore Causes
               </Button>
             </div>

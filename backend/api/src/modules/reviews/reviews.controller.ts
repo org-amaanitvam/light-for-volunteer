@@ -18,7 +18,7 @@ export class ReviewsController {
   }
 
   @ApiBearerAuth()
-  @Roles('volunteer')
+  @Roles('volunteer', 'organisation')
   @Get('mine')
   listMine(@CurrentUser('sub') userId: string) {
     return this.service.findMine(userId);
@@ -26,9 +26,9 @@ export class ReviewsController {
 
   @Post()
   @ApiBearerAuth()
-  @Roles('volunteer')
+  @Roles('volunteer', 'organisation')
   @ApiOperation({ summary: 'Submit rating after completion' })
-  create(@CurrentUser('sub') userId: string, @Body() dto: CreateReviewDto) {
-    return this.service.create(userId, dto);
+  create(@CurrentUser() user: { sub: string; role: string }, @Body() dto: CreateReviewDto) {
+    return this.service.create(user.sub, user.role, dto);
   }
 }

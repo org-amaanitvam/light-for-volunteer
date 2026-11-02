@@ -52,10 +52,12 @@ export class LeaderboardService {
     this.logger.log('Recalculating leaderboard…');
 
     try {
-      const profiles = await this.profileRepo.find({
-        relations: { user: true },
-        order: { points: 'DESC' },
-      });
+      const profiles = await this.profileRepo.createQueryBuilder('profile')
+        .leftJoinAndSelect('profile.user', 'user')
+        .where('user.role = :role', { role: 'volunteer' })
+        .orderBy('profile.points', 'DESC')
+        .addOrderBy('user.name', 'ASC')
+        .getMany();
 
       this.cache = profiles.map((p, index) => ({
         rank: index + 1,

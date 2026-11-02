@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Public } from '../../common/decorators/public.decorator';
@@ -32,9 +32,10 @@ export class AdminController {
   @Patch('organisations/:id/verify')
   reviewOrganisation(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('sub') adminId: string,
     @Body() dto: ReviewOrganisationDto,
   ) {
-    return this.service.reviewOrganisation(id, dto);
+    return this.service.reviewOrganisation(id, adminId, dto);
   }
 
 
@@ -50,9 +51,16 @@ export class AdminController {
   @Patch('opportunities/:id/review')
   reviewOpportunity(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('sub') adminId: string,
     @Body() dto: ReviewOpportunityDto,
   ) {
-    return this.service.reviewOpportunity(id, dto);
+    return this.service.reviewOpportunity(id, adminId, dto);
+  }
+
+  @Roles('admin')
+  @Get('audit-logs')
+  getAuditLogs(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.service.getAuditLogs(Number(page) || 1, Number(limit) || 25);
   }
 
   @Roles('admin')

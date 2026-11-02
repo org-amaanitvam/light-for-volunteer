@@ -29,6 +29,8 @@ import { UsersModule } from './modules/users/users.module';
 import { VolunteersModule } from './modules/volunteers/volunteers.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { HealthController } from './modules/health/health.controller';
+import { CertificatesModule } from './modules/certificates/certificates.module';
+import { MentorsModule } from './modules/mentors/mentors.module';
 /**
  * Global guard order: JWT auth → RBAC roles (registered inside AuthModule),
  * then throttling registered here. Route opt-outs: `@Public()`,
@@ -54,7 +56,6 @@ import { HealthController } from './modules/health/health.controller';
     DatabaseModule,
     UsersModule,
     AuthModule,
-    // Feature stubs — owned by their respective teammates.
     VolunteersModule,
     OrganisationsModule,
     OpportunitiesModule,
@@ -68,7 +69,8 @@ import { HealthController } from './modules/health/health.controller';
     SearchModule,
     ReportsModule,
     LeaderboardModule, // Suraj: leaderboard recalculation
-    ReportsModule,
+    CertificatesModule,
+    MentorsModule,
   ],
   controllers: [HealthController],
   providers: [

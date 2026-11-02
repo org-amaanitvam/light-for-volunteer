@@ -42,7 +42,7 @@ Start: npm run start --workspace web
 Configure the API service with:
 
 ```text
-Build: npm ci && npm run build --workspace @lfv/api
+Build: npm ci && npm run build --workspace @lfv/types && npm run build --workspace @lfv/api
 Start: npm run start:prod --workspace @lfv/api
 Health check: /api/health
 ```
@@ -65,3 +65,16 @@ Run the migration command once against the production database before switching 
 6. Confirm R2 upload and download flows from the deployed domain. Set the bucket’s CORS allow-origin to the exact frontend origin if browser uploads/downloads require it.
 
 The web production build and API production build are the deployment gates. The API tests that require external credentials or a production database should be run in the relevant deployment environment.
+
+## Render staging and production deploys
+
+`.github/workflows/ci.yml` runs for pull requests and pushes to `staging` and `main`. After CI succeeds on a push, `.github/workflows/render-deploy.yml` sends Render deploy-hook requests for the matching environment. Configure the Render services to deploy the corresponding branch and add these GitHub Actions secrets:
+
+| Secret | Render service |
+| --- | --- |
+| `RENDER_API_DEPLOY_HOOK_STAGING` | Staging API |
+| `RENDER_WEB_DEPLOY_HOOK_STAGING` | Staging web |
+| `RENDER_API_DEPLOY_HOOK_PRODUCTION` | Production API |
+| `RENDER_WEB_DEPLOY_HOOK_PRODUCTION` | Production web |
+
+Create GitHub `staging` and `production` environments and add the matching secrets to each environment. Set required reviewers on `production` if a human approval should gate production deploys. Configure the API service's release command as `npm run db:migrate`; the workflow does not expose database credentials or run migrations from GitHub Actions.

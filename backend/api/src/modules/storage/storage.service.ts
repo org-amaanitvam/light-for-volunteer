@@ -272,7 +272,7 @@ secretAccessKey: this.configService.getOrThrow<string>('storage.secretAccessKey'
     }
 
     throw new ForbiddenException(
-      'Organisations can delete only their own verification documents',
+      `Organisations can ${action} only their own verification documents`,
     );
   }
 

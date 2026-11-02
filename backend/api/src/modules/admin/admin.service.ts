@@ -15,6 +15,7 @@ import { Review } from '../../database/entities/review.entity';
 import { Message } from '../../database/entities/message.entity';
 import { User } from '../users/entities/user.entity';
 import { ResolveReportDto } from '../../dtos/report/resolve-report.dto';
+import { AuditLog } from '../../database/entities/audit-log.entity';
 
 @Injectable()
 export class AdminService {
@@ -27,6 +28,9 @@ export class AdminService {
 
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
+
+    @InjectRepository(AuditLog)
+    private readonly auditRepository: Repository<AuditLog>,
 
     private readonly dataSource: DataSource,
   ) { }
@@ -58,6 +62,7 @@ export class AdminService {
 
   async reviewOrganisation(
     id: string,
+    adminId: string,
     dto: ReviewOrganisationDto,
   ) {
     const organisation = await this.organisationRepository.findOne({
@@ -79,6 +84,7 @@ export class AdminService {
     organisation.verification_status = dto.status;
 
     const updated = await this.organisationRepository.save(organisation);
+    await this.recordAudit(adminId, `organisation_${dto.status}`, 'organisation', id, { status: dto.status });
 
     return {
       message:
@@ -112,6 +118,7 @@ export class AdminService {
 
   async reviewOpportunity(
     id: string,
+    adminId: string,
     dto: ReviewOpportunityDto,
   ) {
     const opportunity = await this.opportunityRepository.findOne({
@@ -133,7 +140,27 @@ export class AdminService {
         ? OpportunityStatus.LIVE
         : OpportunityStatus.REJECTED;
 
-    return this.opportunityRepository.save(opportunity);
+    const saved = await this.opportunityRepository.save(opportunity);
+    await this.recordAudit(adminId, `opportunity_${dto.status}`, 'opportunity', id, { status: saved.status });
+    return saved;
+  }
+
+  async getAuditLogs(page = 1, limit = 25) {
+    const safePage = Math.max(1, Math.floor(page));
+    const safeLimit = Math.min(100, Math.max(1, Math.floor(limit)));
+    const [logs, total] = await this.auditRepository.findAndCount({
+      relations: { admin: true },
+      order: { created_at: 'DESC' },
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
+    });
+    return {
+      data: logs.map(({ id, action, entity_type, entity_id, details, created_at, admin }) => ({
+        id, action, entityType: entity_type, entityId: entity_id, details, createdAt: created_at,
+        admin: admin ? { id: admin.id, name: admin.name, email: admin.email } : null,
+      })),
+      meta: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) },
+    };
   }
 
 
@@ -196,6 +223,13 @@ export class AdminService {
           : ReportStatus.RESOLVED;
 
       const saved = await reportRepo.save(report);
+      await manager.getRepository(AuditLog).save(manager.getRepository(AuditLog).create({
+        admin: { id: adminId } as User,
+        action: `report_${dto.action}`,
+        entity_type: report.target_type,
+        entity_id: report.target_id,
+        details: { reportId: report.id, status: saved.status, resolutionNote: saved.resolution_note },
+      }));
 
       return {
         message: 'Report resolved successfully',
@@ -208,5 +242,15 @@ export class AdminService {
         },
       };
     });
+  }
+
+  private async recordAudit(adminId: string, action: string, entityType: string, entityId: string, details: Record<string, unknown>) {
+    await this.auditRepository.save(this.auditRepository.create({
+      admin: { id: adminId } as User,
+      action,
+      entity_type: entityType,
+      entity_id: entityId,
+      details,
+    }));
   }
 }

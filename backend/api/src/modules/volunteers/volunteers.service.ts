@@ -4,6 +4,8 @@ import { Repository, type QueryDeepPartialEntity } from 'typeorm';
 import { VolunteerProfile } from '../../database/entities/volunteer-profile.entity';
 import { UpdateVolunteerProfileDto } from '../../dtos/volunteer-profile/update-volunteer-profile.dto';
 import { User } from '../users/entities/user.entity';
+import { Application } from '../../database/entities/application.entity';
+import { ApplicationStatus } from '../../database/enums/application-status.enum';
 
 type VolunteerProfileResponse = {
   id: string;
@@ -48,11 +50,13 @@ export class VolunteersService {
   constructor(
     @InjectRepository(VolunteerProfile)
     private readonly profiles: Repository<VolunteerProfile>,
+    @InjectRepository(Application)
+    private readonly applications: Repository<Application>,
   ) {}
 
   async getMyProfile(userId: string): Promise<VolunteerProfileResponse> {
     const profile = await this.ensureProfile(userId);
-    return this.toOwnerResponse(profile);
+    return this.toOwnerResponse(profile, await this.getTotalHours(userId));
   }
 
   async updateMyProfile(
@@ -69,6 +73,7 @@ export class VolunteersService {
       changes.about = typeof input.about === 'string' ? input.about.trim() : null;
     }
     if (input.resumeUrl !== undefined) {
+      this.assertStorageKeyOwner(userId, input.resumeUrl, 'resumes');
       changes.resume_url = typeof input.resumeUrl === 'string' ? input.resumeUrl : null;
     }
 
@@ -79,6 +84,7 @@ export class VolunteersService {
 
     const portfolioLinks = input.portfolioLinks as string[] | null | undefined;
     if (portfolioLinks !== undefined) {
+      for (const link of portfolioLinks ?? []) this.assertStorageKeyOwner(userId, link, 'portfolio');
       changes.portfolio_links =
         portfolioLinks === null
           ? null
@@ -94,7 +100,13 @@ export class VolunteersService {
 
     const updated = await this.profiles.findOne({ where: { id: profile.id } });
     if (!updated) throw new NotFoundException('Volunteer profile not found');
-    return this.toOwnerResponse(updated);
+    return this.toOwnerResponse(updated, await this.getTotalHours(userId));
+  }
+
+  private assertStorageKeyOwner(userId: string, value: string | null | undefined, purpose: 'resumes' | 'portfolio'): void {
+    if (value?.startsWith(`${purpose}/`) && !value.startsWith(`${purpose}/${userId}/`)) {
+      throw new BadRequestException('Uploaded file must belong to this volunteer');
+    }
   }
 
   async getPublicProfile(userId: string): Promise<VolunteerPublicProfileResponse> {
@@ -165,7 +177,17 @@ export class VolunteersService {
     return result;
   }
 
-  private toOwnerResponse(profile: VolunteerProfile): VolunteerProfileResponse {
+  private async getTotalHours(userId: string): Promise<number> {
+    const result = await this.applications.createQueryBuilder('application')
+      .innerJoin('application.volunteer', 'volunteer')
+      .select('COALESCE(SUM(application.completed_hours), 0)', 'total')
+      .where('volunteer.id = :userId', { userId })
+      .andWhere('application.status = :status', { status: ApplicationStatus.COMPLETED })
+      .getRawOne<{ total: string | number }>();
+    return Number(result?.total ?? 0);
+  }
+
+  private toOwnerResponse(profile: VolunteerProfile, totalHours: number): VolunteerProfileResponse {
     return {
       id: profile.id,
       headline: profile.headline ?? null,
@@ -176,7 +198,7 @@ export class VolunteersService {
       ratingAvg: profile.rating_avg,
       badges: profile.badges ?? [],
       resumeUrl: profile.resume_url ?? null,
-      totalHours: 0,
+      totalHours,
     };
   }
 }

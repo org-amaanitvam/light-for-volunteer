@@ -12,12 +12,13 @@ import { Review } from '../../database/entities/review.entity';
 import { Application } from '../../database/entities/application.entity';
 import { CreateReviewDto } from '../../dtos/review/create-review.dto';
 import { ApplicationStatus } from '../../database/enums/application-status.enum';
+import { NotificationType } from '../../database/enums/notification-type.enum';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Two-way ratings after completion.
  *
- * Owner: Samman. Placeholder only — Auth
- * (src/modules/auth) is the reference for service/controller patterns.
+ * Reviews can be submitted by either participant after an application is completed.
  */
 @Injectable()
 export class ReviewsService {
@@ -26,12 +27,13 @@ export class ReviewsService {
     private readonly reviewRepo: Repository<Review>,
     @InjectRepository(Application)
     private readonly applicationRepo: Repository<Application>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findMine(userId: string) {
     const reviews = await this.reviewRepo.find({
       where: { given_by: { id: userId } },
-      relations: { application: { opportunity: { organisation: true } }, given_to: true },
+      relations: { application: { opportunity: { organisation: true } }, given_to: true, given_by: true },
       order: { created_at: 'DESC' },
     });
     return reviews.map((review) => ({
@@ -43,10 +45,11 @@ export class ReviewsService {
       comment: review.comment,
       createdAt: review.created_at,
       reviewerName: 'You',
+      reviewedPerson: review.given_to?.name ?? 'Participant',
     }));
   }
 
-  async create(givenById: string, dto: CreateReviewDto) {
+  async create(givenById: string, role: string, dto: CreateReviewDto) {
     const application = await this.applicationRepo.findOne({
         where: { id: dto.applicationId },
         relations: {
@@ -69,25 +72,13 @@ export class ReviewsService {
       );
     }
 
-    if (application.volunteer.id !== givenById) {
-      throw new ForbiddenException('Only the volunteer who completed this application can submit this review');
-    }
-    const givenToId = application.opportunity.organisation.user.id;
+    const volunteerId = application.volunteer.id;
+    const organisationOwnerId = application.opportunity.organisation.user.id;
+    let givenToId: string;
+    if (role === 'volunteer' && volunteerId === givenById) givenToId = organisationOwnerId;
+    else if (role === 'organisation' && organisationOwnerId === givenById) givenToId = volunteerId;
+    else throw new ForbiddenException('Only participants of this completed application can review each other');
     if (givenById === givenToId) throw new BadRequestException('You cannot review yourself');
-
-    const participants = [
-      application.volunteer.id,
-      givenToId,
-    ];
-
-    if (
-      !participants.includes(givenById) ||
-      !participants.includes(givenToId)
-    ) {
-      throw new ForbiddenException(
-        'Only participants of this application can review each other',
-      );
-    }
 
     const existing = await this.reviewRepo.findOne({
       where: {
@@ -112,6 +103,19 @@ export class ReviewsService {
         comment: dto.comment,
       }),
     );
+
+    try {
+      await this.notifications.create({
+        userId: givenToId,
+        type: NotificationType.REVIEW_RECEIVED,
+        title: 'You received a review',
+        body: `A participant left feedback for ${application.opportunity.title}.`,
+        referenceId: saved.id,
+        referenceType: 'review',
+      });
+    } catch {
+      // Keep the saved review successful if notifications are temporarily unavailable.
+    }
 
     return {
       id: saved.id,

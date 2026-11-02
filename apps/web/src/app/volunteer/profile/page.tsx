@@ -16,7 +16,7 @@ import { api } from "@/lib/api";
 import type { VolunteerProfileData } from "@/types/volunteer";
 import {
   calculateProfileCompletion,
-} from "@/lib/volunteer-mock-adapter";
+} from "@/lib/volunteer-utils";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -45,6 +45,8 @@ export default function VolunteerProfilePage() {
   const [editing, setEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [portfolioFiles, setPortfolioFiles] = useState<File[]>([]);
 
   const [form, setForm] = useState({
     headline: profile.headline ?? "",
@@ -100,7 +102,7 @@ export default function VolunteerProfilePage() {
     if (!form.about.trim()) {
       errs.about = "About description is required.";
     }
-    if (form.resumeUrl.trim()) {
+    if (form.resumeUrl.trim() && !form.resumeUrl.startsWith("resumes/")) {
       try {
         new URL(form.resumeUrl);
       } catch {
@@ -125,12 +127,25 @@ export default function VolunteerProfilePage() {
       .map((l) => l.trim())
       .filter(Boolean);
 
+    const uploadedKeys: string[] = [];
     try {
-      const saved = await api.updateVolunteerProfile({ headline: form.headline.trim(), about: form.about.trim(), skills: parsedSkills, portfolioLinks: parsedLinks, resumeUrl: form.resumeUrl.trim() || null });
+      const resumeUrl = resumeFile ? await api.uploadVolunteerFile(resumeFile, "resume") : form.resumeUrl.trim() || null;
+      if (resumeFile && resumeUrl) uploadedKeys.push(resumeUrl);
+      const uploadedPortfolio: string[] = [];
+      for (const file of portfolioFiles) {
+        const key = await api.uploadVolunteerFile(file, "portfolio");
+        uploadedPortfolio.push(key);
+        uploadedKeys.push(key);
+      }
+      const saved = await api.updateVolunteerProfile({ headline: form.headline.trim(), about: form.about.trim(), skills: parsedSkills, portfolioLinks: [...parsedLinks, ...uploadedPortfolio], resumeUrl });
       setProfile({ headline: saved.headline, about: saved.about, skills: saved.skills || [], portfolioLinks: saved.portfolioLinks || [], points: saved.points, ratingAvg: saved.ratingAvg, badges: saved.badges || [], resumeUrl: saved.resumeUrl, totalHours: saved.totalHours });
+      setForm({ headline: saved.headline || "", about: saved.about || "", skillsInput: (saved.skills || []).join(", "), portfolioInput: (saved.portfolioLinks || []).join(", "), resumeUrl: saved.resumeUrl || "" });
+      setResumeFile(null);
+      setPortfolioFiles([]);
       setEditing(false);
       setSaveStatus("Your profile was saved.");
     } catch (error) {
+      await Promise.all(uploadedKeys.map((key) => api.deleteStorageObject(key).catch(() => undefined)));
       setSaveStatus(error instanceof Error ? error.message : "Could not save your profile.");
     }
   }
@@ -144,7 +159,22 @@ export default function VolunteerProfilePage() {
       resumeUrl: profile.resumeUrl ?? "",
     });
     setErrors({});
+    setResumeFile(null);
+    setPortfolioFiles([]);
     setEditing(false);
+  }
+
+  async function openStoredFile(key: string) {
+    const fileWindow = window.open("about:blank", "_blank");
+    if (!fileWindow) { setSaveStatus("Allow pop-ups to view this file."); return; }
+    try {
+      const url = await api.getStorageDownloadUrl(key);
+      fileWindow.opener = null;
+      fileWindow.location.href = url;
+    } catch (error) {
+      fileWindow.close();
+      setSaveStatus(error instanceof Error ? error.message : "Could not open this file.");
+    }
   }
 
   return (
@@ -239,7 +269,7 @@ export default function VolunteerProfilePage() {
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl font-bold text-slate-900">{user?.name ?? "Volunteer"}</h2>
                   <Badge variant="secondary" className="font-semibold text-sky-800">
-                    Verified
+                    Volunteer
                   </Badge>
                 </div>
                 <p className="text-xs text-slate-500">{user?.email}</p>
@@ -279,14 +309,7 @@ export default function VolunteerProfilePage() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-slate-800">📄 Resume:</span>
               {profile.resumeUrl ? (
-                <a
-                  href={profile.resumeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-sky-600 hover:underline"
-                >
-                  View Document ↗
-                </a>
+                profile.resumeUrl.startsWith("resumes/") ? <button type="button" onClick={() => void openStoredFile(profile.resumeUrl!)} className="font-medium text-sky-600 hover:underline">View private PDF ↗</button> : <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-sky-600 hover:underline">View Document ↗</a>
               ) : (
                 <span className="text-slate-400">Not uploaded</span>
               )}
@@ -301,7 +324,7 @@ export default function VolunteerProfilePage() {
             <CardHeader>
               <CardTitle className="text-lg">Edit Profile Information</CardTitle>
               <CardDescription>
-                Updates will be reflected locally in your session. Backend persistence will connect once the profile endpoint is ready.
+                Your profile changes and uploaded files are saved to your account.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -354,7 +377,7 @@ export default function VolunteerProfilePage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Portfolio / Social Links (comma-separated URLs)
+                  Portfolio / Social Links (comma-separated HTTPS URLs)
                 </label>
                 <Input
                   name="portfolioInput"
@@ -366,18 +389,30 @@ export default function VolunteerProfilePage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Resume Link (URL)
+                  Resume link (optional if uploading a PDF)
                 </label>
                 <Input
                   name="resumeUrl"
                   value={form.resumeUrl}
                   onChange={handleInputChange}
-                  placeholder="https://drive.google.com/... or https://example.com/resume.pdf"
+                  placeholder="https://example.com/resume.pdf"
                   className={errors.resumeUrl ? "border-red-400" : ""}
                 />
                 {errors.resumeUrl && (
                   <p className="mt-1 text-xs text-red-600">{errors.resumeUrl}</p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Upload resume PDF (up to 5 MB)</label>
+                <input type="file" accept="application/pdf,.pdf" onChange={(event) => setResumeFile(event.target.files?.[0] || null)} className="block w-full rounded-xl border border-sky-100 p-3 text-sm" />
+                <p className="mt-1 text-xs font-normal text-slate-500">{resumeFile?.name || (form.resumeUrl.startsWith("resumes/") ? "A private resume PDF is on file." : "Resume stored privately in your account.")}</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Upload portfolio files (PDF, JPG, PNG, WebP; up to 10 MB each)</label>
+                <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" onChange={(event) => setPortfolioFiles(Array.from(event.target.files || []))} className="block w-full rounded-xl border border-sky-100 p-3 text-sm" />
+                {portfolioFiles.length > 0 && <p className="mt-1 text-xs font-normal text-slate-500">Selected: {portfolioFiles.map((file) => file.name).join(", ")}</p>}
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -467,14 +502,7 @@ export default function VolunteerProfilePage() {
                     {profile.portfolioLinks.map((link) => (
                       <li key={link} className="flex items-center gap-2 text-xs">
                         <span className="text-sky-500">🔗</span>
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="truncate text-sky-600 underline underline-offset-2 hover:text-sky-800"
-                        >
-                          {link}
-                        </a>
+                        {link.startsWith("portfolio/") ? <button type="button" onClick={() => void openStoredFile(link)} className="truncate text-left text-sky-600 underline underline-offset-2 hover:text-sky-800">View private portfolio file ↗</button> : <a href={link} target="_blank" rel="noopener noreferrer" className="truncate text-sky-600 underline underline-offset-2 hover:text-sky-800">{link}</a>}
                       </li>
                     ))}
                   </ul>
