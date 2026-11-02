@@ -4,6 +4,8 @@ import { DataSource, Repository } from 'typeorm';
 import { VolunteerProfile } from '../../database/entities/volunteer-profile.entity';
 import { Badge } from '../../database/entities/badge.entity';
 import { PointTransaction } from '../../database/entities/point-transaction.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../../database/enums/notification-type.enum';
 
 @Injectable()
 export class GamificationService {
@@ -15,6 +17,7 @@ export class GamificationService {
     private readonly badgeRepository: Repository<Badge>,
     @InjectRepository(PointTransaction)
     private readonly transactionRepository: Repository<PointTransaction>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async getMyGamification(userId: string) {
@@ -135,6 +138,19 @@ export class GamificationService {
 
     profile.badges = [...currentBadges, badge.code];
     await this.profileRepository.save(profile);
+
+    try {
+      await this.notifications.create({
+        userId,
+        type: NotificationType.BADGE_AWARDED,
+        title: `Badge unlocked: ${badge.title}`,
+        body: badge.criteria,
+        referenceId: profile.id,
+        referenceType: 'badge',
+      });
+    } catch {
+      // The badge remains awarded if notification delivery is unavailable.
+    }
 
     return {
       awarded: true,

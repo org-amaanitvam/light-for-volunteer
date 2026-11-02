@@ -18,11 +18,14 @@ export function Navbar() {
     ? "/organisation/dashboard"
     : user?.role === "admin"
       ? "/organisation/admin"
+      : user?.role === "mentor"
+        ? "/mentorship/profile"
       : "/volunteer/dashboard";
 
   const navLinks = [
 { name: "Home", href: "/" },
 { name: "Opportunities", href: "/opportunities" },
+{ name: "Mentors", href: "/mentorship" },
 { name: "About Us", href: "/about" },
 { name: "Blog & Resources", href: "/blog" },
 { name: "Contact", href: "/contact" },
@@ -168,6 +171,10 @@ export function Navbar() {
                         </div>
                       </div>
                     </Link>
+                    <Link href="/signup/mentor" className="flex items-start gap-2.5 rounded-xl p-2.5 text-left transition hover:bg-sky-50">
+                      <Users className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600" />
+                      <div><div className="text-xs font-semibold text-slate-800">Join as Mentor</div><div className="text-[11px] text-slate-500">Share your experience with volunteers</div></div>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -245,6 +252,9 @@ export function Navbar() {
                   <Button variant="secondary" className="w-full text-sky-800">
                     Register as Organisation
                   </Button>
+                </Link>
+                <Link href="/signup/mentor" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full">Join as Mentor</Button>
                 </Link>
               </>
             )}

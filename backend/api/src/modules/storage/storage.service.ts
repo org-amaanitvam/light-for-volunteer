@@ -262,13 +262,8 @@ secretAccessKey: this.configService.getOrThrow<string>('storage.secretAccessKey'
     return;
   }
 
-  // Organisations can download all documents,
-  // but can delete only their own verification documents.
+  // Organisations can access only their own verification documents.
   if (user.role === 'organisation') {
-    if (action === 'download') {
-      return;
-    }
-
     const ownVerificationPrefix =
       `verification-documents/${user.sub}/`;
 
@@ -277,7 +272,7 @@ secretAccessKey: this.configService.getOrThrow<string>('storage.secretAccessKey'
     }
 
     throw new ForbiddenException(
-      'Organisations can delete only their own verification documents',
+      `Organisations can ${action} only their own verification documents`,
     );
   }
 

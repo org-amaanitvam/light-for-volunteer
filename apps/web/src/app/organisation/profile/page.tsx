@@ -21,6 +21,7 @@ const initialProfile = {
   category: "Organisation",
   established: "",
   description: "",
+  verificationDocUrl: "",
 };
 
 export default function OrganisationProfilePage() {
@@ -28,8 +29,11 @@ export default function OrganisationProfilePage() {
   const [savedProfile, setSavedProfile] = useState(initialProfile);
   const [reviews] = useState<Review[]>([]);
   const [verificationStatus, setVerificationStatus] = useState("pending");
+  const [ratingAvg, setRatingAvg] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [profileExists, setProfileExists] = useState(false);
+  const [selectedDocFile, setSelectedDocFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -37,10 +41,12 @@ export default function OrganisationProfilePage() {
     let active = true;
     api.getMyOrganisation().then((data) => {
       if (!active) return;
-      const loaded = { ...initialProfile, name: data.orgName, website: data.website || "", description: data.about || "", category: data.registrationType || "Organisation" };
+      const loaded = { ...initialProfile, name: data.orgName, website: data.website || "", description: data.about || "", category: data.registrationType || "Organisation", verificationDocUrl: data.verificationDocUrl || "" };
       setProfile(loaded);
       setSavedProfile(loaded);
       setVerificationStatus(data.verificationStatus);
+      setRatingAvg(data.ratingAvg);
+      setReviewCount(data.reviewCount);
       setProfileExists(true);
     }).catch((error: unknown) => {
       if (active && error instanceof Error && /not found|not been created/i.test(error.message)) {
@@ -51,11 +57,7 @@ export default function OrganisationProfilePage() {
     return () => { active = false; };
   }, []);
 
-  const averageRating =
-    reviews.length > 0
-      ? reviews.reduce((total, review) => total + review.rating, 0) /
-        reviews.length
-      : 0;
+  const averageRating = ratingAvg;
 
   function updateField(field: keyof typeof initialProfile, value: string) {
     setProfile((previous) => ({
@@ -72,17 +74,35 @@ export default function OrganisationProfilePage() {
       return;
     }
 
+    let uploadedDocumentKey: string | null = null;
     try {
-      const data = { orgName: profile.name.trim(), about: profile.description, website: profile.website, registrationType: profile.category };
+      const verificationDocUrl = selectedDocFile
+        ? (uploadedDocumentKey = await api.uploadVerificationDocument(selectedDocFile))
+        : profile.verificationDocUrl || undefined;
+      const data = { orgName: profile.name.trim(), about: profile.description, website: profile.website, registrationType: profile.category, verificationDocUrl };
       const saved = profileExists ? await api.updateMyOrganisation(data) : await api.createMyOrganisation(data);
-      const updated = { ...profile, name: saved.orgName, website: saved.website || "", description: saved.about || "", category: saved.registrationType || "Organisation" };
+      const updated = { ...profile, name: saved.orgName, website: saved.website || "", description: saved.about || "", category: saved.registrationType || "Organisation", verificationDocUrl: saved.verificationDocUrl || "" };
       setProfile(updated);
       setSavedProfile(updated);
       setVerificationStatus(saved.verificationStatus);
+      setRatingAvg(saved.ratingAvg);
+      setReviewCount(saved.reviewCount);
       setProfileExists(true);
+      setSelectedDocFile(null);
       setIsEditing(false);
-      setMessage("Organisation profile saved.");
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not save organisation profile."); }
+      setMessage(selectedDocFile ? "Profile saved and verification document uploaded." : "Organisation profile saved.");
+    } catch (error) {
+      if (uploadedDocumentKey) await api.deleteStorageObject(uploadedDocumentKey).catch(() => undefined);
+      setMessage(error instanceof Error ? error.message : "Could not save organisation profile.");
+    }
+  }
+
+  async function resubmitVerification() {
+    try {
+      const updated = await api.resubmitMyOrganisation();
+      setVerificationStatus(updated.verificationStatus);
+      setMessage("Verification resubmitted for admin review.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not resubmit verification."); }
   }
 
   function cancelEditing() {
@@ -148,6 +168,7 @@ export default function OrganisationProfilePage() {
                 <span className="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800">
                   Verification: {verificationStatus}
                 </span>
+                {verificationStatus === "rejected" && <button onClick={() => void resubmitVerification()} className="rounded-full border border-amber-300 px-3 py-1.5 text-sm font-semibold text-amber-800 hover:bg-amber-50">Resubmit verification</button>}
                 <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
                   {profile.category}
                 </span>
@@ -172,7 +193,7 @@ export default function OrganisationProfilePage() {
 
               <div className="rounded-xl bg-slate-50 p-4">
                 <p className="text-sm text-slate-500">Total Reviews</p>
-                <p className="mt-2 text-2xl font-bold">{reviews.length}</p>
+                <p className="mt-2 text-2xl font-bold">{reviewCount}</p>
               </div>
 
               <div className="rounded-xl bg-slate-50 p-4">
@@ -259,6 +280,12 @@ export default function OrganisationProfilePage() {
                   placeholder="Describe your mission and activities..."
                 />
               </label>
+
+              <label className="block text-sm font-medium sm:col-span-2">
+                Verification document (PDF, up to 10 MB)
+                <input type="file" accept="application/pdf,.pdf" disabled={!isEditing || verificationStatus === "verified"} onChange={(event) => setSelectedDocFile(event.target.files?.[0] || null)} className="mt-2 block w-full rounded-xl border border-slate-300 bg-white p-3 text-sm disabled:bg-slate-50" />
+                <span className="mt-1 block text-xs font-normal text-slate-500">{selectedDocFile ? `Selected: ${selectedDocFile.name}` : profile.verificationDocUrl ? "A verification document is on file." : "No verification document uploaded."}</span>
+              </label>
             </div>
 
             {isEditing && (
@@ -303,9 +330,7 @@ export default function OrganisationProfilePage() {
                 >
                   ★★★★★
                 </p>
-                <p className="mt-2 text-sm text-slate-500">
-                  Based on {reviews.length} reviews
-                </p>
+                <p className="mt-2 text-sm text-slate-500">Based on {reviewCount} reviews</p>
               </div>
 
               <div className="sm:ml-8 sm:border-l sm:border-slate-200 sm:pl-8">

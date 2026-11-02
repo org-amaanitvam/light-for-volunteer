@@ -86,6 +86,9 @@ export default function OrganisationDashboard() {
   const [activeApplicantListing, setActiveApplicantListing] = useState<string | null>(null);
   const [applicants, setApplicants] = useState<Record<string, ApplicationItem[]>>({});
   const [applicantLoading, setApplicantLoading] = useState(false);
+  const [reviewedApplications, setReviewedApplications] = useState<Set<string>>(new Set());
+  const [reviewRatings, setReviewRatings] = useState<Record<string, number>>({});
+  const [reviewComments, setReviewComments] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [message, setMessage] = useState("");
@@ -98,8 +101,12 @@ export default function OrganisationDashboard() {
     setActiveApplicantListing(opportunityId);
     setApplicantLoading(true);
     try {
-      const result = await api.getOpportunityApplicants(opportunityId);
+      const [result, reviews] = await Promise.all([
+        api.getOpportunityApplicants(opportunityId),
+        api.request<{ applicationId?: string }[]>("/reviews/mine"),
+      ]);
       setApplicants((previous) => ({ ...previous, [opportunityId]: result }));
+      setReviewedApplications((previous) => new Set([...previous, ...reviews.map((review) => review.applicationId).filter((id): id is string => Boolean(id))]));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not load applicants.");
     } finally {
@@ -109,7 +116,17 @@ export default function OrganisationDashboard() {
 
   async function changeApplicantStatus(applicationId: string, status: ApplicationItem["status"], opportunityId: string) {
     try {
-      const updated = await api.updateApplicationStatus(applicationId, status);
+      let hoursCompleted: number | undefined;
+      if (status === "completed") {
+        const entered = window.prompt("How many volunteer hours did you verify for this completion?", "1");
+        if (entered === null) return;
+        hoursCompleted = Number(entered);
+        if (!Number.isInteger(hoursCompleted) || hoursCompleted < 1 || hoursCompleted > 500) {
+          setMessage("Enter a verified whole number of hours from 1 to 500.");
+          return;
+        }
+      }
+      const updated = await api.updateApplicationStatus(applicationId, status, hoursCompleted);
       setApplicants((previous) => ({
         ...previous,
         [opportunityId]: (previous[opportunityId] || []).map((item) => item.id === updated.id ? { ...item, ...updated, volunteer: item.volunteer } : item),
@@ -118,6 +135,16 @@ export default function OrganisationDashboard() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not update applicant status.");
     }
+  }
+
+  async function reviewApplicant(application: ApplicationItem) {
+    const comment = reviewComments[application.id]?.trim() || "";
+    if (comment.length < 10) { setMessage("Please write at least 10 characters of feedback."); return; }
+    try {
+      await api.request("/reviews", { method: "POST", body: JSON.stringify({ applicationId: application.id, rating: reviewRatings[application.id] || 5, comment }) });
+      setReviewedApplications((previous) => new Set(previous).add(application.id));
+      setMessage(`Your review for ${application.volunteer?.name || "the volunteer"} has been saved.`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not submit review."); }
   }
 
   useEffect(() => {
@@ -740,6 +767,7 @@ export default function OrganisationDashboard() {
                           <p className="text-sm text-slate-500">{application.volunteer?.email} · {application.volunteer?.city || "Location not provided"}</p>
                           <p className="mt-1 text-sm text-slate-700">{application.pitch_text}</p>
                           <p className="mt-1 text-xs capitalize text-slate-500">Status: {application.status}</p>
+                          {application.status === "completed" && (reviewedApplications.has(application.id) ? <p className="mt-2 text-xs font-semibold text-emerald-700">You reviewed this volunteer.</p> : <div className="mt-3 flex flex-wrap items-center gap-2"><select aria-label="Volunteer rating" value={reviewRatings[application.id] || 5} onChange={(event) => setReviewRatings((previous) => ({ ...previous, [application.id]: Number(event.target.value) }))} className="rounded-lg border p-2 text-sm">{[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} star{rating === 1 ? "" : "s"}</option>)}</select><input aria-label="Review comment" value={reviewComments[application.id] || ""} onChange={(event) => setReviewComments((previous) => ({ ...previous, [application.id]: event.target.value }))} maxLength={2000} placeholder="Feedback (at least 10 characters)" className="min-w-48 flex-1 rounded-lg border p-2 text-sm" /><button onClick={() => void reviewApplicant(application)} className="rounded-lg border border-sky-200 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-50">Review volunteer</button></div>)}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {application.status === "applied" && <button onClick={() => void changeApplicantStatus(application.id, "shortlisted", opportunity.id)} className="rounded-lg border px-3 py-2 text-sm">Shortlist</button>}

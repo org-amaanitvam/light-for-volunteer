@@ -18,6 +18,7 @@ type Organisation = {
   category: string;
   submitted: string;
   status: OrganisationStatus;
+  verificationDocUrl: string | null;
 };
 
 type Listing = {
@@ -43,6 +44,7 @@ type ReportedReview = {
 };
 
 type Tab = "organisations" | "listings" | "reports";
+type AuditLogItem = { id: string; action: string; entityType: string; entityId: string | null; createdAt: string; admin: { name: string; email: string } | null };
 
 function toAdminListing(item: OpportunityItem): Listing {
   return {
@@ -108,6 +110,7 @@ export default function AdminPage() {
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [reports, setReports] = useState<ReportedReview[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
 
   const [activeTab, setActiveTab] = useState<Tab>("organisations");
   const [search, setSearch] = useState("");
@@ -124,11 +127,12 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (authLoading || user?.role !== "admin") return;
-    Promise.all([api.getPendingOrganisations(), api.getPendingOpportunities(), api.getPendingReports()])
-      .then(([orgItems, opportunityItems, reportItems]) => {
-        setOrganisations(orgItems.map((item) => ({ id: item.id, name: item.org_name, email: item.user?.email || "", location: item.user?.city || "", category: item.registration_type || "Organisation", submitted: "", status: "Pending" })));
+    Promise.all([api.getPendingOrganisations(), api.getPendingOpportunities(), api.getPendingReports(), api.getAdminAuditLogs()])
+      .then(([orgItems, opportunityItems, reportItems, audit]) => {
+        setOrganisations(orgItems.map((item) => ({ id: item.id, name: item.org_name, email: item.user?.email || "", location: item.user?.city || "", category: item.registration_type || "Organisation", submitted: "", status: "Pending", verificationDocUrl: item.verification_doc_url })));
         setListings(opportunityItems.map(toAdminListing));
         setReports(reportItems.map((item) => ({ id: item.id, organisation: `${item.target_type} ${item.target_id.slice(0, 8)}`, reviewer: item.reporter?.name || "Account holder", rating: 0, comment: `Reported ${item.target_type} content`, reason: item.reason, submitted: item.created_at.slice(0, 10), status: "Pending" })));
+        setAuditLogs(audit.data);
       })
       .catch((error: unknown) => setMessage(error instanceof Error ? error.message : "Could not load pending opportunities."));
   }, [authLoading, user]);
@@ -216,6 +220,22 @@ export default function AdminPage() {
       setMessage(organisation ? `${organisation.name} marked as ${status.toLowerCase()}.` : "Organisation updated.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not update organisation verification.");
+    }
+  }
+
+  async function openVerificationDocument(key: string) {
+    const documentWindow = window.open("about:blank", "_blank");
+    if (!documentWindow) {
+      setMessage("Allow pop-ups to view the verification document.");
+      return;
+    }
+    try {
+      const url = key.startsWith("https://") ? key : await api.getStorageDownloadUrl(key);
+      documentWindow.opener = null;
+      documentWindow.location.href = url;
+    } catch (error) {
+      documentWindow.close();
+      setMessage(error instanceof Error ? error.message : "Could not open the verification document.");
     }
   }
 
@@ -455,6 +475,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 lg:justify-end">
+                      {organisation.verificationDocUrl && <button onClick={() => void openVerificationDocument(organisation.verificationDocUrl!)} className="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">View verification PDF</button>}
                       {organisation.status !== "Verified" && (
                         <button
                           onClick={() =>
@@ -587,7 +608,7 @@ export default function AdminPage() {
                       </div>
 
                       <p className="mt-2 text-sm text-slate-500">
-                        Reported by: {report.reviewer}
+                          Reported by: {report.reviewer} · Type: {report.organisation.split(" ")[0]}
                       </p>
                       <p className="mt-2 text-sm text-slate-500">
                         Submitted: {report.submitted}
@@ -630,6 +651,11 @@ export default function AdminPage() {
               )}
             </div>
           )}
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">Admin audit log</h2><p className="mt-1 text-xs text-slate-500">Recent organisation, listing, and report moderation actions.</p></div><button onClick={() => void api.getAdminAuditLogs().then((result) => setAuditLogs(result.data)).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "Could not refresh audit log."))} className="rounded-lg border px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Refresh</button></div>
+          {auditLogs.length === 0 ? <p className="mt-4 text-sm text-slate-500">No moderation actions have been recorded yet.</p> : <div className="mt-4 divide-y divide-slate-100">{auditLogs.map((log) => <div key={log.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold capitalize text-slate-800">{log.action.replaceAll("_", " ")}</p><p className="text-xs text-slate-500">{log.entityType}{log.entityId ? ` · ${log.entityId}` : ""} · {log.admin?.name ?? "Former admin"}</p></div><time className="text-xs text-slate-400">{new Date(log.createdAt).toLocaleString()}</time></div>)}</div>}
         </section>
 
         <footer className="border-t border-slate-200 pt-5 text-center text-xs leading-5 text-slate-500">

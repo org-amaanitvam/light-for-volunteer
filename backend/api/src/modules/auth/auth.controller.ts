@@ -89,6 +89,12 @@ export class AuthController {
   }
 
   @Public()
+  @Get('google/enabled')
+  googleEnabled() {
+    return { enabled: this.config.get<boolean>('auth.google.enabled') ?? false };
+  }
+
+  @Public()
   @UseGuards(GoogleAuthGuard)
   @Get('google')
   @ApiOperation({ summary: 'Start the Google OAuth 2.0 handshake' })

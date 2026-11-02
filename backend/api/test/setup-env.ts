@@ -12,6 +12,11 @@
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_SYNC = 'true';
 process.env.DATABASE_MIGRATIONS_RUN = 'false';
+// Never let e2e schema synchronization touch the developer or production DB.
+process.env.DATABASE_NAME = 'light_for_volunteer_test';
+if (!process.env.DATABASE_NAME.endsWith('_test')) {
+  throw new Error('E2E tests require an isolated database ending in _test.');
+}
 process.env.REFRESH_GRACE_SECONDS = '2';
 process.env.THROTTLE_AUTH_LIMIT = '1000';
 process.env.THROTTLE_AUTH_TTL = '60';

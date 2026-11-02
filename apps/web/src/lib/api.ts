@@ -83,6 +83,7 @@ export interface ApplicationItem {
   pitch_text: string;
   status: "applied" | "shortlisted" | "selected" | "completed" | "rejected";
   applied_at: string;
+  completed_hours?: number;
   volunteer?: { id: string; name: string; email: string; city?: string | null };
 }
 
@@ -105,6 +106,25 @@ export interface GamificationItem {
   recentTransactions: { eventType: string; points: number; createdAt: string }[];
 }
 
+export interface CertificateItem {
+  id: string;
+  certificateNumber: string;
+  opportunityTitle: string;
+  organisation: string;
+  completedAt: string;
+  hoursVolunteered: number;
+  verified: boolean;
+}
+
+export interface MentorItem {
+  id: string;
+  name: string;
+  city: string | null;
+  headline: string | null;
+  about: string | null;
+  skills: string[];
+}
+
 export interface OrganisationProfileItem {
   id: string;
   orgName: string;
@@ -115,6 +135,7 @@ export interface OrganisationProfileItem {
   verificationDocUrl: string | null;
   verificationStatus: string;
   ratingAvg: number;
+  reviewCount: number;
 }
 
 export interface SearchFacets {
@@ -210,7 +231,7 @@ export interface DeleteOpportunityResponse {
   id: string;
 }
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3001/api" : "")).replace(/\/+$/, "");
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3001/api" : "")).replace(/\/+$/, "");
 
 class ApiClient {
   private getTokens(): AuthTokens | null {
@@ -232,6 +253,10 @@ class ApiClient {
     localStorage.removeItem("lfv_access_token");
     localStorage.removeItem("lfv_refresh_token");
     localStorage.removeItem("lfv_user_profile");
+  }
+
+  public getAccessToken(): string | null {
+    return this.getTokens()?.accessToken ?? null;
   }
 
   public setUser(user: UserProfile) {
@@ -347,6 +372,18 @@ class ApiClient {
     return user;
   }
 
+  public async googleAuthEnabled(): Promise<boolean> {
+    const result = await this.request<{ enabled: boolean }>("/auth/google/enabled");
+    return result.enabled;
+  }
+
+  public async exchangeGoogleCode(code: string, role: SignupPayload["role"]): Promise<{ user: UserProfile; accessToken: string; refreshToken: string }> {
+    const result = await this.request<{ user: UserProfile; accessToken: string; refreshToken: string }>("/auth/exchange", { method: "POST", body: JSON.stringify({ code, role }) });
+    this.setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+    this.setUser(result.user);
+    return result;
+  }
+
   public async refreshToken(refreshToken: string): Promise<AuthTokens | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -409,10 +446,11 @@ class ApiClient {
   public async updateApplicationStatus(
     applicationId: string,
     status: ApplicationItem["status"],
+    hoursCompleted?: number,
   ): Promise<ApplicationItem> {
     return this.request<ApplicationItem>(`/applications/${applicationId}/status`, {
       method: "PATCH",
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, ...(hoursCompleted !== undefined ? { hoursCompleted } : {}) }),
     });
   }
 
@@ -439,7 +477,7 @@ class ApiClient {
     });
   }
 
-  public async getPendingOrganisations(): Promise<{ id: string; org_name: string; about: string | null; registration_type: string | null; verification_status: string; user?: { name: string; email: string; city: string | null } }[]> {
+  public async getPendingOrganisations(): Promise<{ id: string; org_name: string; about: string | null; registration_type: string | null; verification_status: string; verification_doc_url: string | null; user?: { name: string; email: string; city: string | null } }[]> {
     return this.request("/admin/organisations/pending");
   }
 
@@ -447,12 +485,100 @@ class ApiClient {
     return this.request("/organisations/me");
   }
 
-  public async createMyOrganisation(data: { orgName: string; about?: string; website?: string; registrationType?: string }): Promise<OrganisationProfileItem> {
+  public async createMyOrganisation(data: { orgName: string; about?: string; website?: string; registrationType?: string; verificationDocUrl?: string }): Promise<OrganisationProfileItem> {
     return this.request("/organisations", { method: "POST", body: JSON.stringify(data) });
   }
 
-  public async updateMyOrganisation(data: { orgName?: string; about?: string; website?: string; registrationType?: string }): Promise<OrganisationProfileItem> {
+  public async updateMyOrganisation(data: { orgName?: string; about?: string; website?: string; registrationType?: string; verificationDocUrl?: string }): Promise<OrganisationProfileItem> {
     return this.request("/organisations/me", { method: "PATCH", body: JSON.stringify(data) });
+  }
+
+  public async resubmitMyOrganisation(): Promise<OrganisationProfileItem> {
+    return this.request("/organisations/me/resubmit", { method: "POST" });
+  }
+
+  public async uploadVerificationDocument(file: File): Promise<string> {
+    if (file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) {
+      throw new Error("Choose a PDF verification document.");
+    }
+    if (file.size <= 0 || file.size > 10 * 1024 * 1024) {
+      throw new Error("The PDF must be between 1 byte and 10 MB.");
+    }
+    const signed = await this.request<{ uploadUrl: string; key: string; contentType: string }>("/storage/presign-upload", {
+      method: "POST",
+      body: JSON.stringify({ purpose: "verification", fileName: file.name, contentType: file.type, fileSize: file.size }),
+    });
+    const uploaded = await fetch(signed.uploadUrl, { method: "PUT", headers: { "Content-Type": signed.contentType }, body: file });
+    if (!uploaded.ok) throw new Error(`R2 upload failed (${uploaded.status}). Check the bucket CORS policy and try again.`);
+    await this.request("/storage/verify-upload", { method: "POST", body: JSON.stringify({ key: signed.key }) });
+    return signed.key;
+  }
+
+  public async uploadVolunteerFile(file: File, purpose: "resume" | "portfolio"): Promise<string> {
+    const allowed = purpose === "resume"
+      ? ["application/pdf"]
+      : ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+    const maxSize = purpose === "resume" ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (!allowed.includes(file.type) || !/\.(pdf|jpe?g|png|webp)$/i.test(file.name) || (purpose === "resume" && !/\.pdf$/i.test(file.name))) {
+      throw new Error(purpose === "resume" ? "Choose a PDF resume." : "Choose a PDF, JPG, PNG, or WebP portfolio file.");
+    }
+    if (!file.size || file.size > maxSize) throw new Error(`File must be between 1 byte and ${maxSize / (1024 * 1024)} MB.`);
+    const signed = await this.request<{ uploadUrl: string; key: string; contentType: string }>("/storage/presign-upload", {
+      method: "POST",
+      body: JSON.stringify({ purpose, fileName: file.name, contentType: file.type, fileSize: file.size }),
+    });
+    const uploaded = await fetch(signed.uploadUrl, { method: "PUT", headers: { "Content-Type": signed.contentType }, body: file });
+    if (!uploaded.ok) throw new Error(`R2 upload failed (${uploaded.status}). Check the bucket CORS policy and try again.`);
+    await this.request("/storage/verify-upload", { method: "POST", body: JSON.stringify({ key: signed.key }) });
+    return signed.key;
+  }
+
+  public async getStorageDownloadUrl(key: string): Promise<string> {
+    const result = await this.request<{ downloadUrl: string }>("/storage/presign-download", { method: "POST", body: JSON.stringify({ key }) });
+    return result.downloadUrl;
+  }
+
+  public async getMyCertificates(): Promise<CertificateItem[]> {
+    return this.request<CertificateItem[]>("/certificates");
+  }
+
+  public async getMentors(): Promise<MentorItem[]> {
+    return this.request<MentorItem[]>("/mentors");
+  }
+
+  public async getMyMentorProfile(): Promise<{ headline: string; about: string; skills: string[] }> {
+    return this.request("/mentors/me");
+  }
+
+  public async updateMyMentorProfile(data: { headline: string; about: string; skills: string[] }): Promise<{ headline: string; about: string; skills: string[] }> {
+    return this.request("/mentors/me", { method: "PATCH", body: JSON.stringify(data) });
+  }
+
+  public async downloadCertificatePdf(applicationId: string): Promise<Blob> {
+    if (!API_BASE_URL) throw new Error("The API URL is not configured.");
+    let tokens = this.getTokens();
+    if (!tokens?.accessToken) throw new Error("Sign in as a volunteer to download certificates.");
+    let response = await fetch(`${API_BASE_URL}/certificates/${applicationId}/pdf`, {
+      headers: { Authorization: `Bearer ${tokens.accessToken}` },
+    });
+    if (response.status === 401 && tokens.refreshToken) {
+      const refreshed = await this.refreshToken(tokens.refreshToken);
+      if (refreshed) {
+        tokens = { ...tokens, ...refreshed };
+        response = await fetch(`${API_BASE_URL}/certificates/${applicationId}/pdf`, {
+          headers: { Authorization: `Bearer ${tokens.accessToken}` },
+        });
+      }
+    }
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Certificate download failed (${response.status}).`);
+    }
+    return response.blob();
+  }
+
+  public async deleteStorageObject(key: string): Promise<void> {
+    await this.request("/storage/object", { method: "DELETE", body: JSON.stringify({ key }) });
   }
 
   public async reviewOrganisation(id: string, status: "verified" | "rejected"): Promise<unknown> {
@@ -465,6 +591,10 @@ class ApiClient {
 
   public async resolveReport(id: string, action: "dismiss_report" | "remove_content"): Promise<unknown> {
     return this.request(`/admin/reports/${id}/resolve`, { method: "PATCH", body: JSON.stringify({ action }) });
+  }
+
+  public async getAdminAuditLogs(): Promise<{ data: { id: string; action: string; entityType: string; entityId: string | null; createdAt: string; admin: { name: string; email: string } | null }[]; meta: { total: number } }> {
+    return this.request("/admin/audit-logs?page=1&limit=25");
   }
 
   public async createOpportunity(data: CreateOpportunityInput): Promise<OpportunityItem> {

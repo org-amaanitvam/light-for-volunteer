@@ -55,7 +55,7 @@ async function bootstrap(): Promise<void> {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Light For Volunteer API')
-    .setDescription('Auth & RBAC foundation — Light For Volunteer backend')
+    .setDescription('Authentication, volunteer and organisation profiles, opportunities, applications, reviews, moderation, messaging, notifications and storage APIs.')
     .setVersion('0.1.0')
     .addBearerAuth()
     .build();

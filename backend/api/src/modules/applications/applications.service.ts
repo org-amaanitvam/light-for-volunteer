@@ -10,6 +10,8 @@ import { ApplicationStatus } from '../../database/enums/application-status.enum'
 import { OpportunityStatus } from '../../database/enums/opportunity-status.enum';
 import { CreateApplicationDto } from '../../dtos/application/create-application.dto';
 import { GamificationService } from '../gamification/gamification.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../../database/enums/notification-type.enum';
 
 /**
  * Pitch/application lifecycle.
@@ -29,11 +31,13 @@ export class ApplicationsService {
     @InjectRepository(VolunteerProfile)
     private readonly volunteerProfileRepo: Repository<VolunteerProfile>,
     private readonly gamificationService: GamificationService,
+    private readonly notifications: NotificationsService,
   ) { }
 
   async create(volunteerId: string, dto: CreateApplicationDto) {
     const opportunity = await this.opportunityRepo.findOne({
       where: { id: dto.opportunityId },
+      relations: { organisation: { user: true } },
     });
     if (!opportunity) {
       throw new NotFoundException('Opportunity not found');
@@ -78,6 +82,20 @@ export class ApplicationsService {
           pitch_text: dto.pitchText.trim(),
         }),
       );
+
+      try {
+        const organisationOwnerId = opportunity.organisation?.user?.id;
+        if (organisationOwnerId) await this.notifications.create({
+          userId: organisationOwnerId,
+          type: NotificationType.APPLICATION_UPDATE,
+          title: 'New volunteer application',
+          body: `A volunteer applied to "${opportunity.title}".`,
+          referenceId: opportunity.id,
+          referenceType: 'opportunity',
+        });
+      } catch {
+        this.logger.warn(`Application ${saved.id} was saved, but its organisation notification could not be sent.`);
+      }
 
       if (previousApplicationCount === 0) {
         try {
@@ -144,7 +162,7 @@ export class ApplicationsService {
     }));
   }
 
-  async updateStatus(id: string, status: ApplicationStatus, userId: string, userRole: string) {
+  async updateStatus(id: string, status: ApplicationStatus, userId: string, userRole: string, hoursCompleted?: number) {
     const application = await this.applicationRepo.findOne({
       where: { id },
       relations: { opportunity: { organisation: { user: true } }, volunteer: true },
@@ -168,8 +186,30 @@ export class ApplicationsService {
       throw new BadRequestException(`Cannot move an application from ${application.status} to ${status}`);
     }
 
+    const previousStatus = application.status;
     application.status = status;
+    if (status === ApplicationStatus.COMPLETED && !application.completed_at) {
+      application.completed_at = new Date();
+    }
+    if (status === ApplicationStatus.COMPLETED && hoursCompleted !== undefined) {
+      application.completed_hours = hoursCompleted;
+    }
     const saved = await this.applicationRepo.save(application);
+
+    if (previousStatus !== status) {
+      try {
+        await this.notifications.create({
+          userId: application.volunteer.id,
+          type: NotificationType.APPLICATION_UPDATE,
+          title: 'Application status updated',
+          body: `Your application for "${application.opportunity.title}" is now ${status}.`,
+          referenceId: application.id,
+          referenceType: 'application',
+        });
+      } catch {
+        this.logger.warn(`Application ${saved.id} changed status, but its volunteer notification could not be sent.`);
+      }
+    }
 
     if (status === ApplicationStatus.COMPLETED) {
       const volunteerId = application.volunteer.id;
@@ -211,6 +251,8 @@ export class ApplicationsService {
       pitch_text: application.pitch_text,
       status: application.status,
       applied_at: application.applied_at,
+      completed_at: application.completed_at ?? null,
+      completed_hours: application.completed_hours ?? 0,
     };
   }
 }

@@ -5,6 +5,7 @@ import { GamificationService } from './gamification.service';
 import { VolunteerProfile } from '../../database/entities/volunteer-profile.entity';
 import { Badge } from '../../database/entities/badge.entity';
 import { PointTransaction } from '../../database/entities/point-transaction.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PointTransaction } from '../../database/entities/point-transaction.enti
       Badge,
       PointTransaction,
     ]),
+    NotificationsModule,
   ],
   controllers: [GamificationController],
   providers: [GamificationService],

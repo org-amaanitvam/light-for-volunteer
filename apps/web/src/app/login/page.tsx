@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, ArrowRight, HeartHandshake, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { api } from "@/lib/api";
+import { API_BASE_URL, api } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 
 export default function LoginPage() {
@@ -17,6 +17,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [googleRole, setGoogleRole] = useState<"volunteer" | "organisation" | "mentor">("volunteer");
+
+  useEffect(() => { api.googleAuthEnabled().then(setGoogleEnabled).catch(() => setGoogleEnabled(false)); }, []);
+
+  function continueWithGoogle() {
+    if (!API_BASE_URL) return;
+    const requestedNext = new URLSearchParams(window.location.search).get("next") || "";
+    localStorage.setItem("lfv_google_role", googleRole);
+    localStorage.setItem("lfv_google_next", requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "");
+    window.location.assign(`${API_BASE_URL}/auth/google`);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +140,8 @@ export default function LoginPage() {
                 {loading ? "Authenticating..." : "Sign In"} <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             </form>
+
+            {googleEnabled && <div className="mt-5 space-y-2 border-t border-sky-100 pt-5"><label htmlFor="google-role" className="block text-xs font-semibold text-slate-600">If this is your first Google sign-in, choose your account type</label><select id="google-role" value={googleRole} onChange={(event) => setGoogleRole(event.target.value as typeof googleRole)} className="w-full rounded-xl border border-slate-200 p-2.5 text-sm"><option value="volunteer">Volunteer</option><option value="organisation">Organisation</option><option value="mentor">Mentor</option></select><Button type="button" variant="outline" onClick={continueWithGoogle} className="w-full">Continue with Google</Button></div>}
 
             <div className="mt-6 text-center border-t border-sky-100 pt-5">
               <p className="text-xs text-slate-500">
