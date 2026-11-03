@@ -12,6 +12,22 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
+  // Simple uptime checks for monitors configured at the service root.
+  app.getHttpAdapter().get('/', (_req, res) => {
+    res.status(200).json({
+      status: 'OK',
+      message: 'Light for Volunteer Backend is running',
+    });
+  });
+
+  // UptimeRobot health-check endpoint
+  app.getHttpAdapter().get('/health', (_req, res) => {
+    res.status(200).json({
+      status: 'OK',
+      message: 'Light for Volunteer Backend is running',
+    });
+  });
+
   app.setGlobalPrefix('api');
   app.use(helmet());
 
