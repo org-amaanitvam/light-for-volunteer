@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HeartHandshake, Menu, X, User, LogOut, ChevronDown, Building2, Users } from "lucide-react";
+import {Menu, X, User, LogOut, ChevronDown, Building2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useAuth } from "@/context/auth-context";
+import Image from "next/image";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -20,24 +21,30 @@ export function Navbar() {
       ? "/organisation/admin"
       : user?.role === "mentor"
         ? "/mentorship/profile"
-      : "/volunteer/dashboard";
+        : "/volunteer/dashboard";
 
   const navLinks = [
-{ name: "Home", href: "/" },
-{ name: "Opportunities", href: "/opportunities" },
-{ name: "Mentors", href: "/mentorship" },
-{ name: "About Us", href: "/about" },
-{ name: "Blog & Resources", href: "/blog" },
-{ name: "Contact", href: "/contact" },
-];
+    { name: "Home", href: "/" },
+    { name: "Opportunities", href: "/opportunities" },
+    { name: "Mentors", href: "/mentorship" },
+    { name: "About Us", href: "/about" },
+    { name: "Blog & Resources", href: "/blog" },
+    { name: "Contact", href: "/contact" },
+  ];
 
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 border-b border-sky-100/80 transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform duration-200">
-            <HeartHandshake className="w-6 h-6" />
+          <div className="w-10 h-10 relative">
+            <Image
+              src="/logo.jpeg"
+              alt="Light For Volunteer logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-sky-700 to-cyan-600 bg-clip-text text-transparent">
@@ -57,11 +64,10 @@ export function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-sky-600 ${
-                  isActive
+                className={`text-sm font-medium transition-colors hover:text-sky-600 ${isActive
                     ? "text-sky-600 font-semibold"
                     : "text-slate-600"
-                }`}
+                  }`}
               >
                 {link.name}
               </Link>
