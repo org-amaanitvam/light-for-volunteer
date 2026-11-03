@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, Phone, MapPin, Send, CheckCircle2, MessageSquare, Instagram, Linkedin } from "lucide-react";
+import { Mail, Phone, MapPin, Send, CheckCircle2, MessageSquare, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,7 +79,7 @@ export default function ContactPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-xs font-semibold text-sky-600 hover:underline"
                   >
-                    <Instagram className="h-4 w-4" aria-hidden="true" />
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
                     Instagram
                   </a>
                   <a
@@ -88,7 +88,7 @@ export default function ContactPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-xs font-semibold text-sky-600 hover:underline"
                   >
-                    <Linkedin className="h-4 w-4" aria-hidden="true" />
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
                     LinkedIn
                   </a>
                 </div>
