@@ -41,7 +41,7 @@ export function Navbar() {
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-sky-700 to-cyan-600 bg-clip-text text-transparent">
-              Light For Volunteer
+              Light of Volunteer
             </span>
             <span className="text-[10px] uppercase font-semibold text-sky-500 tracking-wider">
               Amaanitvam Foundation
