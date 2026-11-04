@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, Phone, MapPin, Send, CheckCircle2, MessageSquare, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Send, CheckCircle2, MessageSquare, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,10 +47,10 @@ export default function ContactPage() {
                   <h3 className="text-sm font-bold text-slate-900">Email Us</h3>
                   <p className="text-xs text-slate-500 mt-1">Our support team replies within 24h</p>
                   <a
-                    href="mailto:contact@amaanitvam.org"
+                    href="mailto:lightofvolunteer@gmail.com"
                     className="text-xs font-semibold text-sky-600 hover:underline mt-2 inline-block"
                   >
-                    contact@amaanitvam.org
+                    lightofvolunteer@gmail.com
                   </a>
                 </div>
               </div>
@@ -64,7 +64,33 @@ export default function ContactPage() {
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Call Us</h3>
                   <p className="text-xs text-slate-500 mt-1">Mon–Fri from 9am to 6pm IST</p>
-                  <p className="text-xs font-semibold text-slate-800 mt-2">+91 98765 43210</p>
+                  <p className="text-xs font-semibold text-slate-800 mt-2">+91 9891757935</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="border-sky-100 bg-white p-6 shadow-sm">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Follow Us</h3>
+                <div className="mt-3 flex flex-col gap-3">
+                  <a
+                    href="https://www.instagram.com/lightofvolunteer?mdxt=dHZuMWNjbGgxYW9l"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs font-semibold text-sky-600 hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                    Instagram
+                  </a>
+                  <a
+                    href="https://www.linkedin.com/company/light-of-volunteer/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs font-semibold text-sky-600 hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                    LinkedIn
+                  </a>
                 </div>
               </div>
             </Card>
