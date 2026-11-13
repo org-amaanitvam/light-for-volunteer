@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {Menu, X, User, LogOut, ChevronDown, Building2, Users } from "lucide-react";
+import { Menu, X, User, LogOut, ChevronDown, Building2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useAuth } from "@/context/auth-context";
@@ -14,30 +14,59 @@ export function Navbar() {
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
+  const [joinDisclosureOpen, setJoinDisclosureOpen] = useState(false);
+  const joinDisclosureRef = useRef<HTMLDivElement>(null);
+  const authDropdownRef = useRef<HTMLDivElement>(null);
 
-  const dashboardHref = user?.role === "organisation"
-    ? "/organisation/dashboard"
-    : user?.role === "admin"
-      ? "/organisation/admin"
-      : user?.role === "mentor"
-        ? "/mentorship/profile"
-        : "/volunteer/dashboard";
+  // Close disclosure dropdowns on outside click or Escape key
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (joinDisclosureRef.current && !joinDisclosureRef.current.contains(e.target as Node)) {
+        setJoinDisclosureOpen(false);
+      }
+      if (authDropdownRef.current && !authDropdownRef.current.contains(e.target as Node)) {
+        setAuthDropdownOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setJoinDisclosureOpen(false);
+        setAuthDropdownOpen(false);
+        setMobileMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const dashboardHref =
+    user?.role === "organisation"
+      ? "/organisation/dashboard"
+      : user?.role === "admin"
+        ? "/organisation/admin"
+        : user?.role === "mentor"
+          ? "/mentorship/profile"
+          : "/volunteer/dashboard";
 
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Opportunities", href: "/opportunities" },
     { name: "Mentors", href: "/mentorship" },
-    { name: "About Us", href: "/about" },
-    { name: "Blog & Resources", href: "/blog" },
+    { name: "About", href: "/about" },
+    { name: "Blog", href: "/blog" },
     { name: "Contact", href: "/contact" },
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 border-b border-sky-100/80 transition-all duration-200">
+    <header className="sticky top-0 z-40 w-full bg-[#0c4a6e]/90 backdrop-blur-md border-b border-white/15 shadow-[0_4px_20px_rgba(12,74,110,0.2)] transition-[border-color,background-color] duration-150">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 relative">
+        {/* Brand Logo & Foundation Attribution */}
+        <Link href="/" className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] rounded-lg">
+          <div className="w-10 h-10 relative shrink-0 rounded-lg overflow-hidden border border-white/20 shadow-xs">
             <Image
               src="/logo.jpeg"
               alt="Light For Volunteer logo"
@@ -47,27 +76,32 @@ export function Navbar() {
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-sky-700 to-cyan-600 bg-clip-text text-transparent">
-              Light of Volunteer
+            <span className="font-extrabold text-base sm:text-lg tracking-tight text-white group-hover:text-[#38bdf8] transition-colors">
+              Light For Volunteer
             </span>
-            <span className="text-[10px] uppercase font-semibold text-sky-500 tracking-wider">
+            <span className="text-xs font-semibold text-[#38bdf8]">
               Amaanitvam Foundation
             </span>
           </div>
         </Link>
 
-        {/* Desktop Nav Items */}
-        <nav className="hidden md:flex items-center gap-7">
+        {/* Desktop Nav Items (lg: 1024px+ breakpoint for balanced spacing) */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8" aria-label="Main Navigation">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive =
+              link.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(link.href);
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-sky-600 ${isActive
-                    ? "text-sky-600 font-semibold"
-                    : "text-slate-600"
-                  }`}
+                aria-current={isActive ? "page" : undefined}
+                className={`text-sm font-semibold py-1 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] rounded-md ${
+                  isActive
+                    ? "text-[#38bdf8] border-b-2 border-[#38bdf8]"
+                    : "text-white/80 hover:text-white"
+                }`}
               >
                 {link.name}
               </Link>
@@ -75,160 +109,210 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Right Action Icons & Auth */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Right Action Icons & Auth (Desktop >= lg) */}
+        <div className="hidden lg:flex items-center gap-3">
           <NotificationBell />
 
           {user ? (
-            <div className="relative">
+            <div className="relative" ref={authDropdownRef}>
               <button
+                type="button"
                 onClick={() => setAuthDropdownOpen(!authDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-sky-200 bg-sky-50/70 hover:bg-sky-100 text-sky-900 transition text-sm font-medium focus:outline-none"
+                aria-expanded={authDropdownOpen}
+                aria-controls="auth-user-dropdown"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white transition-colors text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] cursor-pointer"
               >
-                <div className="w-7 h-7 rounded-full bg-sky-500 text-white flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 rounded-lg bg-[#0284c7] text-white flex items-center justify-center text-xs font-bold shadow-xs">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
-                <span className="max-w-[100px] truncate">{user.name}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-sky-600" />
+                <span className="max-w-[120px] truncate">{user.name}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#38bdf8] transition-transform duration-150 ${authDropdownOpen ? "rotate-180" : ""}`} />
               </button>
 
               {authDropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-30"
-                    onClick={() => setAuthDropdownOpen(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-52 rounded-2xl border border-sky-100 bg-white p-2 shadow-xl z-40 animate-in fade-in slide-in-from-top-1">
-                    <div className="px-3 py-2 border-b border-sky-50 mb-1">
-                      <p className="text-xs font-bold text-slate-800">{user.name}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
-                      <span className="inline-block mt-1 uppercase text-[9px] font-bold px-2 py-0.5 rounded-md bg-sky-100 text-sky-700">
-                        {user.role}
-                      </span>
-                    </div>
-
-                    <Link
-                      href={dashboardHref}
-                      onClick={() => setAuthDropdownOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-sky-50 rounded-xl transition"
-                    >
-                      <User className="w-3.5 h-3.5 text-sky-500" /> My Profile / Dashboard
-                    </Link>
-
-                    <button
-                      onClick={() => {
-                        setAuthDropdownOpen(false);
-                        logout();
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-xl transition text-left"
-                    >
-                      <LogOut className="w-3.5 h-3.5" /> Sign out
-                    </button>
+                <div
+                  id="auth-user-dropdown"
+                  className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#bae6fd] bg-white p-2 shadow-xl z-50 animate-in fade-in duration-150 text-[#0f2a43]"
+                >
+                  <div className="px-3 py-2 border-b border-[#e2eaf2] mb-1">
+                    <p className="text-xs font-bold text-[#0f2a43]">{user.name}</p>
+                    <p className="text-xs text-[#5a7b9d] truncate">{user.email}</p>
+                    <span className="inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-[#e0f2fe] text-[#075985] capitalize">
+                      {user.role}
+                    </span>
                   </div>
-                </>
+
+                  <Link
+                    href={dashboardHref}
+                    onClick={() => setAuthDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-[#0f2a43] hover:bg-[#f4f9ff] hover:text-[#0369a1] rounded-xl transition-colors"
+                  >
+                    <User className="w-3.5 h-3.5 text-[#0369a1]" /> My Dashboard
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthDropdownOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-[#b91c1c] hover:bg-[#fef2f2] rounded-xl transition-colors text-left cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" /> Sign out
+                  </button>
+                </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2.5">
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="font-semibold text-slate-700">
-                  Log in
-                </Button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="font-semibold text-white/90 hover:text-white text-sm px-3.5 py-2 rounded-xl hover:bg-white/10 transition-colors"
+              >
+                Log in
               </Link>
 
-              <div className="relative group">
-                <Button
-                  variant="gradient"
-                  size="sm"
-                  className="rounded-xl flex items-center gap-1.5 font-medium"
+              {/* Accessible Join Light Disclosure */}
+              <div className="relative" ref={joinDisclosureRef}>
+                <button
+                  type="button"
+                  onClick={() => setJoinDisclosureOpen((prev) => !prev)}
+                  aria-expanded={joinDisclosureOpen}
+                  aria-controls="join-disclosure-panel"
+                  className="inline-flex items-center justify-center rounded-xl text-sm font-bold h-10 px-4 bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-[0_2px_10px_rgba(2,132,199,0.35)] gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] cursor-pointer transition-colors border border-white/20"
                 >
-                  Join Light <ChevronDown className="w-3.5 h-3.5" />
-                </Button>
+                  Join Light <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${joinDisclosureOpen ? "rotate-180" : ""}`} />
+                </button>
 
-                {/* Submenu for Signup */}
-                <div className="absolute right-0 top-full pt-2 w-56 hidden group-hover:block transition-all">
-                  <div className="bg-white rounded-2xl border border-sky-100 p-2 shadow-xl backdrop-blur-md">
-                    <Link
-                      href="/signup/volunteer"
-                      className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-sky-50 transition text-left"
-                    >
-                      <Users className="w-4 h-4 text-sky-500 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-xs font-semibold text-slate-800">
-                          Join as Volunteer
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                          Find causes & gain verified hours
-                        </div>
-                      </div>
-                    </Link>
-
-                    <Link
-                      href="/signup/organisation"
-                      className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-sky-50 transition text-left"
-                    >
-                      <Building2 className="w-4 h-4 text-cyan-600 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-xs font-semibold text-slate-800">
-                          Register Organisation
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                          Post drives & manage volunteers
-                        </div>
-                      </div>
-                    </Link>
-                    <Link href="/signup/mentor" className="flex items-start gap-2.5 rounded-xl p-2.5 text-left transition hover:bg-sky-50">
-                      <Users className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600" />
-                      <div><div className="text-xs font-semibold text-slate-800">Join as Mentor</div><div className="text-[11px] text-slate-500">Share your experience with volunteers</div></div>
-                    </Link>
+                {joinDisclosureOpen && (
+                  <div
+                    id="join-disclosure-panel"
+                    className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl border border-[#bae6fd] p-2 shadow-xl z-50 animate-in fade-in duration-150 text-[#0f2a43]"
+                  >
+                    <ul className="space-y-1">
+                      <li>
+                        <Link
+                          href="/signup/volunteer"
+                          onClick={() => setJoinDisclosureOpen(false)}
+                          className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-[#f4f9ff] transition-colors text-left group"
+                        >
+                          <div className="p-1 rounded-lg bg-[#e0f2fe] text-[#0369a1] mt-0.5 shrink-0 group-hover:bg-[#0369a1] group-hover:text-white transition-colors">
+                            <Users className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-[#0f2a43] group-hover:text-[#0369a1]">
+                              Join as Volunteer
+                            </div>
+                            <div className="text-[11px] text-[#5a7b9d]">
+                              Find causes &amp; build verified hours
+                            </div>
+                          </div>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href="/signup/organisation"
+                          onClick={() => setJoinDisclosureOpen(false)}
+                          className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-[#f4f9ff] transition-colors text-left group"
+                        >
+                          <div className="p-1 rounded-lg bg-[#e0f2fe] text-[#0369a1] mt-0.5 shrink-0 group-hover:bg-[#0369a1] group-hover:text-white transition-colors">
+                            <Building2 className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-[#0f2a43] group-hover:text-[#0369a1]">
+                              Register Organisation
+                            </div>
+                            <div className="text-[11px] text-[#5a7b9d]">
+                              Post drives &amp; coordinate volunteers
+                            </div>
+                          </div>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href="/signup/mentor"
+                          onClick={() => setJoinDisclosureOpen(false)}
+                          className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-[#f4f9ff] transition-colors text-left group"
+                        >
+                          <div className="p-1 rounded-lg bg-[#e0f2fe] text-[#0369a1] mt-0.5 shrink-0 group-hover:bg-[#0369a1] group-hover:text-white transition-colors">
+                            <Users className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-[#0f2a43] group-hover:text-[#0369a1]">
+                              Join as Mentor
+                            </div>
+                            <div className="text-[11px] text-[#5a7b9d]">
+                              Guide volunteers in community impact
+                            </div>
+                          </div>
+                        </Link>
+                      </li>
+                    </ul>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Mobile menu trigger */}
-        <div className="flex md:hidden items-center gap-2">
+        {/* Mobile/Tablet menu trigger (below lg: <1024px) */}
+        <div className="flex lg:hidden items-center gap-2">
           <NotificationBell />
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl text-slate-700 hover:bg-sky-50"
-            aria-label="Toggle menu"
+            className="p-2.5 rounded-xl text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] cursor-pointer"
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation-drawer"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-6 h-6 text-[#38bdf8]" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile/Tablet Drawer (below lg) */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-sky-100 bg-white/95 backdrop-blur-md px-5 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200">
-          <div className="flex flex-col space-y-2.5">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-700 py-1.5 hover:text-sky-600"
-              >
-                {link.name}
-              </Link>
-            ))}
-          </div>
+        <div
+          id="mobile-navigation-drawer"
+          className="lg:hidden border-t border-white/15 bg-[#0c4a6e]/95 backdrop-blur-xl px-5 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200 text-white"
+        >
+          <nav className="flex flex-col space-y-1" aria-label="Mobile Navigation">
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(link.href);
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`text-sm font-semibold py-2.5 px-3 rounded-xl transition-colors ${
+                    isActive
+                      ? "bg-white/15 text-[#38bdf8]"
+                      : "text-white/85 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
+          </nav>
 
-          <div className="pt-4 border-t border-sky-100 flex flex-col gap-2.5">
+          <div className="pt-3 border-t border-white/15 flex flex-col gap-2.5">
             {user ? (
               <div className="space-y-2">
-                <div className="text-xs font-medium text-slate-500">
-                  Signed in as: <span className="font-semibold text-slate-800">{user.email}</span>
+                <div className="text-xs font-medium text-[#bae6fd]">
+                  Signed in as: <span className="font-semibold text-white">{user.email}</span>
                 </div>
                 <Link
                   href={dashboardHref}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-sky-200 px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-50"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-sm font-semibold text-white hover:bg-white/20"
                 >
-                  <User className="h-4 w-4" /> My Profile / Dashboard
+                  <User className="h-4 w-4 text-[#38bdf8]" /> My Dashboard
                 </Link>
                 <Button
                   variant="outline"
@@ -237,30 +321,33 @@ export function Navbar() {
                     logout();
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full text-red-600 border-red-200"
+                  className="w-full text-[#fca5a5] border-white/20 hover:bg-white/10 bg-transparent"
                 >
                   Sign Out
                 </Button>
               </div>
             ) : (
               <>
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full">
-                    Log in
-                  </Button>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 px-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-colors"
+                >
+                  Log in
                 </Link>
-                <Link href="/signup/volunteer" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="default" className="w-full bg-sky-500">
-                    Sign up as Volunteer
-                  </Button>
+                <Link
+                  href="/signup/volunteer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 px-4 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white text-sm font-bold shadow-sm transition-colors border border-white/20"
+                >
+                  Join as Volunteer
                 </Link>
-                <Link href="/signup/organisation" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="secondary" className="w-full text-sky-800">
-                    Register as Organisation
-                  </Button>
-                </Link>
-                <Link href="/signup/mentor" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full">Join as Mentor</Button>
+                <Link
+                  href="/signup/organisation"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white text-sm font-semibold transition-colors border border-white/20"
+                >
+                  Register Organisation
                 </Link>
               </>
             )}

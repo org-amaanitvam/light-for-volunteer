@@ -3,18 +3,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2",
+  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium select-none " +
+  "transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#0369a1] focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-sky-500 text-white shadow hover:bg-sky-600",
+          "border-transparent bg-[#0369a1] text-white shadow-none",
         secondary:
-          "border-transparent bg-sky-100 text-sky-800 hover:bg-sky-200",
+          "border-[#bae6fd] bg-[#e0f2fe] text-[#075985]",
+        outline:
+          "border-[#bae6fd] bg-white text-[#0f2a43]",
+        civic:
+          "border-[#bae6fd]/80 bg-[#f0f9ff] text-[#0369a1] font-semibold",
+        success:
+          "border-[#a7f3d0] bg-[#ecfdf5] text-[#065f46]",
+        warning:
+          "border-[#fde68a] bg-[#fffbeb] text-[#92400e]",
         destructive:
-          "border-transparent bg-red-500 text-white shadow hover:bg-red-600",
-        outline: "text-sky-700 border-sky-200 bg-sky-50/50",
-        success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+          "border-[#fecaca] bg-[#fef2f2] text-[#991b1b]",
       },
     },
     defaultVariants: {

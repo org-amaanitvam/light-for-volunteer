@@ -3,6 +3,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import type { BadgeItem } from "@/types/volunteer";
+import { Award, Lock, CheckCircle2, Calendar } from "lucide-react";
 
 interface BadgeShelfProps {
   badges: BadgeItem[];
@@ -17,8 +18,8 @@ export function BadgeShelf({
 }: BadgeShelfProps) {
   if (badges.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/20 p-8 text-center">
-        <p className="text-sm font-medium text-slate-500">{emptyMessage}</p>
+      <div className="rounded-2xl border border-dashed border-[#bae6fd] bg-[#f4f9ff]/40 p-8 text-center">
+        <p className="text-xs font-medium text-[#5a7b9d]">{emptyMessage}</p>
       </div>
     );
   }
@@ -38,45 +39,56 @@ export function BadgeShelf({
             key={badge.id}
             className={`relative flex flex-col justify-between rounded-2xl border p-5 transition-all duration-200 ${
               badge.earned
-                ? "border-sky-200 bg-gradient-to-br from-white via-sky-50/40 to-cyan-50/30 shadow-sm hover:shadow-md hover:border-sky-300"
-                : "border-slate-200/80 bg-slate-50/60 opacity-60 grayscale-[70%]"
+                ? "border-[#bae6fd] bg-white shadow-sm hover:border-[#7dd3fc] hover:shadow-md"
+                : "border-[#e2e8f0] bg-[#f8fafc] opacity-65"
             }`}
           >
             <div>
-              <div className="flex items-center justify-between mb-3">
+              {/* Badge Icon Seal */}
+              <div className="flex items-center justify-between mb-3.5">
                 <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl text-2xl shadow-sm ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-xl border transition ${
                     badge.earned
-                      ? "bg-white border border-sky-100 shadow-sky-500/10"
-                      : "bg-slate-200/80 border border-slate-300"
+                      ? "bg-[#e0f2fe] border-[#bae6fd] text-[#0369a1] shadow-sm"
+                      : "bg-[#e2e8f0] border-[#cbd5e1] text-[#94a3b8]"
                   }`}
                 >
-                  {badge.earned ? badge.iconUrl || "🏅" : "🔒"}
+                  {badge.earned ? (
+                    <Award className="h-6 w-6 text-[#0369a1]" />
+                  ) : (
+                    <Lock className="h-5 w-5 text-[#94a3b8]" />
+                  )}
                 </div>
                 {badge.category && (
-                  <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                  <span className="rounded bg-[#f1f5f9] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#475569]">
                     {badge.category}
                   </span>
                 )}
               </div>
 
-              <h4 className="text-base font-bold text-slate-900">{badge.title}</h4>
-              <p className="mt-1 text-xs text-slate-600 leading-relaxed">{badge.criteria}</p>
+              <h4 className="text-sm font-bold text-[#0f2a43] tracking-tight">{badge.title}</h4>
+              <p className="mt-1 text-xs text-[#5a7b9d] leading-relaxed">{badge.criteria}</p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100/80 flex items-center justify-between">
+            {/* Status Footer */}
+            <div className="mt-4 pt-3 border-t border-[#f1f5f9] flex items-center justify-between text-xs">
               {badge.earned ? (
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="success" className="text-[11px] font-semibold px-2 py-0.5">
-                    ✓ Unlocked
+                <div className="flex items-center gap-2">
+                  <Badge variant="success" className="text-[11px] font-bold px-2 py-0.5 gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>Unlocked</span>
                   </Badge>
                   {formattedDate && (
-                    <span className="text-[11px] text-slate-400">{formattedDate}</span>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-[#5a7b9d] tabular-nums">
+                      <Calendar className="h-3 w-3" />
+                      {formattedDate}
+                    </span>
                   )}
                 </div>
               ) : (
-                <Badge variant="outline" className="text-[11px] font-medium text-slate-500 bg-white">
-                  Locked
+                <Badge variant="outline" className="text-[11px] font-medium text-[#64748b] bg-white border-[#cbd5e1] gap-1">
+                  <Lock className="h-3 w-3" />
+                  <span>Locked</span>
                 </Badge>
               )}
             </div>

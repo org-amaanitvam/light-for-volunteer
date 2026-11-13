@@ -3,12 +3,26 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Mail, Lock, Phone, MapPin, ArrowRight, HeartHandshake, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  User,
+  Mail,
+  Lock,
+  Phone,
+  MapPin,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Award,
+  Clock,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
+import { sanitizeRedirect } from "@/lib/utils";
 
 export default function VolunteerSignupPage() {
   const router = useRouter();
@@ -16,6 +30,7 @@ export default function VolunteerSignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,24 +43,23 @@ export default function VolunteerSignupPage() {
 
     try {
       const res = await api.signup({
-        name,
+        name: name.trim(),
         email,
         password,
         role: "volunteer",
-        phone: phone || undefined,
-        city: city || undefined,
+        phone: phone.trim() || undefined,
+        city: city.trim() || undefined,
       });
       setUser(res.user);
       const requestedNext = new URLSearchParams(window.location.search).get("next");
-      const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
-        ? requestedNext
-        : "/volunteer/dashboard";
+      const sanitized = sanitizeRedirect(requestedNext);
+      const next = sanitized || "/volunteer/dashboard";
       router.push(next);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Failed to create volunteer account. Please check your inputs.");
+        setError("Failed to create volunteer account. Please verify all fields and try again.");
       }
     } finally {
       setLoading(false);
@@ -53,167 +67,268 @@ export default function VolunteerSignupPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-sky-50/50 via-white to-sky-50/30">
-      <div className="max-w-lg w-full space-y-8">
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2 mb-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
-              <HeartHandshake className="w-6 h-6" />
+    <div className="min-h-[85vh] bg-transparent py-10 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        {/* Left Volunteer Dossier Column */}
+        <div className="lg:col-span-5 bg-[#0C4A6E] rounded-3xl p-7 sm:p-9 text-white flex flex-col justify-between shadow-[0_12px_32px_rgba(12,74,110,0.15)] relative overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity pointer-events-none"
+            style={{ backgroundImage: "url('/Zephyr%20032.png')" }}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0C4A6E]/85 via-[#0C4A6E]/75 to-[#075985]/80 pointer-events-none" />
+
+          <div className="relative z-10 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-semibold tracking-wide uppercase text-[#E0F2FE]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#93C5FD]" />
+              Volunteer Passport Dossier
             </div>
-          </Link>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Join as a Volunteer
-          </h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Sign up to discover opportunities, earn badges, and give back
-          </p>
+
+            <div className="space-y-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                Build your verified civic service record
+              </h1>
+              <p className="text-sm text-[#E0F2FE]/90 leading-relaxed">
+                Join India&apos;s volunteer network. Track genuine community hours, receive verified completion certificates, and support grassroots change.
+              </p>
+            </div>
+
+            <div className="space-y-3.5 pt-2">
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div className="w-8 h-8 rounded-xl bg-[#0369A1] flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 text-[#E0F2FE]" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-white">Verified Impact Hours</div>
+                  <div className="text-[11px] text-[#E0F2FE]/80 mt-0.5">
+                    Service hours and drive contributions confirmed directly by host organisations.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div className="w-8 h-8 rounded-xl bg-[#0369A1] flex items-center justify-center shrink-0">
+                  <Award className="w-4 h-4 text-[#E0F2FE]" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-white">Auditable PDF Certificates</div>
+                  <div className="text-[11px] text-[#E0F2FE]/80 mt-0.5">
+                    Download official completion certificates with unique Certificate IDs issued upon drive completion.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div className="w-8 h-8 rounded-xl bg-[#0369A1] flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-[#E0F2FE]" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-white">Mentorship & Guidance</div>
+                  <div className="text-[11px] text-[#E0F2FE]/80 mt-0.5">
+                    Access experienced community mentors in education, environment, and civic engagement.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 pt-6 mt-6 border-t border-white/15 text-[11px] text-[#E0F2FE]/70 flex items-center justify-between">
+            <span>Free individual account</span>
+            <span>Zero advertising</span>
+          </div>
         </div>
 
-        <Card className="border-sky-100 shadow-xl shadow-sky-500/5">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-lg">Volunteer Registration</CardTitle>
-            <CardDescription className="text-xs">
-              Fill in your basic information to create your volunteer profile
-            </CardDescription>
-          </CardHeader>
+        {/* Right Form Card Column */}
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-[#BAE6FD] p-7 sm:p-9 shadow-[0_4px_24px_rgba(3,105,161,0.06)] flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-[#E0F2FE] pb-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-[#0F2A43] tracking-tight">Create Volunteer Account</h2>
+                <p className="text-xs text-[#475569] mt-0.5">Enter your details to initiate your volunteer ledger</p>
+              </div>
+              <span className="px-2.5 py-1 rounded-md bg-[#F4F9FF] border border-[#BAE6FD] text-[11px] font-semibold text-[#0369A1]">
+                Individual Member
+              </span>
+            </div>
 
-          <CardContent>
             {error && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="mb-5 p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] text-xs flex items-start gap-2.5"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0 text-[#DC2626] mt-0.5" />
+                <span className="font-medium leading-relaxed">{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Full Name
+                <label
+                  htmlFor="vol-name"
+                  className="block text-xs font-semibold text-[#0F2A43] mb-1.5"
+                >
+                  Full Name <span className="text-[#DC2626]">*</span>
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" />
                   <Input
+                    id="vol-name"
                     type="text"
                     required
+                    minLength={2}
+                    maxLength={120}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Aarav Sharma"
-                    className="pl-10 text-xs"
+                    placeholder="e.g. Aarav Sharma"
+                    className="pl-10"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Email Address
+                <label
+                  htmlFor="vol-email"
+                  className="block text-xs font-semibold text-[#0F2A43] mb-1.5"
+                >
+                  Email Address <span className="text-[#DC2626]">*</span>
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" />
                   <Input
+                    id="vol-email"
                     type="email"
                     required
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="aarav@example.com"
-                    className="pl-10 text-xs"
+                    className="pl-10"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Create Password
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="vol-password"
+                    className="block text-xs font-semibold text-[#0F2A43]"
+                  >
+                    Create Password <span className="text-[#DC2626]">*</span>
+                  </label>
+                  <span className="text-[11px] text-[#64748B]">Minimum 8 characters</span>
+                </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" />
                   <Input
-                    type="password"
+                    id="vol-password"
+                    type={showPassword ? "text" : "password"}
                     required
-                    minLength={6}
+                    minLength={8}
+                    maxLength={128}
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    className="pl-10 text-xs"
+                    placeholder="At least 8 characters"
+                    className="pl-10 pr-10"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#0F2A43] p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0369A1]"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Phone (Optional)
+                  <label
+                    htmlFor="vol-phone"
+                    className="block text-xs font-semibold text-[#0F2A43] mb-1.5"
+                  >
+                    Phone <span className="text-[11px] font-normal text-[#64748B]">(Optional)</span>
                   </label>
                   <div className="relative">
-                    <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" />
                     <Input
+                      id="vol-phone"
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+91 9876543210"
-                      className="pl-10 text-xs"
+                      placeholder="+91 98765 43210"
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    City (Optional)
+                  <label
+                    htmlFor="vol-city"
+                    className="block text-xs font-semibold text-[#0F2A43] mb-1.5"
+                  >
+                    City <span className="text-[11px] font-normal text-[#64748B]">(Optional)</span>
                   </label>
                   <div className="relative">
-                    <MapPin className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <MapPin className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" />
                     <Input
+                      id="vol-city"
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="Delhi, Mumbai, Bengaluru..."
-                      className="pl-10 text-xs"
+                      placeholder="e.g. Mumbai, Bengaluru"
+                      className="pl-10"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-sky-50/70 text-xs text-sky-800 space-y-1">
-                <div className="font-semibold flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-sky-600" /> Volunteer Perks
-                </div>
-                <p className="text-[11px] text-sky-700">
-                  Track volunteer hours, earn verified achievement certificates, and connect directly with social impact leaders.
-                </p>
-              </div>
-
               <Button
                 type="submit"
                 disabled={loading}
-                variant="gradient"
-                className="w-full mt-2 h-11 text-sm font-semibold"
+                variant="default"
+                className="w-full mt-2 h-11 text-sm font-semibold tracking-wide"
               >
-                {loading ? "Creating Account..." : "Create Volunteer Account"}{" "}
+                {loading ? "Creating Volunteer Account..." : "Complete Volunteer Registration"}
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             </form>
+          </div>
 
-            <div className="mt-6 text-center border-t border-sky-100 pt-5">
-              <p className="text-xs text-slate-500">
-                Are you an NGO or non-profit?{" "}
-                <Link
-                  href="/signup/organisation"
-                  className="font-semibold text-sky-600 hover:text-sky-700 underline"
-                >
-                  Register Organisation here
-                </Link>
-              </p>
-              <p className="text-xs text-slate-500 mt-2">
-                Already have an account?{" "}
-                <Link
-                  href="/login"
-                  className="font-semibold text-sky-600 hover:text-sky-700 underline"
-                >
-                  Sign in
-                </Link>
-              </p>
+          <div className="mt-6 pt-5 border-t border-[#E0F2FE]">
+            <p className="text-xs text-[#475569] text-center mb-2.5 font-medium">
+              Already have an account, or registering for another role?
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
+              <Link
+                href="/login"
+                className="font-semibold text-[#0369A1] hover:text-[#075985] underline underline-offset-2"
+              >
+                Sign In to Existing Account
+              </Link>
+              <span className="text-[#CBD5E1]" aria-hidden="true">
+                •
+              </span>
+              <Link
+                href="/signup/organisation"
+                className="font-semibold text-[#0369A1] hover:text-[#075985] underline underline-offset-2"
+              >
+                Register an Organisation
+              </Link>
+              <span className="text-[#CBD5E1]" aria-hidden="true">
+                •
+              </span>
+              <Link
+                href="/signup/mentor"
+                className="font-semibold text-[#0369A1] hover:text-[#075985] underline underline-offset-2"
+              >
+                Apply as Mentor
+              </Link>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
