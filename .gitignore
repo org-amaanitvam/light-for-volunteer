@@ -16,3 +16,9 @@ Thumbs.db
 test/*.xml
 jest*.xml
 .neon
+
+# Local tooling & scratch
+scratch/
+.impeccable/
+.ralphy/
+

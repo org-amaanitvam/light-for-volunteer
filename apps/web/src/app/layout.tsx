@@ -22,10 +22,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} min-h-screen flex flex-col bg-slate-50/50 selection:bg-sky-200 selection:text-sky-900`}>
+      <body className={`${inter.className} min-h-screen flex flex-col relative selection:bg-sky-200 selection:text-sky-900`}>
+        {/* WCAG 2.4.1 Bypass Blocks - Skip to content */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-sky-700 focus:text-white focus:rounded-xl focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 font-medium text-sm"
+        >
+          Skip to main content
+        </a>
+
+        {/* Global Platform-Wide Atmospheric Background (Zephyr 032.png) */}
+        <div
+          className="fixed inset-0 -z-50 bg-cover pointer-events-none"
+          style={{
+            backgroundImage: "url('/Zephyr%20032.png')",
+            backgroundPosition: "center 15%",
+          }}
+          aria-hidden="true"
+        >
+          {/* Subtle cinematic ambient wash */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0c4a6e]/15 via-white/80 to-[#f8fafc]" />
+        </div>
+
         <AuthProvider>
-          <Suspense fallback={<div className="h-16 border-b border-slate-100 bg-white" />}><Navbar /></Suspense>
-          <main className="flex-1">{children}</main>
+          <Suspense fallback={<div className="h-18 border-b border-white/10 bg-[#0c4a6e]" />}><Navbar /></Suspense>
+          <main id="main-content" tabIndex={-1} className="flex-1 outline-none">{children}</main>
           <Footer />
           <ChatWindow />
         </AuthProvider>

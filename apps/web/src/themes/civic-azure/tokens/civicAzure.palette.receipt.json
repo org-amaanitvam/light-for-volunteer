@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "recipe": "astryx-oklch-v1",
+  "generatorVersion": "palette-generator-v1",
+  "candidateFormatVersion": "palette-typescript-v1",
+  "candidateSha256": "20a5268cbcc844642aa589f9b5e0d98f78b671889b197e6ed369d7bc588556d8",
+  "preview": {
+    "version": "palette-preview-v1",
+    "sha256": "ba6d4bc41b05e6b168306c1048e1b8bd72803cfb9ff35af017d1f8b26079a415"
+  },
+  "request": {
+    "recipe": "astryx-oklch-v1",
+    "vibrancy": 50,
+    "neutralProfile": "neutral-v1",
+    "modeStrategy": "light-and-dark",
+    "stops": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      55,
+      60,
+      65,
+      70,
+      75,
+      80,
+      85,
+      90,
+      95,
+      100
+    ],
+    "families": [
+      {
+        "id": "civic",
+        "name": "civic",
+        "seed": "#0369a1",
+        "kind": "chromatic",
+        "anchors": []
+      }
+    ]
+  },
+  "diagnostics": {
+    "families": {
+      "civic": {
+        "light": {
+          "monotonic": true,
+          "minimumAdjacentDeltaE": 4.145720742183582,
+          "maximumAdjacentDeltaE": 18.565734384765467,
+          "maximumHueDrift": 6.358281000663851,
+          "hueIdentityRisk": null,
+          "gamutMappedStops": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            75,
+            80,
+            85,
+            90,
+            95,
+            100
+          ],
+          "anchors": []
+        },
+        "dark": {
+          "monotonic": true,
+          "minimumAdjacentDeltaE": 4.145720742183582,
+          "maximumAdjacentDeltaE": 18.565734384765467,
+          "maximumHueDrift": 6.762601512532228,
+          "hueIdentityRisk": null,
+          "gamutMappedStops": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            80,
+            85,
+            90,
+            95,
+            100
+          ],
+          "anchors": []
+        }
+      }
+    },
+    "coordination": [
+      {
+        "mode": "light",
+        "stop": 50,
+        "closestFamilies": null,
+        "minimumFamilyDeltaE": null,
+        "strongestFamily": "civic",
+        "weakestFamily": "civic",
+        "chromaRatio": 1
+      },
+      {
+        "mode": "dark",
+        "stop": 50,
+        "closestFamilies": null,
+        "minimumFamilyDeltaE": null,
+        "strongestFamily": "civic",
+        "weakestFamily": "civic",
+        "chromaRatio": 1
+      }
+    ]
+  }
+}

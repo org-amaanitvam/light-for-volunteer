@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@astryxdesign/core": "^0.7.13",
+    "@astryxdesign/theme-neutral": "^0.7.13",
+    "@stylexjs/stylex": "^0.19.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.58.0",
@@ -19,6 +22,7 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@astryxdesign/cli": "^0.7.13",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
