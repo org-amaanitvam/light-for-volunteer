@@ -103,35 +103,38 @@ export default function MentorProfilePage() {
         </div>
 
         {/* Header Block with Consistent Zephyr Horizon */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-[#0c4a6e] p-6 shadow-sm sm:p-8">
-          <div
-            className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
-            style={{
-              backgroundImage: "url('/Zephyr%20032.png')",
-              backgroundPosition: "center 25%",
-            }}
-            aria-hidden="true"
-          />
-          <div
-            className="absolute inset-0 bg-gradient-to-r from-[#0c4a6e]/95 via-[#075985]/80 to-[#0c4a6e]/70 pointer-events-none"
-            aria-hidden="true"
-          />
-          <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-white/15 pb-6">
-            <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-semibold text-[#e0f2fe]">
-                <UserCheck className="h-3.5 w-3.5 text-[#38bdf8]" />
-                <span>Mentor Identity Ledger</span>
+        <div className="relative overflow-hidden rounded-3xl border border-[#bae6fd]/80 bg-white p-6 shadow-xs sm:p-8">
+          {/* Subtle top horizon image strip */}
+          <div className="relative -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 mb-6 p-6 sm:p-8 border-b border-[#bae6fd]/80 overflow-hidden bg-white">
+            <div
+              className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
+              style={{
+                backgroundImage: "url('/Zephyr%20032.png')",
+                backgroundPosition: "center 22%",
+              }}
+              aria-hidden="true"
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/45 pointer-events-none"
+              aria-hidden="true"
+            />
+            <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#bae6fd] bg-white/95 backdrop-blur-md px-3 py-1 text-xs font-semibold text-[#0369a1]">
+                  <UserCheck className="h-3.5 w-3.5 text-[#0284c7]" />
+                  <span>Mentor Identity Ledger</span>
+                </div>
+                <h1 className="mt-3 text-2xl font-black tracking-tight text-[#0f2a43] sm:text-3xl">
+                  Mentor Profile
+                </h1>
+                <p className="mt-1 text-xs leading-relaxed text-[#335577] sm:text-sm">
+                  Add your focus areas and guidance scope so volunteers can discover and contact you.
+                </p>
               </div>
-              <h1 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
-                Mentor Profile
-              </h1>
-              <p className="mt-1 text-xs leading-relaxed text-[#e0f2fe]/90 sm:text-sm">
-                Add your focus areas and guidance scope so volunteers can discover and contact you.
-              </p>
-            </div>
 
-            <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-[#38bdf8]">
-              <ShieldCheck className="h-6 w-6" />
+              <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 backdrop-blur-md border border-[#bae6fd] text-[#0369a1]">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
             </div>
           </div>
 

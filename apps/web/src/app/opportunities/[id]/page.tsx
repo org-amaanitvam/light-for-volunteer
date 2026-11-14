@@ -331,46 +331,47 @@ function OpportunityDetailsContent() {
     <main className="min-h-screen bg-transparent px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Architectural Horizon Header for Opportunity Dossier */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-[#0c4a6e] p-5 sm:p-6 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-[#bae6fd]/80 bg-white p-5 sm:p-6 shadow-sm">
           <div
             className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
             style={{
               backgroundImage: "url('/Zephyr%20032.png')",
-              backgroundPosition: "center 25%",
+              backgroundPosition: "center 22%",
             }}
             aria-hidden="true"
           />
+          {/* Daylight gradient wash preserving sky and hill details */}
           <div
-            className="absolute inset-0 bg-gradient-to-r from-[#0c4a6e]/95 via-[#075985]/80 to-[#0c4a6e]/70 pointer-events-none"
+            className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/45 pointer-events-none"
             aria-hidden="true"
           />
           <div className="relative z-10">
             {/* Breadcrumb Navigation */}
             <nav aria-label="Breadcrumb">
-              <ol className="flex items-center gap-2 text-xs font-semibold text-[#bae6fd]">
+              <ol className="flex items-center gap-2 text-xs font-semibold text-[#5a7b9d]">
                 <li>
                   <Link
                     href="/opportunities"
-                    className="inline-flex items-center gap-1.5 text-[#bae6fd] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] rounded"
+                    className="inline-flex items-center gap-1.5 text-[#0369a1] hover:text-[#075985] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0369a1] rounded"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                     All Opportunities
                   </Link>
                 </li>
-                <li aria-hidden="true" className="text-white/40">
+                <li aria-hidden="true" className="text-[#bae6fd]">
                   /
                 </li>
-                <li className="text-white truncate max-w-xs sm:max-w-md font-bold">
+                <li className="text-[#0f2a43] truncate max-w-xs sm:max-w-md font-bold">
                   {opportunity.category}
                 </li>
               </ol>
             </nav>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-[#0f2a43] tracking-tight">
                 {opportunity.title}
               </h1>
-              <span className="text-xs font-semibold text-[#e0f2fe] bg-white/15 backdrop-blur-md border border-white/25 px-3 py-1 rounded-full shadow-xs">
+              <span className="text-xs font-semibold text-[#0369a1] bg-white/90 backdrop-blur-md border border-[#bae6fd] px-3 py-1 rounded-full shadow-xs">
                 {opportunity.organisation?.org_name || "Community Organisation"}
               </span>
             </div>

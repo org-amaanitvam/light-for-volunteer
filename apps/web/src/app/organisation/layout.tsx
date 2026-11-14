@@ -33,28 +33,29 @@ export default function OrganisationLayout({ children }: { children: ReactNode }
       />
       <main className="flex-1">
         {/* Consistent Organisation Workspace Horizon Banner (Zephyr 032.png) */}
-        <div className="relative overflow-hidden border-b border-white/20 bg-[#0c4a6e] py-6 px-4 sm:px-6 lg:px-8 mb-6 shadow-sm">
+        <div className="relative overflow-hidden border-b border-[#bae6fd]/80 bg-white py-6 px-4 sm:px-6 lg:px-8 mb-6 shadow-sm">
           <div
             className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
             style={{
               backgroundImage: "url('/Zephyr%20032.png')",
-              backgroundPosition: "center 25%",
+              backgroundPosition: "center 22%",
             }}
             aria-hidden="true"
           />
+          {/* Daylight gradient overlay */}
           <div
-            className="absolute inset-0 bg-gradient-to-r from-[#0c4a6e]/95 via-[#075985]/80 to-[#0c4a6e]/70 pointer-events-none"
+            className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/45 pointer-events-none"
             aria-hidden="true"
           />
           <div className="relative z-10 max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-bold text-[#e0f2fe] mb-1.5 shadow-xs">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#bae6fd] bg-white/95 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-bold text-[#0369a1] mb-1.5 shadow-xs">
                 <span>Institutional Partner Console</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-[#0f2a43] tracking-tight">
                 {orgData?.orgName || user?.name || "Organisation Workspace"}
               </h1>
-              <p className="text-xs text-[#e0f2fe]/90 mt-0.5">
+              <p className="text-xs text-[#335577] mt-0.5">
                 Drive publishing, attendance ledger verification, and credential issuance.
               </p>
             </div>

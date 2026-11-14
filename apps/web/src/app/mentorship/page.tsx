@@ -46,32 +46,37 @@ export default function MentorshipPage() {
   return (
     <main className="min-h-screen bg-transparent text-[#0f2a43]">
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-[#bae6fd]/40 bg-[#0c4a6e] py-14 sm:py-16">
+      <section className="relative overflow-hidden border-b border-[#bae6fd]/80 bg-white py-12 sm:py-16">
         <div
           className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
           style={{
             backgroundImage: "url('/Zephyr%20032.png')",
-            backgroundPosition: "center 25%",
+            backgroundPosition: "center 22%",
           }}
           aria-hidden="true"
         />
+        {/* Soft daylight gradient overlay preserving sky, clouds and landscape */}
         <div
-          className="absolute inset-0 bg-gradient-to-r from-[#0c4a6e]/95 via-[#075985]/80 to-[#0c4a6e]/70 pointer-events-none"
+          className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/45 pointer-events-none"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white via-white/70 to-transparent pointer-events-none"
           aria-hidden="true"
         />
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-[#e0f2fe] shadow-xs">
-              <Users className="h-3.5 w-3.5 text-[#38bdf8]" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#bae6fd] bg-white/95 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-[#0369a1] shadow-xs">
+              <Users className="h-3.5 w-3.5 text-[#0284c7]" />
               <span>Civic Mentorship Ledger</span>
             </div>
 
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Learn from people who care.
+            <h1 className="mt-4 text-3xl font-black tracking-tight text-[#0f2a43] sm:text-4xl lg:text-5xl">
+              Learn from people who <span className="text-[#0284c7]">care</span>.
             </h1>
 
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#e0f2fe]/90 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#335577] sm:text-base">
               Connect with registered mentors who can share guidance on volunteering, skills, and social impact work.
             </p>
           </ScrollReveal>
