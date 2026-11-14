@@ -93,7 +93,7 @@ export function NotificationBell() {
 
   return (
     <div className="relative">
-      <button onClick={() => { setIsOpen((open) => !open); if (!isOpen) void load().catch(() => undefined); }} className="relative rounded-full p-2 text-white/85 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#38bdf8]" aria-label="View notifications">
+      <button onClick={() => { setIsOpen((open) => !open); if (!isOpen) void load().catch(() => undefined); }} className="relative rounded-full p-2 text-[#335577] transition-colors hover:bg-[#f4f9ff] hover:text-[#0369a1] focus:outline-none focus:ring-2 focus:ring-[#0369a1]" aria-label="View notifications">
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-sky-500 px-1 text-[10px] font-bold text-white">{unreadCount > 99 ? "99+" : unreadCount}</span>}
       </button>

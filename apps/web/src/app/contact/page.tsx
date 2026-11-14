@@ -24,30 +24,35 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-[#f8fbff]">
       {/* Architectural Header Section with Zephyr Background */}
-      <section className="relative overflow-hidden border-b border-[#bae6fd]/40 bg-[#0c4a6e] py-14 sm:py-16">
+      <section className="relative overflow-hidden border-b border-[#bae6fd]/80 bg-white py-12 sm:py-16">
         <div
           className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
           style={{
             backgroundImage: "url('/Zephyr%20032.png')",
-            backgroundPosition: "center 25%",
+            backgroundPosition: "center 22%",
           }}
           aria-hidden="true"
         />
+        {/* Daylight gradient overlay */}
         <div
-          className="absolute inset-0 bg-gradient-to-r from-[#0c4a6e]/95 via-[#075985]/80 to-[#0c4a6e]/70 pointer-events-none"
+          className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/45 pointer-events-none"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#f8fbff] via-[#f8fbff]/70 to-transparent pointer-events-none"
           aria-hidden="true"
         />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="text-center max-w-2xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#e0f2fe] text-xs font-semibold mb-4 shadow-xs">
-                <MessageSquare className="w-4 h-4 text-[#38bdf8]" /> Get in Touch
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#bae6fd] text-[#0369a1] text-xs font-semibold mb-4 shadow-xs">
+                <MessageSquare className="w-4 h-4 text-[#0284c7]" /> Get in Touch
               </div>
-              <h1 className="text-4xl font-black text-white tracking-tight sm:text-5xl">
-                We’d love to hear from you
+              <h1 className="text-4xl font-black text-[#0f2a43] tracking-tight sm:text-5xl">
+                We’d love to <span className="text-[#0284c7]">hear from you</span>
               </h1>
-              <p className="mt-4 text-[#e0f2fe]/90 text-sm sm:text-base">
+              <p className="mt-4 text-[#335577] text-sm sm:text-base">
                 Have questions about volunteer drives, organisation onboarding, or partnerships? Reach out to our community team.
               </p>
             </div>

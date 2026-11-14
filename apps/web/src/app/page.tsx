@@ -110,60 +110,60 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       {/* 
-        HERO SECTION — Cinematic Civic Azure Treatment (Zephyr 032.png)
-        Full-Width Natural Landscape + Deep Blue Cinematic Color Treatment + White Typography
+        HERO SECTION — Balanced White & Blue Civic Design
+        Preserved Zephyr 032.png Landscape + Natural Sky & Hills + High-Contrast Typography
       */}
-      <section className="relative overflow-hidden border-b border-[#bae6fd]/40 pt-16 pb-20 sm:pt-20 sm:pb-28 lg:pt-24 lg:pb-32">
+      <section className="relative overflow-hidden border-b border-[#bae6fd]/80 pt-8 pb-12 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-28">
         {/* Full-Width Responsive Hero Background (Zephyr 032.png) */}
         <div
-          className="absolute inset-0 z-0 bg-cover bg-no-repeat pointer-events-none bg-[position:center_20%] sm:bg-[position:center_28%]"
+          className="absolute inset-0 z-0 bg-cover bg-no-repeat pointer-events-none bg-[position:center_18%] sm:bg-[position:center_25%]"
           style={{
             backgroundImage: "url('/Zephyr%20032.png')",
           }}
           aria-hidden="true"
         >
-          {/* Deep Blue Cinematic Color Treatment preserving sky, sunlight, clouds, and green rolling hill */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0c4a6e]/80 via-[#075985]/60 to-[#0c4a6e]/90" />
-          {/* Subtle radial focus vignette to enrich photographic depth and ensure contrast */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_65%_at_50%_35%,rgba(7,89,133,0.3)_0%,rgba(12,74,110,0.7)_100%)]" />
-          {/* Intentional clean transition from the deep photographic section to clean white content */}
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/70 to-transparent pointer-events-none" />
+          {/* Natural atmospheric overlay: preserves vibrant blue sky, cumulus clouds, and green rolling landscape */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/70" />
+          {/* Soft central radial wash to guarantee AAA text contrast while keeping natural landscape visible on sides */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_75%_65%_at_50%_35%,rgba(255,255,255,0.85)_0%,rgba(255,255,255,0.3)_60%,transparent_100%)]" />
+          {/* Clean seamless transition into Featured Opportunities */}
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/80 to-transparent pointer-events-none" />
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center flex flex-col items-center">
           <ScrollReveal direction="up" className="w-full flex flex-col items-center">
             {/* Civic Trust Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-[#e0f2fe] mb-6 shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#38bdf8] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#38bdf8]" />
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#bae6fd] text-[11px] sm:text-xs font-semibold text-[#0369a1] mb-4 sm:mb-6 shadow-xs max-w-full text-center">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0284c7] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0369a1]" />
               </span>
-              <span>Amaanitvam Foundation Initiative</span>
-              <span className="text-white/30">|</span>
-              <span className="text-[#bae6fd] font-medium">2026 Social Impact Drives Live</span>
+              <span className="truncate">Amaanitvam Foundation Initiative</span>
+              <span className="text-[#bae6fd] hidden sm:inline">|</span>
+              <span className="text-[#075985] font-medium hidden sm:inline">2026 Social Impact Drives Live</span>
             </div>
 
-            {/* Centered White Headline with Strong Hierarchy */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12] text-balance drop-shadow-sm">
+            {/* Centered Headline with Balanced Hierarchy */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0c4a6e] leading-[1.15] sm:leading-[1.12] text-balance">
               Be the Light in Someone&apos;s World.{" "}
-              <span className="text-[#38bdf8] block sm:inline">
+              <span className="text-[#0284c7] block sm:inline">
                 Volunteer for Causes That Matter.
               </span>
             </h1>
 
             {/* Centered Subtitle */}
-            <p className="mt-6 text-base sm:text-lg text-[#e0f2fe]/95 leading-relaxed max-w-2xl mx-auto font-normal drop-shadow-xs">
+            <p className="mt-3.5 sm:mt-5 text-sm sm:text-base text-[#335577] leading-relaxed max-w-2xl mx-auto font-normal">
               Discover verified volunteer opportunities, internships, and skill-based mentorships. Join thousands of passionate individuals collaborating with registered social impact organisations.
             </p>
 
             {/* Centered Primary CTAs */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full sm:w-auto">
+            <div className="mt-5 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3.5 w-full sm:w-auto">
               <Link
                 href="/signup/volunteer"
                 className={buttonVariants({
                   size: "lg",
                   variant: "default",
-                  className: "gap-2 px-8 justify-center bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-[0_8px_25px_rgba(2,132,199,0.4)] hover:shadow-[0_10px_30px_rgba(2,132,199,0.5)] transition-all font-bold w-full sm:w-auto border border-white/20",
+                  className: "gap-2 px-7 sm:px-8 justify-center bg-[#0369a1] hover:bg-[#075985] text-white shadow-xs transition-all font-bold w-full sm:w-auto h-11 sm:h-12",
                 })}
               >
                 Start Volunteering <ArrowRight className="w-4 h-4" />
@@ -174,15 +174,15 @@ export default function HomePage() {
                 className={buttonVariants({
                   size: "lg",
                   variant: "secondary",
-                  className: "gap-2 justify-center bg-white/10 hover:bg-white/20 text-white border border-white/25 backdrop-blur-md shadow-xs transition-all font-semibold w-full sm:w-auto",
+                  className: "gap-2 justify-center bg-white hover:bg-[#f0f9ff] text-[#0f2a43] border border-[#bae6fd] shadow-xs transition-all font-semibold w-full sm:w-auto h-11 sm:h-12",
                 })}
               >
-                <Building2 className="w-4 h-4 text-[#38bdf8]" /> Post Opportunities (For NGOs)
+                <Building2 className="w-4 h-4 text-[#0369a1]" /> Post Opportunities (For NGOs)
               </Link>
             </div>
 
             {/* Centered Search Console */}
-            <div className="mt-10 w-full max-w-3xl mx-auto rounded-2xl border border-white/30 bg-white/95 backdrop-blur-xl p-4 sm:p-5 shadow-[0_20px_50px_rgba(12,74,110,0.3)] text-left">
+            <div className="mt-6 sm:mt-10 w-full max-w-3xl mx-auto rounded-2xl border border-[#bae6fd] bg-white/95 backdrop-blur-md p-3.5 sm:p-5 shadow-[0_12px_36px_rgba(15,42,67,0.08)] text-left">
               <form onSubmit={handleSearchSubmit} role="search" className="flex flex-col sm:flex-row items-center gap-2.5">
                 <div className="relative flex-1 w-full">
                   <label htmlFor="homepage-search" className="sr-only">
@@ -207,7 +207,7 @@ export default function HomePage() {
               </form>
 
               {/* Horizontal Category Quick Filters */}
-              <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-3.5 overflow-x-auto pb-1 text-xs [scrollbar-width:none] [-ms-overflow-style:none]">
+              <div className="flex items-center gap-1.5 mt-3 sm:mt-3.5 overflow-x-auto pb-1 text-xs [scrollbar-width:none] [-ms-overflow-style:none]">
                 <span className="text-[#0c4a6e] font-bold text-xs shrink-0 mr-1">
                   Popular:
                 </span>

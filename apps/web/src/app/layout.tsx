@@ -40,12 +40,12 @@ export default function RootLayout({
           }}
           aria-hidden="true"
         >
-          {/* Subtle cinematic ambient wash */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0c4a6e]/15 via-white/80 to-[#f8fafc]" />
+          {/* Balanced White & Blue atmospheric wash */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/75 to-[#f8fafc]" />
         </div>
 
         <AuthProvider>
-          <Suspense fallback={<div className="h-18 border-b border-white/10 bg-[#0c4a6e]" />}><Navbar /></Suspense>
+          <Suspense fallback={<div className="h-16 sm:h-18 border-b border-[#bae6fd]/80 bg-white" />}><Navbar /></Suspense>
           <main id="main-content" tabIndex={-1} className="flex-1 outline-none">{children}</main>
           <Footer />
           <ChatWindow />

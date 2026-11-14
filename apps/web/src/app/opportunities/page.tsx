@@ -311,32 +311,37 @@ function OpportunitiesContent() {
         ARCHITECTURAL CATALOGUE HEADER 
         Clear civic positioning, search input, and cause category quick pills
       */}
-      <section className="relative overflow-hidden border-b border-[#bae6fd]/40 bg-[#0c4a6e]">
+      <section className="relative overflow-hidden border-b border-[#bae6fd]/80 bg-white">
         <div
           className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
           style={{
             backgroundImage: "url('/Zephyr%20032.png')",
-            backgroundPosition: "center 25%",
+            backgroundPosition: "center 22%",
           }}
           aria-hidden="true"
         />
+        {/* Soft balanced daylight gradient wash preserving landscape details */}
         <div
-          className="absolute inset-0 bg-gradient-to-r from-[#0c4a6e]/95 via-[#075985]/80 to-[#0c4a6e]/70 pointer-events-none"
+          className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/45 pointer-events-none"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white via-white/70 to-transparent pointer-events-none"
           aria-hidden="true"
         />
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 sm:py-14 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-[#e0f2fe] shadow-xs">
-              <HeartHandshake className="w-3.5 h-3.5 text-[#38bdf8]" />
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#bae6fd] bg-white/95 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-[#0369a1] shadow-xs">
+              <HeartHandshake className="w-3.5 h-3.5 text-[#0284c7]" />
               <span>Amaanitvam Foundation Civic Directory</span>
             </div>
 
-            <h1 className="max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl">
-              Explore Opportunities &amp; Civic Drives
+            <h1 className="max-w-3xl text-3xl font-black tracking-tight text-[#0f2a43] sm:text-4xl">
+              Explore Opportunities &amp; <span className="text-[#0284c7]">Civic Drives</span>
             </h1>
 
-            <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-[#e0f2fe]/90 sm:text-base">
+            <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-[#335577] sm:text-base">
               Discover verified volunteering opportunities, internships, and mentorships hosted by registered social impact organisations. Apply directly and earn auditable service credentials.
             </p>
 
@@ -351,7 +356,7 @@ function OpportunitiesContent() {
                   value={query}
                   onChange={(e) => setUserQuery(e.target.value)}
                   placeholder="Search by cause, role, organisation, skill, or city..."
-                  className="h-11 w-full rounded-xl border border-white/30 bg-white/95 backdrop-blur-md pl-10 pr-4 text-sm text-[#0f2a43] placeholder:text-[#5a7b9d] outline-none transition focus:border-[#38bdf8] focus:bg-white focus:ring-2 focus:ring-[#38bdf8]/30 shadow-xs"
+                  className="h-11 w-full rounded-xl border border-[#bae6fd] bg-white/95 backdrop-blur-md pl-10 pr-4 text-sm text-[#0f2a43] placeholder:text-[#5a7b9d] outline-none transition focus:border-[#0369a1] focus:bg-white focus:ring-2 focus:ring-[#0369a1]/20 shadow-xs"
                 />
               </div>
 
@@ -361,7 +366,7 @@ function OpportunitiesContent() {
                     .getElementById("catalogue-results")
                     ?.scrollIntoView({ behavior: "smooth" })
                 }
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] px-6 font-bold text-white shadow-sm transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] cursor-pointer border border-white/20"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0369a1] hover:bg-[#075985] px-6 font-bold text-white shadow-xs transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0369a1] cursor-pointer"
               >
                 Search Drives <ArrowRight size={16} />
               </button>
@@ -376,8 +381,8 @@ function OpportunitiesContent() {
                 }}
                 className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                   !category && !locationType
-                    ? "border-white bg-white text-[#0c4a6e] font-bold shadow-xs"
-                    : "border-white/20 bg-white/10 backdrop-blur-xs text-[#e0f2fe] hover:bg-white/20 hover:text-white"
+                    ? "border-[#0369a1] bg-[#0369a1] text-white font-bold shadow-xs"
+                    : "border-[#bae6fd] bg-white/90 backdrop-blur-xs text-[#335577] hover:bg-[#f4f9ff] hover:text-[#0369a1]"
                 }`}
               >
                 All Causes
@@ -393,8 +398,8 @@ function OpportunitiesContent() {
                     }}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                       isSelected
-                        ? "border-white bg-white text-[#0c4a6e] font-bold shadow-xs"
-                        : "border-white/20 bg-white/10 backdrop-blur-xs text-[#e0f2fe] hover:bg-white/20 hover:text-white"
+                        ? "border-[#0369a1] bg-[#0369a1] text-white font-bold shadow-xs"
+                        : "border-[#bae6fd] bg-white/90 backdrop-blur-xs text-[#335577] hover:bg-[#f4f9ff] hover:text-[#0369a1]"
                     }`}
                   >
                     {item}
