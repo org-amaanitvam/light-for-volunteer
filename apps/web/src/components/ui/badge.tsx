@@ -4,18 +4,18 @@ import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
   "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium select-none " +
-  "transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#0369a1] focus:ring-offset-2",
+  "transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#26505c] focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-[#0369a1] text-white shadow-none",
+          "border-transparent bg-[#26505c] text-white shadow-none font-semibold",
         secondary:
-          "border-[#bae6fd] bg-[#e0f2fe] text-[#075985]",
+          "border-[#e5e7eb] bg-[#edf3f4] text-[#26505c] font-semibold",
         outline:
-          "border-[#bae6fd] bg-white text-[#0f2a43]",
+          "border-[#e5e7eb] bg-white text-[#1f2d35]",
         civic:
-          "border-[#bae6fd]/80 bg-[#f0f9ff] text-[#0369a1] font-semibold",
+          "border-[#26505c]/20 bg-[#edf3f4] text-[#26505c] font-semibold",
         success:
           "border-[#a7f3d0] bg-[#ecfdf5] text-[#065f46]",
         warning:

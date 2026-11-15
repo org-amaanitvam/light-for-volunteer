@@ -45,9 +45,9 @@ export const metadata = {
 
 export default function BlogPage() {
   return (
-    <div className="min-h-screen bg-[#f8fbff]">
+    <div className="min-h-screen bg-transparent">
       {/* Architectural Header Section with Zephyr Background */}
-      <section className="relative overflow-hidden border-b border-[#bae6fd]/80 bg-white py-12 sm:py-16">
+      <section className="relative overflow-hidden border-b border-[#e5e7eb] bg-white py-12 sm:py-16">
         <div
           className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
           style={{
@@ -62,20 +62,20 @@ export default function BlogPage() {
           aria-hidden="true"
         />
         <div
-          className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#f8fbff] via-[#f8fbff]/70 to-transparent pointer-events-none"
+          className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white via-white/70 to-transparent pointer-events-none"
           aria-hidden="true"
         />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="text-center max-w-2xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#bae6fd] text-[#0369a1] text-xs font-semibold mb-4 shadow-xs">
-                <BookOpen className="w-4 h-4 text-[#0284c7]" /> Resources &amp; Stories
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#e5e7eb] text-[#26505c] text-xs font-semibold mb-4 shadow-xs">
+                <BookOpen className="w-4 h-4 text-[#f3b61f]" /> Resources &amp; Stories
               </div>
-              <h1 className="text-4xl font-black text-[#0f2a43] tracking-tight sm:text-5xl">
-                Knowledge for <span className="text-[#0284c7]">Changemakers</span>
+              <h1 className="text-4xl font-black text-[#1f2d35] tracking-tight sm:text-5xl">
+                Knowledge for <span className="text-[#26505c]">Changemakers</span>
               </h1>
-              <p className="mt-4 text-[#335577] text-sm sm:text-base">
+              <p className="mt-4 text-[#356775] text-sm sm:text-base">
                 Discover volunteer best practices, NGO toolkits, and real stories of social transformation.
               </p>
             </div>
@@ -86,24 +86,24 @@ export default function BlogPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
         {/* Featured Resource Card with ScrollReveal */}
         <ScrollReveal delay={0} direction="up" className="mb-12">
-          <div className="rounded-3xl border border-[#bae6fd] bg-gradient-to-br from-white via-[#f4f9ff] to-[#e0f2fe]/40 p-8 sm:p-10 shadow-xs hover:border-[#7dd3fc] hover:shadow-[0_4px_20px_rgba(3,105,161,0.08)] transition">
+          <div className="rounded-3xl border border-[#e5e7eb] bg-gradient-to-br from-white via-[#edf3f4]/50 to-[#edf3f4] p-8 sm:p-10 shadow-xs hover:border-[#26505c]/30 hover:shadow-[0_8px_24px_rgba(38,80,92,0.08)] transition">
             <div className="max-w-3xl">
-              <Badge variant="default" className="bg-[#0369a1] hover:bg-[#075985] text-white mb-3 text-xs">
+              <Badge variant="default" className="bg-[#26505c] text-white mb-3 text-xs font-bold">
                 Featured Resource
               </Badge>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0f2a43] leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1f2d35] leading-tight">
                 Amaanitvam Volunteer Handbook &amp; Social Leadership Guide (PDF)
               </h2>
-              <p className="mt-3 text-sm text-[#335577] leading-relaxed">
+              <p className="mt-3 text-sm text-[#356775] leading-relaxed">
                 Download our comprehensive handbook covering codes of conduct, field safety guidelines,
                 effective community communication, and step-by-step badge tracking.
               </p>
-              <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-[#5a7b9d]">
+              <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-[#607b85]">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <Calendar className="w-3.5 h-3.5 text-[#0369a1]" /> Updated for 2026
+                  <Calendar className="w-3.5 h-3.5 text-[#26505c]" /> Updated for 2026
                 </span>
                 <span className="flex items-center gap-1.5 font-medium">
-                  <Clock className="w-3.5 h-3.5 text-[#0369a1]" /> Free Download
+                  <Clock className="w-3.5 h-3.5 text-[#26505c]" /> Free Download
                 </span>
               </div>
             </div>
@@ -115,29 +115,29 @@ export default function BlogPage() {
           {ARTICLES.map((art, index) => (
             <ScrollReveal key={art.id} delay={(index % 3) * 100} direction="up" className="h-full">
               <Card
-                className="border-[#bae6fd]/80 bg-white hover:border-[#7dd3fc] hover:shadow-[0_4px_16px_rgba(3,105,161,0.08)] transition-all flex flex-col justify-between h-full"
+                className="border-[#e5e7eb] bg-white hover:border-[#26505c]/30 hover:shadow-[0_8px_24px_rgba(38,80,92,0.08)] transition-all flex flex-col justify-between h-full"
               >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-3 text-xs">
-                    <Badge variant="secondary" className="bg-[#e0f2fe] text-[#075985] border border-[#bae6fd]">
+                    <Badge variant="secondary" className="bg-[#edf3f4] text-[#26505c] border border-[#e5e7eb] font-semibold">
                       {art.category}
                     </Badge>
-                    <span className="text-[#5a7b9d] text-[11px] flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-[#0369a1]" /> {art.readTime}
+                    <span className="text-[#607b85] text-[11px] flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-[#26505c]" /> {art.readTime}
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-bold text-[#0f2a43] group-hover:text-[#0369a1] transition leading-snug">
+                  <h3 className="text-lg font-bold text-[#1f2d35] group-hover:text-[#26505c] transition leading-snug">
                     {art.title}
                   </h3>
 
-                  <p className="mt-2.5 text-xs text-[#335577] line-clamp-3 leading-relaxed">
+                  <p className="mt-2.5 text-xs text-[#607b85] line-clamp-3 leading-relaxed">
                     {art.excerpt}
                   </p>
 
-                  <div className="mt-6 pt-4 border-t border-[#e2eaf2] flex items-center justify-between text-xs">
-                    <span className="text-[#5a7b9d] text-[11px]">{art.author}</span>
-                    <span className="text-[#0369a1] font-semibold flex items-center gap-1">
+                  <div className="mt-6 pt-4 border-t border-[#e5e7eb] flex items-center justify-between text-xs">
+                    <span className="text-[#607b85] text-[11px]">{art.author}</span>
+                    <span className="text-[#26505c] font-bold flex items-center gap-1">
                       Read <ArrowRight className="w-3 h-3" />
                     </span>
                   </div>

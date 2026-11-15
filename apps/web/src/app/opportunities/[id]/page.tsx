@@ -331,7 +331,7 @@ function OpportunityDetailsContent() {
     <main className="min-h-screen bg-transparent px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Architectural Horizon Header for Opportunity Dossier */}
-        <div className="relative overflow-hidden rounded-2xl border border-[#bae6fd]/80 bg-white p-5 sm:p-6 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white p-5 sm:p-6 shadow-xs">
           <div
             className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
             style={{
@@ -348,30 +348,30 @@ function OpportunityDetailsContent() {
           <div className="relative z-10">
             {/* Breadcrumb Navigation */}
             <nav aria-label="Breadcrumb">
-              <ol className="flex items-center gap-2 text-xs font-semibold text-[#5a7b9d]">
+              <ol className="flex items-center gap-2 text-xs font-semibold text-[#356775]">
                 <li>
                   <Link
                     href="/opportunities"
-                    className="inline-flex items-center gap-1.5 text-[#0369a1] hover:text-[#075985] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0369a1] rounded"
+                    className="inline-flex items-center gap-1.5 text-[#26505c] hover:text-[#1a3840] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26505c] rounded"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                     All Opportunities
                   </Link>
                 </li>
-                <li aria-hidden="true" className="text-[#bae6fd]">
+                <li aria-hidden="true" className="text-[#e5e7eb]">
                   /
                 </li>
-                <li className="text-[#0f2a43] truncate max-w-xs sm:max-w-md font-bold">
+                <li className="text-[#1f2d35] truncate max-w-xs sm:max-w-md font-bold">
                   {opportunity.category}
                 </li>
               </ol>
             </nav>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-[#0f2a43] tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-[#1f2d35] tracking-tight">
                 {opportunity.title}
               </h1>
-              <span className="text-xs font-semibold text-[#0369a1] bg-white/90 backdrop-blur-md border border-[#bae6fd] px-3 py-1 rounded-full shadow-xs">
+              <span className="text-xs font-semibold text-[#26505c] bg-white/95 backdrop-blur-md border border-[#e5e7eb] px-3 py-1 rounded-full shadow-xs">
                 {opportunity.organisation?.org_name || "Community Organisation"}
               </span>
             </div>
@@ -381,7 +381,7 @@ function OpportunityDetailsContent() {
         {/* Dossier & Participation Console Grid */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
           {/* LEFT: Opportunity Dossier */}
-          <article className="lg:col-span-8 rounded-2xl border border-[#bae6fd]/80 bg-white p-6 sm:p-8 shadow-[0_1px_3px_rgba(15,42,67,0.03)] space-y-8">
+          <article className="lg:col-span-8 rounded-2xl border border-[#e5e7eb] bg-white p-6 sm:p-8 shadow-xs space-y-8">
             {/* Header Area */}
             <div>
               <div className="flex flex-wrap items-center gap-2">
@@ -391,7 +391,7 @@ function OpportunityDetailsContent() {
                 >
                   {opportunity.category}
                 </Badge>
-                <span className="rounded-full bg-[#f4f9ff] border border-[#bae6fd] px-2.5 py-0.5 text-xs font-medium text-[#075985]">
+                <span className="rounded-full bg-[#edf3f4] border border-[#e5e7eb] px-2.5 py-0.5 text-xs font-medium text-[#26505c]">
                   {opportunity.type}
                 </span>
                 {!isLive && (
@@ -401,22 +401,22 @@ function OpportunityDetailsContent() {
                 )}
               </div>
 
-              <h1 className="mt-4 text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0f2a43] text-balance">
+              <h1 className="mt-4 text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#1f2d35] text-balance">
                 {opportunity.title}
               </h1>
 
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#335577]">
-                <span className="font-bold text-[#0f2a43]">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#356775]">
+                <span className="font-bold text-[#1f2d35]">
                   {opportunity.organisation?.org_name ||
                     "Social impact organisation"}
                 </span>
                 {isVerifiedOrg && (
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[#a7f3d0] bg-[#ecfdf5] px-2.5 py-0.5 text-xs font-semibold text-[#065f46]"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#badbcc] bg-[#d1e7dd] px-2.5 py-0.5 text-xs font-semibold text-[#0f5132]"
                     title="Organisation registration documents verified by Amaanitvam Foundation"
                   >
                     <CheckCircle2
-                      className="h-3.5 w-3.5 text-[#047857] shrink-0"
+                      className="h-3.5 w-3.5 text-[#0f5132] shrink-0"
                       aria-hidden="true"
                     />
                     <span>Verified Organisation</span>
@@ -427,7 +427,7 @@ function OpportunityDetailsContent() {
                     href={websiteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0369a1] hover:text-[#075985] underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0369a1] rounded"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#26505c] hover:text-[#1a3840] underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26505c] rounded"
                     aria-label={`Visit official website of ${
                       opportunity.organisation?.org_name || "organisation"
                     } (opens in a new tab)`}
@@ -442,29 +442,29 @@ function OpportunityDetailsContent() {
             {/* Metrics Ledger Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {/* Location */}
-              <div className="min-w-0 rounded-xl border border-[#bae6fd]/70 bg-[#f4f9ff] p-3.5">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#5a7b9d]">
+              <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-3.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#356775]">
                   <MapPin
-                    className="h-3.5 w-3.5 text-[#0369a1] shrink-0"
+                    className="h-3.5 w-3.5 text-[#26505c] shrink-0"
                     aria-hidden="true"
                   />
                   <span>Location</span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-[#0f2a43] truncate">
+                <p className="mt-1 text-sm font-bold text-[#1f2d35] truncate">
                   {displayLocation}
                 </p>
               </div>
 
               {/* Openings */}
-              <div className="min-w-0 rounded-xl border border-[#bae6fd]/70 bg-[#f4f9ff] p-3.5">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#5a7b9d]">
+              <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-3.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#356775]">
                   <Users
-                    className="h-3.5 w-3.5 text-[#0369a1] shrink-0"
+                    className="h-3.5 w-3.5 text-[#26505c] shrink-0"
                     aria-hidden="true"
                   />
                   <span>Openings</span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-[#0f2a43] tabular-nums">
+                <p className="mt-1 text-sm font-bold text-[#1f2d35] tabular-nums">
                   {opportunity.openings === 0 ? (
                     <span className="text-[#92400e]">Capacity Reached</span>
                   ) : typeof opportunity.openings === "number" &&
@@ -480,10 +480,10 @@ function OpportunityDetailsContent() {
 
               {/* Deadline */}
               {formattedDeadline && (
-                <div className="min-w-0 rounded-xl border border-[#bae6fd]/70 bg-[#f4f9ff] p-3.5">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#5a7b9d]">
+                <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-3.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#356775]">
                     <CalendarDays
-                      className="h-3.5 w-3.5 text-[#0369a1] shrink-0"
+                      className="h-3.5 w-3.5 text-[#26505c] shrink-0"
                       aria-hidden="true"
                     />
                     <span>Deadline</span>
@@ -492,7 +492,7 @@ function OpportunityDetailsContent() {
                     className={`mt-1 text-sm font-bold tabular-nums ${
                       formattedDeadline.isPast
                         ? "text-[#92400e]"
-                        : "text-[#0f2a43]"
+                        : "text-[#1f2d35]"
                     }`}
                   >
                     {formattedDeadline.label}
@@ -502,32 +502,32 @@ function OpportunityDetailsContent() {
 
               {/* Duration */}
               {durationVal && (
-                <div className="min-w-0 rounded-xl border border-[#bae6fd]/70 bg-[#f4f9ff] p-3.5">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#5a7b9d]">
+                <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-3.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#356775]">
                     <Clock
-                      className="h-3.5 w-3.5 text-[#0369a1] shrink-0"
+                      className="h-3.5 w-3.5 text-[#26505c] shrink-0"
                       aria-hidden="true"
                     />
                     <span>Duration</span>
                   </div>
-                  <p className="mt-1 text-sm font-bold text-[#0f2a43]">
+                  <p className="mt-1 text-sm font-bold text-[#1f2d35]">
                     {durationVal}
                   </p>
                 </div>
               )}
 
               {/* Impact Recognition / Points */}
-              <div className="min-w-0 rounded-xl border border-[#bae6fd]/70 bg-[#f4f9ff] p-3.5">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#5a7b9d]">
+              <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-3.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#356775]">
                   <Award
-                    className="h-3.5 w-3.5 text-[#0369a1] shrink-0"
+                    className="h-3.5 w-3.5 text-[#26505c] shrink-0"
                     aria-hidden="true"
                   />
                   <span>Recognition</span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-[#0f2a43] tabular-nums">
+                <p className="mt-1 text-sm font-bold text-[#1f2d35] tabular-nums">
                   {pointsReward > 0 ? (
-                    <span className="text-[#0369a1]">
+                    <span className="text-[#26505c]">
                       +{pointsReward} Impact Points
                     </span>
                   ) : (
@@ -537,15 +537,15 @@ function OpportunityDetailsContent() {
               </div>
 
               {/* Hosting Org */}
-              <div className="min-w-0 rounded-xl border border-[#bae6fd]/70 bg-[#f4f9ff] p-3.5">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#5a7b9d]">
+              <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-3.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#356775]">
                   <ShieldCheck
-                    className="h-3.5 w-3.5 text-[#0369a1] shrink-0"
+                    className="h-3.5 w-3.5 text-[#26505c] shrink-0"
                     aria-hidden="true"
                   />
                   <span>Hosting Org</span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-[#0f2a43] truncate">
+                <p className="mt-1 text-sm font-bold text-[#1f2d35] truncate">
                   {opportunity.organisation?.org_name ||
                     "Social impact organisation"}
                 </p>
@@ -553,11 +553,11 @@ function OpportunityDetailsContent() {
             </div>
 
             {/* Description Section */}
-            <section className="border-t border-[#e2eaf2] pt-6">
-              <h2 className="text-lg font-bold text-[#0f2a43]">
+            <section className="border-t border-[#e5e7eb] pt-6">
+              <h2 className="text-lg font-bold text-[#1f2d35]">
                 About This Opportunity
               </h2>
-              <div className="mt-3 text-sm sm:text-base leading-relaxed text-[#335577] whitespace-pre-wrap max-w-prose">
+              <div className="mt-3 text-sm sm:text-base leading-relaxed text-[#356775] whitespace-pre-wrap max-w-prose">
                 {opportunity.description}
               </div>
             </section>
@@ -565,15 +565,15 @@ function OpportunityDetailsContent() {
             {/* Skills Required Section */}
             {opportunity.skills_required &&
               opportunity.skills_required.length > 0 && (
-                <section className="border-t border-[#e2eaf2] pt-6">
-                  <h2 className="text-lg font-bold text-[#0f2a43]">
+                <section className="border-t border-[#e5e7eb] pt-6">
+                  <h2 className="text-lg font-bold text-[#1f2d35]">
                     Required Skills &amp; Competencies
                   </h2>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {opportunity.skills_required.map((skill) => (
                       <span
                         key={skill}
-                        className="rounded-lg border border-[#bae6fd]/70 bg-[#f4f9ff] px-3 py-1.5 text-xs font-semibold text-[#075985]"
+                        className="rounded-lg border border-[#e5e7eb] bg-[#edf3f4] px-3 py-1.5 text-xs font-semibold text-[#26505c]"
                       >
                         {skill}
                       </span>
@@ -585,12 +585,12 @@ function OpportunityDetailsContent() {
 
           {/* RIGHT: Participation Console */}
           <aside className="lg:col-span-4" aria-label="Participation Console">
-            <div className="sticky top-24 rounded-2xl border border-[#bae6fd] bg-white p-6 shadow-[0_2px_8px_rgba(15,42,67,0.04)]">
-              <div className="border-b border-[#e2eaf2] pb-4">
-                <h2 className="text-base font-bold text-[#0f2a43]">
+            <div className="sticky top-24 rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-xs">
+              <div className="border-b border-[#e5e7eb] pb-4">
+                <h2 className="text-base font-bold text-[#1f2d35]">
                   Participation Console
                 </h2>
-                <p className="mt-0.5 text-xs text-[#5a7b9d]">
+                <p className="mt-0.5 text-xs text-[#356775]">
                   Review requirements and submit your application to the host organisation.
                 </p>
               </div>
@@ -603,15 +603,15 @@ function OpportunityDetailsContent() {
                   aria-busy="true"
                   aria-label="Checking application status"
                 >
-                  <div className="h-4 w-32 rounded bg-[#e0f2fe]" />
-                  <div className="h-28 rounded-xl bg-[#f4f9ff] border border-[#bae6fd]" />
-                  <div className="h-10 rounded-xl bg-[#e0f2fe]" />
+                  <div className="h-4 w-32 rounded bg-[#edf3f4]" />
+                  <div className="h-28 rounded-xl bg-[#edf3f4] border border-[#e5e7eb]" />
+                  <div className="h-10 rounded-xl bg-[#edf3f4]" />
                 </div>
               ) : appCheckError && !existingApplication ? (
                 /* Application Verification Error Notice */
-                <div className="mt-5 space-y-3 rounded-xl border border-[#bae6fd] bg-[#f4f9ff] p-4 text-xs text-[#335577]">
-                  <p className="font-bold text-[#0f2a43] flex items-center gap-1.5">
-                    <AlertCircle className="h-4 w-4 text-[#0369a1]" aria-hidden="true" />
+                <div className="mt-5 space-y-3 rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-4 text-xs text-[#356775]">
+                  <p className="font-bold text-[#1f2d35] flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 text-[#26505c]" aria-hidden="true" />
                     Application Status Unverified
                   </p>
                   <p className="leading-relaxed">
@@ -631,26 +631,26 @@ function OpportunityDetailsContent() {
                   {message && (
                     <div
                       role="status"
-                      className="rounded-xl border border-[#a7f3d0] bg-[#ecfdf5] p-3 text-xs text-[#065f46] flex items-center gap-2"
+                      className="rounded-xl border border-[#badbcc] bg-[#d1e7dd] p-3 text-xs text-[#0f5132] flex items-center gap-2"
                     >
                       <CheckCircle2
-                        className="h-4 w-4 text-[#047857] shrink-0"
+                        className="h-4 w-4 text-[#0f5132] shrink-0"
                         aria-hidden="true"
                       />
                       <span className="font-semibold">{message}</span>
                     </div>
                   )}
 
-                  <div className="rounded-xl border border-[#a7f3d0] bg-[#ecfdf5]/60 p-4">
+                  <div className="rounded-xl border border-[#badbcc] bg-[#d1e7dd]/50 p-4">
                     <div className="flex items-start gap-3">
-                      <div className="rounded-full bg-white p-1.5 text-[#047857] shrink-0 mt-0.5 border border-[#a7f3d0]">
+                      <div className="rounded-full bg-white p-1.5 text-[#0f5132] shrink-0 mt-0.5 border border-[#badbcc]">
                         <FileCheck className="h-5 w-5" aria-hidden="true" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-[#065f46]">
+                        <h3 className="text-sm font-bold text-[#0f5132]">
                           Application on File
                         </h3>
-                        <p className="mt-0.5 text-xs text-[#065f46] leading-relaxed">
+                        <p className="mt-0.5 text-xs text-[#0f5132] leading-relaxed">
                           Your application has been received and registered with the host organisation.
                         </p>
                       </div>
@@ -658,21 +658,21 @@ function OpportunityDetailsContent() {
                   </div>
 
                   {/* Structured Receipt Ledger */}
-                  <div className="rounded-xl border border-[#bae6fd] bg-[#f4f9ff] p-4 space-y-3 text-xs">
-                    <div className="flex items-center justify-between border-b border-[#e2eaf2] pb-2.5">
-                      <span className="text-[#5a7b9d] font-medium">
+                  <div className="rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-4 space-y-3 text-xs">
+                    <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-2.5">
+                      <span className="text-[#356775] font-medium">
                         Application ID
                       </span>
-                      <code className="font-mono text-[#0f2a43] font-semibold">
+                      <code className="font-mono text-[#1f2d35] font-semibold">
                         #{existingApplication.id.slice(0, 8)}
                       </code>
                     </div>
 
-                    <div className="flex items-center justify-between border-b border-[#e2eaf2] pb-2.5">
-                      <span className="text-[#5a7b9d] font-medium">
+                    <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-2.5">
+                      <span className="text-[#356775] font-medium">
                         Submitted Date
                       </span>
-                      <span className="font-semibold text-[#0f2a43] tabular-nums">
+                      <span className="font-semibold text-[#1f2d35] tabular-nums">
                         {new Date(
                           existingApplication.applied_at
                         ).toLocaleDateString("en-IN", {
@@ -683,8 +683,8 @@ function OpportunityDetailsContent() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between border-b border-[#e2eaf2] pb-2.5">
-                      <span className="text-[#5a7b9d] font-medium">
+                    <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-2.5">
+                      <span className="text-[#356775] font-medium">
                         Current Status
                       </span>
                       <Badge
@@ -696,21 +696,21 @@ function OpportunityDetailsContent() {
                     </div>
 
                     <div className="pt-1">
-                      <p className="text-xs text-[#335577] leading-relaxed">
+                      <p className="text-xs text-[#356775] leading-relaxed">
                         {statusMeta.description}
                       </p>
                     </div>
 
                     {existingApplication.pitch_text && (
-                      <details className="group border-t border-[#e2eaf2] pt-2.5">
-                        <summary className="cursor-pointer text-xs font-semibold text-[#0369a1] hover:text-[#075985] flex items-center justify-between select-none">
+                      <details className="group border-t border-[#e5e7eb] pt-2.5">
+                        <summary className="cursor-pointer text-xs font-semibold text-[#26505c] hover:text-[#1a3840] flex items-center justify-between select-none">
                           <span>View Submitted Statement</span>
                           <ChevronDown
-                            className="h-3.5 w-3.5 text-[#0369a1] transition-transform group-open:rotate-180"
+                            className="h-3.5 w-3.5 text-[#26505c] transition-transform group-open:rotate-180"
                             aria-hidden="true"
                           />
                         </summary>
-                        <p className="mt-2 text-xs text-[#0f2a43] bg-white p-3 rounded-xl border border-[#bae6fd] whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+                        <p className="mt-2 text-xs text-[#1f2d35] bg-white p-3 rounded-xl border border-[#e5e7eb] whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
                           {existingApplication.pitch_text}
                         </p>
                       </details>
@@ -757,8 +757,8 @@ function OpportunityDetailsContent() {
               ) : user == null ? (
                 /* State A — Unauthenticated */
                 <div className="mt-5 space-y-4">
-                  <div className="rounded-xl border border-[#bae6fd] bg-[#f4f9ff] p-4 text-xs text-[#335577]">
-                    <p className="font-bold text-[#0f2a43]">
+                  <div className="rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-4 text-xs text-[#356775]">
+                    <p className="font-bold text-[#1f2d35]">
                       Volunteer Account Required
                     </p>
                     <p className="mt-1 leading-relaxed">
@@ -770,9 +770,9 @@ function OpportunityDetailsContent() {
                     <Link
                       href={loginHref}
                       className={buttonVariants({
-                        variant: "default",
+                        variant: "secondary",
                         size: "default",
-                        className: "w-full justify-center font-semibold",
+                        className: "w-full justify-center font-bold",
                       })}
                     >
                       Log in to Apply
@@ -780,7 +780,7 @@ function OpportunityDetailsContent() {
                     <Link
                       href={signupHref}
                       className={buttonVariants({
-                        variant: "secondary",
+                        variant: "outline",
                         size: "default",
                         className: "w-full justify-center font-semibold",
                       })}
@@ -792,8 +792,8 @@ function OpportunityDetailsContent() {
               ) : user.role !== "volunteer" ? (
                 /* State B — Non-Volunteer Role Notice */
                 <div className="mt-5 space-y-4">
-                  <div className="rounded-xl border border-[#bae6fd] bg-[#f4f9ff] p-4 text-xs text-[#335577]">
-                    <p className="font-bold text-[#0f2a43]">
+                  <div className="rounded-xl border border-[#e5e7eb] bg-[#edf3f4] p-4 text-xs text-[#356775]">
+                    <p className="font-bold text-[#1f2d35]">
                       Role Notice: Signed in as {user.role}
                     </p>
                     <p className="mt-1 leading-relaxed">
@@ -875,11 +875,11 @@ function OpportunityDetailsContent() {
                   <div>
                     <label
                       htmlFor="application-pitch"
-                      className="block text-xs font-bold text-[#0f2a43]"
+                      className="block text-xs font-bold text-[#1f2d35]"
                     >
                       Statement of Motivation / Pitch
                     </label>
-                    <p className="mt-0.5 text-[11px] text-[#5a7b9d]">
+                    <p className="mt-0.5 text-[11px] text-[#356775]">
                       Introduce yourself and explain why you would like to participate (minimum 10 characters).
                     </p>
 
@@ -893,10 +893,10 @@ function OpportunityDetailsContent() {
                         if (error) setError("");
                       }}
                       placeholder="Share your relevant background, skills, or motivation for joining this drive..."
-                      className={`mt-2 w-full rounded-xl border p-3 text-xs text-[#0f2a43] placeholder:text-[#5a7b9d] outline-none transition focus:ring-2 focus:ring-[#0369a1] ${
+                      className={`mt-2 w-full rounded-xl border p-3 text-xs text-[#1f2d35] placeholder:text-[#607b85] outline-none transition focus:ring-2 focus:ring-[#26505c]/20 ${
                         hasLengthError
                           ? "border-[#b91c1c] bg-[#fef2f2]/40"
-                          : "border-[#bae6fd] bg-white focus:border-[#0369a1]"
+                          : "border-[#e5e7eb] bg-white focus:border-[#26505c]"
                       }`}
                       aria-invalid={hasLengthError}
                       aria-describedby={
@@ -911,20 +911,20 @@ function OpportunityDetailsContent() {
                           Please enter at least 10 characters ({pitchTrimmed.length}/10).
                         </span>
                       ) : (
-                        <span className="text-[#5a7b9d]">
+                        <span className="text-[#356775]">
                           {pitchTrimmed.length} characters entered
                         </span>
                       )}
-                      <span className="text-[#5a7b9d]">Min: 10</span>
+                      <span className="text-[#356775]">Min: 10</span>
                     </div>
                   </div>
 
                   <Button
                     type="submit"
-                    variant="default"
+                    variant="secondary"
                     size="default"
                     disabled={saving}
-                    className="w-full justify-center font-semibold"
+                    className="w-full justify-center font-bold"
                   >
                     {saving ? (
                       <>

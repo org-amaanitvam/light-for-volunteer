@@ -1,60 +1,45 @@
 @import "tailwindcss";
 
 /* 
- * Light For Volunteer — The Transparent Ledger Design System
- * Strict White × Blue Palette & Anti-AI-Slop Foundation
+ * Volunteer Yatra / Light For Volunteer Design System
+ * Grounded Deep Teal (#26505C) × Sunflower Yellow (#FFE970) × Warm Amber (#F3B61F)
+ * Clean White Surface (#FFFFFF) × Dark Charcoal/Teal (#1F2D35) × Muted Surface (#EDF3F4)
+ * Strict Anti-Slop, Accessible, Fluid Interface Foundation
  */
 
 @theme {
-  /* White & Blue Chromatic Ramp */
-  --color-canvas-pure: #ffffff;
-  --color-canvas-ice: #f4f9ff;
-  --color-canvas-ground: #f8fafc;
-  --color-blue-glacial: #e0f2fe;
-  --color-blue-light: #dbeafe;
-  --color-blue-sky: #93c5fd;
-  --color-blue-hairline: #bae6fd;
-  --color-blue-civic: #0369a1;
-  --color-blue-deep: #075985;
-  --color-blue-navy: #0c4a6e;
-  --color-blue-midnight: #0f2a43;
-
-  /* Brand Primary - Civic Azure (5.93:1 contrast against #ffffff) */
-  --color-primary: #0369a1;
-  --color-primary-hover: #075985;
-  --color-primary-active: #0c4a6e;
+  /* Volunteer Yatra Core Color System */
+  --color-primary: #26505c;
+  --color-primary-hover: #1e3f49;
+  --color-primary-light: #356775;
   --color-primary-foreground: #ffffff;
 
-  /* Secondary - Glacial Blue with Deep Azure (6.59:1 contrast) */
-  --color-secondary: #e0f2fe;
-  --color-secondary-foreground: #075985;
-  --color-secondary-hover: #bae6fd;
+  --color-secondary: #ffe970;
+  --color-secondary-hover: #f3b61f;
+  --color-secondary-foreground: #26505c;
 
-  /* Accent - Ice / Sky Highlight */
-  --color-accent: #f0f9ff;
-  --color-accent-foreground: #0369a1;
+  --color-tertiary: #f3b61f;
+  --color-tertiary-hover: #d99f16;
+  --color-tertiary-foreground: #1f2d35;
 
-  /* Surfaces & Grounds */
-  --color-ground: #f4f9ff;
-  --color-ground-subtle: #eef6fc;
   --color-surface: #ffffff;
+  --color-on-surface: #1f2d35;
+  --color-muted-surface: #edf3f4;
+  --color-border: #e5e7eb;
+  --color-border-subtle: #edf3f4;
 
-  /* Typographic Ramp - Midnight Blue tinted neutrals */
-  --color-text-main: #0f2a43;
-  --color-text-muted: #335577;
-  --color-text-subtle: #5a7b9d;
+  /* Typographic Ramp */
+  --color-text-main: #1f2d35;
+  --color-text-muted: #356775;
+  --color-text-subtle: #607b85;
 
-  /* Structural Hairline Boundaries */
-  --color-border-hairline: #bae6fd;
-  --color-border-subtle: #e2eaf2;
-
-  /* Semantic Status Colors (Used strictly for functional status markers) */
+  /* Semantic Status Colors */
   --color-success: #047857;
   --color-success-bg: #ecfdf5;
   --color-success-border: #a7f3d0;
   --color-success-foreground: #065f46;
 
-  --color-destructive: #b91c1c;
+  --color-destructive: #d64545;
   --color-destructive-bg: #fef2f2;
   --color-destructive-border: #fecaca;
   --color-destructive-foreground: #991b1b;
@@ -66,8 +51,8 @@
 
   /* Radii Vocabulary */
   --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-pill: 9999px;
@@ -75,39 +60,39 @@
 
 @layer base {
   :root {
-    --background: 210 100% 98%;
-    --foreground: 209 63% 16%;
+    --background: 190 20% 98%;
+    --foreground: 202 26% 17%;
 
     --card: 0 0% 100%;
-    --card-foreground: 209 63% 16%;
+    --card-foreground: 202 26% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 209 63% 16%;
+    --popover-foreground: 202 26% 17%;
 
-    /* Civic Azure */
-    --primary: 201 96% 32%;
+    /* Deep Teal (#26505c) */
+    --primary: 193 41% 25%;
     --primary-foreground: 0 0% 100%;
 
-    /* Glacial Blue */
-    --secondary: 204 94% 94%;
-    --secondary-foreground: 201 90% 27%;
+    /* Sunflower Yellow (#ffe970) */
+    --secondary: 51 100% 72%;
+    --secondary-foreground: 193 41% 25%;
 
-    /* Muted Slate */
-    --muted: 210 50% 96%;
-    --muted-foreground: 211 40% 33%;
+    /* Muted Surface (#edf3f4) */
+    --muted: 189 17% 94%;
+    --muted-foreground: 194 37% 33%;
 
-    /* Accent */
-    --accent: 204 100% 97%;
-    --accent-foreground: 201 96% 32%;
+    /* Accent Amber (#f3b61f) */
+    --accent: 42 90% 54%;
+    --accent-foreground: 202 26% 17%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 204 88% 86%;
-    --input: 204 88% 86%;
-    --ring: 201 96% 32%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 193 41% 25%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
   }
 }
 
@@ -117,8 +102,9 @@ html {
 
 html,
 body {
-  background-color: #f4f9ff;
-  color: #0f2a43;
+  background-color: #ffffff;
+  color: #1f2d35;
+  font-family: var(--font-poppins, 'Poppins'), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: clip;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -132,7 +118,7 @@ body {
 
 /* Accessible focus ring - Hallmark rule 6 & Better-Accessibility */
 :focus-visible {
-  outline: 2px solid #0369a1 !important;
+  outline: 2px solid #26505c !important;
   outline-offset: 2px !important;
 }
 
@@ -154,12 +140,12 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f0f7ff;
+  background: #edf3f4;
 }
 ::-webkit-scrollbar-thumb {
-  background: #bae6fd;
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #7dd3fc;
+  background: #26505c;
 }

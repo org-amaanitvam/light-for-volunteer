@@ -33,7 +33,7 @@ export default function OrganisationLayout({ children }: { children: ReactNode }
       />
       <main className="flex-1">
         {/* Consistent Organisation Workspace Horizon Banner (Zephyr 032.png) */}
-        <div className="relative overflow-hidden border-b border-[#bae6fd]/80 bg-white py-6 px-4 sm:px-6 lg:px-8 mb-6 shadow-sm">
+        <div className="relative overflow-hidden border-b border-[#e5e7eb] bg-white py-6 px-4 sm:px-6 lg:px-8 mb-6 shadow-xs">
           <div
             className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
             style={{
@@ -49,13 +49,13 @@ export default function OrganisationLayout({ children }: { children: ReactNode }
           />
           <div className="relative z-10 max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#bae6fd] bg-white/95 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-bold text-[#0369a1] mb-1.5 shadow-xs">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e7eb] bg-white/95 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-bold text-[#26505c] mb-1.5 shadow-xs">
                 <span>Institutional Partner Console</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-[#0f2a43] tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-[#1f2d35] tracking-tight">
                 {orgData?.orgName || user?.name || "Organisation Workspace"}
               </h1>
-              <p className="text-xs text-[#335577] mt-0.5">
+              <p className="text-xs text-[#356775] mt-0.5">
                 Drive publishing, attendance ledger verification, and credential issuance.
               </p>
             </div>
@@ -64,10 +64,10 @@ export default function OrganisationLayout({ children }: { children: ReactNode }
 
         {children}
       </main>
-      <footer className="border-t border-slate-200 bg-white py-6 px-4 sm:px-6 lg:px-8 text-xs text-slate-500">
+      <footer className="border-t border-[#e5e7eb] bg-white py-6 px-4 sm:px-6 lg:px-8 text-xs text-[#607b85]">
         <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-3">
           <p>© 2026 Light for Volunteer — An initiative of Amaanitvam Foundation.</p>
-          <p className="font-mono text-[11px] text-slate-400">Architectural Civic Ledger • Strict Security Boundaries</p>
+          <p className="font-mono text-[11px] text-[#607b85]">Volunteer Yatra Civic Ledger • Strict Security Boundaries</p>
         </div>
       </footer>
     </div>

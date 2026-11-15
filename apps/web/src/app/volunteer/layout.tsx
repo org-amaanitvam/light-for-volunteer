@@ -84,18 +84,18 @@ export default function VolunteerLayout({
       {/* Mobile / Tablet Responsive Sub-Navigation Bar */}
       <header
         aria-label="Volunteer workspace navigation"
-        className="md:hidden border-b border-[#bae6fd]/80 bg-white shadow-sm sticky top-[4.5rem] z-20 backdrop-blur-md"
+        className="md:hidden border-b border-[#e5e7eb] bg-white shadow-xs sticky top-[4.5rem] z-20 backdrop-blur-md"
       >
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[#e0f2fe] bg-[#f4f9ff]/40">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-[#e5e7eb] bg-[#edf3f4]/40">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0369a1] text-xs font-bold text-white">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#26505c] text-xs font-bold text-white">
               {user.name ? user.name.charAt(0).toUpperCase() : "V"}
             </div>
-            <span className="text-xs font-bold text-[#0f2a43] truncate max-w-[160px]">
+            <span className="text-xs font-bold text-[#1f2d35] truncate max-w-[160px]">
               {user.name ?? "Volunteer"}
             </span>
           </div>
-          <span className="inline-flex items-center gap-1 rounded bg-[#e0f2fe] px-2 py-0.5 text-[10px] font-bold text-[#0369a1] uppercase">
+          <span className="inline-flex items-center gap-1 rounded bg-[#edf3f4] border border-[#e5e7eb] px-2 py-0.5 text-[10px] font-bold text-[#26505c] uppercase">
             <ShieldCheck className="h-3 w-3" />
             Volunteer Portal
           </span>
@@ -120,11 +120,11 @@ export default function VolunteerLayout({
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition min-h-[44px] shrink-0",
                   isActive
-                    ? "bg-[#0369a1] text-white shadow-sm font-bold"
-                    : "text-[#335577] bg-[#f4f9ff] hover:bg-[#e0f2fe] hover:text-[#0369a1]"
+                    ? "bg-[#26505c] text-white shadow-xs font-bold"
+                    : "text-[#356775] bg-[#edf3f4] hover:bg-[#26505c]/10 hover:text-[#26505c]"
                 )}
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <Icon className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-[#ffe970]" : "text-[#607b85]")} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -136,7 +136,7 @@ export default function VolunteerLayout({
       <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl space-y-6">
           {/* Consistent Workspace Horizon Banner (Zephyr 032.png) */}
-          <div className="relative overflow-hidden rounded-2xl border border-[#bae6fd]/80 bg-white p-5 sm:p-6 shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white p-5 sm:p-6 shadow-xs">
             <div
               className="absolute inset-0 bg-cover bg-no-repeat pointer-events-none"
               style={{
@@ -152,14 +152,14 @@ export default function VolunteerLayout({
             />
             <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#bae6fd] bg-white/95 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-bold text-[#0369a1] mb-1.5 shadow-xs">
-                  <ShieldCheck className="h-3 w-3 text-[#0284c7]" />
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#e5e7eb] bg-white/95 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-bold text-[#26505c] mb-1.5 shadow-xs">
+                  <ShieldCheck className="h-3 w-3 text-[#f3b61f]" />
                   <span>Amaanitvam Volunteer Workspace</span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#0f2a43] tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-black text-[#1f2d35] tracking-tight">
                   Welcome, {user.name || "Volunteer"}
                 </h2>
-                <p className="text-xs text-[#335577] mt-0.5">
+                <p className="text-xs text-[#356775] mt-0.5">
                   Verified civic ledger, live participation tracking, and authenticated transcripts.
                 </p>
               </div>

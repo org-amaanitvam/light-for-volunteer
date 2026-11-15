@@ -18,7 +18,6 @@ import {
   Clock,
   Compass,
 } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,12 +107,12 @@ export default function HomePage() {
   });
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+    <div className="flex flex-col min-h-screen bg-white">
       {/* 
-        HERO SECTION — Balanced White & Blue Civic Design
-        Preserved Zephyr 032.png Landscape + Natural Sky & Hills + High-Contrast Typography
+        HERO SECTION — Volunteer Yatra Design Direction
+        Immersive Zephyr Landscape + Sunflower Yellow CTAs + Grounded Deep Teal Anchors
       */}
-      <section className="relative overflow-hidden border-b border-[#bae6fd]/80 pt-8 pb-12 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-28">
+      <section className="relative overflow-hidden border-b border-[#e5e7eb] pt-8 pb-12 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-28">
         {/* Full-Width Responsive Hero Background (Zephyr 032.png) */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-no-repeat pointer-events-none bg-[position:center_18%] sm:bg-[position:center_25%]"
@@ -123,36 +122,36 @@ export default function HomePage() {
           aria-hidden="true"
         >
           {/* Natural atmospheric overlay: preserves vibrant blue sky, cumulus clouds, and green rolling landscape */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-white/75" />
           {/* Soft central radial wash to guarantee AAA text contrast while keeping natural landscape visible on sides */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_75%_65%_at_50%_35%,rgba(255,255,255,0.85)_0%,rgba(255,255,255,0.3)_60%,transparent_100%)]" />
           {/* Clean seamless transition into Featured Opportunities */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/80 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center flex flex-col items-center">
           <ScrollReveal direction="up" className="w-full flex flex-col items-center">
             {/* Civic Trust Badge */}
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#bae6fd] text-[11px] sm:text-xs font-semibold text-[#0369a1] mb-4 sm:mb-6 shadow-xs max-w-full text-center">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#e5e7eb] text-[11px] sm:text-xs font-semibold text-[#26505c] mb-4 sm:mb-6 shadow-xs max-w-full text-center">
               <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0284c7] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0369a1]" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f3b61f] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ffe970]" />
               </span>
-              <span className="truncate">Amaanitvam Foundation Initiative</span>
-              <span className="text-[#bae6fd] hidden sm:inline">|</span>
-              <span className="text-[#075985] font-medium hidden sm:inline">2026 Social Impact Drives Live</span>
+              <span className="truncate">Volunteer Yatra • Amaanitvam Initiative</span>
+              <span className="text-[#e5e7eb] hidden sm:inline">|</span>
+              <span className="text-[#356775] font-medium hidden sm:inline">2026 Social Impact Drives Live</span>
             </div>
 
             {/* Centered Headline with Balanced Hierarchy */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0c4a6e] leading-[1.15] sm:leading-[1.12] text-balance">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#1f2d35] leading-[1.15] sm:leading-[1.12] text-balance">
               Be the Light in Someone&apos;s World.{" "}
-              <span className="text-[#0284c7] block sm:inline">
+              <span className="text-[#26505c] block sm:inline">
                 Volunteer for Causes That Matter.
               </span>
             </h1>
 
             {/* Centered Subtitle */}
-            <p className="mt-3.5 sm:mt-5 text-sm sm:text-base text-[#335577] leading-relaxed max-w-2xl mx-auto font-normal">
+            <p className="mt-3.5 sm:mt-5 text-sm sm:text-base text-[#356775] leading-relaxed max-w-2xl mx-auto font-normal">
               Discover verified volunteer opportunities, internships, and skill-based mentorships. Join thousands of passionate individuals collaborating with registered social impact organisations.
             </p>
 
@@ -160,47 +159,39 @@ export default function HomePage() {
             <div className="mt-5 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3.5 w-full sm:w-auto">
               <Link
                 href="/signup/volunteer"
-                className={buttonVariants({
-                  size: "lg",
-                  variant: "default",
-                  className: "gap-2 px-7 sm:px-8 justify-center bg-[#0369a1] hover:bg-[#075985] text-white shadow-xs transition-all font-bold w-full sm:w-auto h-11 sm:h-12",
-                })}
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#ffe970] hover:bg-[#f3b61f] text-[#26505c] font-bold text-sm sm:text-base rounded-2xl shadow-[0_2px_10px_rgba(255,233,112,0.4)] hover:shadow-[0_4px_16px_rgba(243,182,31,0.4)] transition-all active:scale-[0.97] w-full sm:w-auto h-12 sm:h-13"
               >
                 Start Volunteering <ArrowRight className="w-4 h-4" />
               </Link>
 
               <Link
                 href="/signup/organisation"
-                className={buttonVariants({
-                  size: "lg",
-                  variant: "secondary",
-                  className: "gap-2 justify-center bg-white hover:bg-[#f0f9ff] text-[#0f2a43] border border-[#bae6fd] shadow-xs transition-all font-semibold w-full sm:w-auto h-11 sm:h-12",
-                })}
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white hover:bg-[#edf3f4] text-[#26505c] border border-[#26505c]/30 font-semibold text-sm sm:text-base rounded-2xl shadow-xs transition-all active:scale-[0.97] w-full sm:w-auto h-12 sm:h-13"
               >
-                <Building2 className="w-4 h-4 text-[#0369a1]" /> Post Opportunities (For NGOs)
+                <Building2 className="w-4 h-4 text-[#26505c]" /> Post Opportunities (For NGOs)
               </Link>
             </div>
 
             {/* Centered Search Console */}
-            <div className="mt-6 sm:mt-10 w-full max-w-3xl mx-auto rounded-2xl border border-[#bae6fd] bg-white/95 backdrop-blur-md p-3.5 sm:p-5 shadow-[0_12px_36px_rgba(15,42,67,0.08)] text-left">
+            <div className="mt-6 sm:mt-10 w-full max-w-3xl mx-auto rounded-2xl border border-[#e5e7eb] bg-white/95 backdrop-blur-md p-3.5 sm:p-5 shadow-[0_12px_36px_rgba(38,80,92,0.08)] text-left">
               <form onSubmit={handleSearchSubmit} role="search" className="flex flex-col sm:flex-row items-center gap-2.5">
                 <div className="relative flex-1 w-full">
                   <label htmlFor="homepage-search" className="sr-only">
                     Search volunteer opportunities by role, cause, or city
                   </label>
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0369a1]" />
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#26505c]" />
                   <Input
                     id="homepage-search"
                     name="search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by role, cause (e.g. Teaching, Climate), or city..."
-                    className="pl-10 h-11 bg-white border-[#bae6fd] text-sm text-[#0f2a43] placeholder:text-[#5a7b9d] focus-visible:border-[#0369a1] rounded-xl"
+                    className="pl-10 h-11 bg-white border-[#e5e7eb] text-sm text-[#1f2d35] placeholder:text-[#607b85] focus-visible:border-[#26505c] rounded-xl"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto h-11 px-6 inline-flex items-center justify-center rounded-xl bg-[#0369a1] hover:bg-[#075985] text-white font-bold text-sm shadow-[0_2px_8px_rgba(3,105,161,0.25)] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0369a1]"
+                  className="w-full sm:w-auto h-11 px-6 inline-flex items-center justify-center rounded-xl bg-[#ffe970] hover:bg-[#f3b61f] text-[#26505c] font-bold text-sm shadow-[0_2px_8px_rgba(255,233,112,0.4)] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26505c] active:scale-[0.97]"
                 >
                   Explore Causes
                 </button>
@@ -208,7 +199,7 @@ export default function HomePage() {
 
               {/* Horizontal Category Quick Filters */}
               <div className="flex items-center gap-1.5 mt-3 sm:mt-3.5 overflow-x-auto pb-1 text-xs [scrollbar-width:none] [-ms-overflow-style:none]">
-                <span className="text-[#0c4a6e] font-bold text-xs shrink-0 mr-1">
+                <span className="text-[#26505c] font-bold text-xs shrink-0 mr-1">
                   Popular:
                 </span>
                 {CATEGORIES.map((cat) => (
@@ -218,8 +209,8 @@ export default function HomePage() {
                     onClick={() => handleCategoryClick(cat)}
                     className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                       selectedCategory === cat
-                        ? "bg-[#0369a1] text-white shadow-xs"
-                        : "bg-[#f0f7ff] text-[#335577] border border-[#bae6fd] hover:bg-[#e0f2fe] hover:text-[#0369a1]"
+                        ? "bg-[#26505c] text-white shadow-xs"
+                        : "bg-[#edf3f4] text-[#26505c] border border-transparent hover:border-[#26505c]/20 hover:bg-[#e2ebec]"
                     }`}
                   >
                     {cat}
@@ -233,27 +224,27 @@ export default function HomePage() {
 
       {/* 
         FEATURED OPPORTUNITIES SECTION
-        Live API integration, high-density transparent card grid
+        Live API integration, high-density card grid
       */}
-      <section id="opportunities" className="py-16 sm:py-20 bg-[#f8fafc] border-b border-[#bae6fd]/80">
+      <section id="opportunities" className="py-16 sm:py-20 bg-[#edf3f4]/40 border-b border-[#e5e7eb]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
               <div>
-                <span className="text-xs font-bold text-[#0369a1]">
+                <span className="text-xs font-bold text-[#26505c] uppercase tracking-wider">
                   Verified Civic Drives
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0f2a43] tracking-tight mt-1">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1f2d35] tracking-tight mt-1">
                   Featured Opportunities
                 </h2>
-                <p className="text-[#335577] text-sm mt-1">
+                <p className="text-[#356775] text-sm mt-1">
                   Active drives from verified non-profit partners seeking dedicated volunteers.
                 </p>
               </div>
 
               <Link
                 href="/opportunities"
-                className="text-sm font-semibold text-[#0369a1] hover:text-[#075985] hover:underline inline-flex items-center gap-1 shrink-0"
+                className="text-sm font-semibold text-[#26505c] hover:text-[#1e3f49] hover:underline inline-flex items-center gap-1 shrink-0"
               >
                 Browse all drives <ChevronRight className="w-4 h-4" />
               </Link>
@@ -275,11 +266,11 @@ export default function HomePage() {
               return (
                 <ScrollReveal key={opp.id} delay={(index % 3) * 100} direction="up" className="h-full">
                   <Card
-                    className="border-[#bae6fd]/80 bg-white hover:border-[#7dd3fc] hover:shadow-[0_4px_16px_rgba(3,105,161,0.08)] flex flex-col justify-between h-full"
+                    className="border-[#e5e7eb] bg-white hover:border-[#26505c]/40 hover:shadow-[0_8px_24px_rgba(38,80,92,0.08)] flex flex-col justify-between h-full rounded-2xl"
                   >
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs bg-[#edf3f4] text-[#26505c] border-none font-semibold">
                           {opp.category}
                         </Badge>
                         {isVerifiedOrg && (
@@ -289,44 +280,44 @@ export default function HomePage() {
                         )}
                       </div>
 
-                      <h3 className="text-base font-bold text-[#0f2a43] line-clamp-2">
+                      <h3 className="text-base font-bold text-[#1f2d35] line-clamp-2">
                         {opp.title}
                       </h3>
 
-                      <div className="mt-4 space-y-2 text-xs text-[#335577]">
+                      <div className="mt-4 space-y-2 text-xs text-[#356775]">
                         <div className="flex items-center gap-2">
-                          <Building2 className="w-3.5 h-3.5 text-[#0369a1] shrink-0" />
-                          <span className="font-semibold text-[#0f2a43] truncate">
+                          <Building2 className="w-3.5 h-3.5 text-[#26505c] shrink-0" />
+                          <span className="font-semibold text-[#1f2d35] truncate">
                             {opp.organisation?.org_name || "Community Organisation"}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-3.5 h-3.5 text-[#0369a1] shrink-0" />
+                          <MapPin className="w-3.5 h-3.5 text-[#26505c] shrink-0" />
                           <span className="truncate">{locationStr}</span>
                         </div>
                         {opp.duration && (
                           <div className="flex items-center gap-2">
-                            <Clock className="w-3.5 h-3.5 text-[#0369a1] shrink-0" />
+                            <Clock className="w-3.5 h-3.5 text-[#26505c] shrink-0" />
                             <span>{opp.duration}</span>
                           </div>
                         )}
                         {openingsStr && (
                           <div className="flex items-center gap-2">
-                            <Users className="w-3.5 h-3.5 text-[#0369a1] shrink-0" />
+                            <Users className="w-3.5 h-3.5 text-[#26505c] shrink-0" />
                             <span className="tabular-nums">{openingsStr}</span>
                           </div>
                         )}
                         {opp.deadline && (
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-3.5 h-3.5 text-[#0369a1] shrink-0" />
+                            <Calendar className="w-3.5 h-3.5 text-[#26505c] shrink-0" />
                             <span className="tabular-nums">Deadline: {new Date(opp.deadline).toLocaleDateString()}</span>
                           </div>
                         )}
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-[#e2eaf2] flex items-center justify-between text-xs">
-                        <span className="text-[#5a7b9d]">Recognition</span>
-                        <span className="text-[#0369a1] font-semibold truncate max-w-[170px] tabular-nums">
+                      <div className="mt-4 pt-3 border-t border-[#edf3f4] flex items-center justify-between text-xs">
+                        <span className="text-[#607b85]">Recognition</span>
+                        <span className="text-[#26505c] font-semibold truncate max-w-[170px] tabular-nums">
                           {opp.pointsReward || opp.points_reward
                             ? `${opp.pointsReward || opp.points_reward} impact points`
                             : opp.type || "Volunteer Drive"}
@@ -337,11 +328,7 @@ export default function HomePage() {
                     <div className="p-6 pt-0">
                       <Link
                         href={`/opportunities/${opp.id}`}
-                        className={buttonVariants({
-                          variant: "outline",
-                          size: "sm",
-                          className: "w-full justify-center text-xs font-semibold",
-                        })}
+                        className="inline-flex items-center justify-center w-full h-10 rounded-xl bg-[#edf3f4] hover:bg-[#26505c] hover:text-white text-[#26505c] text-xs font-semibold transition-all"
                       >
                         View Details <ChevronRight className="w-3.5 h-3.5 ml-1" />
                       </Link>
@@ -352,15 +339,15 @@ export default function HomePage() {
             })}
 
             {opportunitiesLoading && (
-              <div className="col-span-full py-12 text-center text-sm text-[#5a7b9d]">
+              <div className="col-span-full py-12 text-center text-sm text-[#607b85]">
                 Loading approved community drives…
               </div>
             )}
 
             {!opportunitiesLoading && opportunitiesError && (
-              <div className="col-span-full py-12 text-center text-sm text-[#b91c1c] bg-[#fef2f2] rounded-2xl border border-[#fecaca]">
+              <div className="col-span-full py-12 text-center text-sm text-[#d64545] bg-[#fef2f2] rounded-2xl border border-[#fecaca]">
                 Unable to load drives at this moment. Please refresh or visit the{" "}
-                <Link href="/opportunities" className="underline font-semibold text-[#b91c1c]">
+                <Link href="/opportunities" className="underline font-semibold text-[#d64545]">
                   opportunities catalog
                 </Link>
                 .
@@ -368,7 +355,7 @@ export default function HomePage() {
             )}
 
             {!opportunitiesLoading && !opportunitiesError && filteredOpportunities.length === 0 && (
-              <div className="col-span-full py-12 text-center text-sm text-[#5a7b9d] bg-white rounded-2xl border border-[#bae6fd] p-8">
+              <div className="col-span-full py-12 text-center text-sm text-[#607b85] bg-white rounded-2xl border border-[#e5e7eb] p-8">
                 No active drives match this category or query. Browse all available opportunities in the catalog.
               </div>
             )}
@@ -378,56 +365,55 @@ export default function HomePage() {
 
       {/* 
         THE TRANSPARENT LEDGER — Three Architectural Pillars
-        Clear explanation of platform value, accountability, and verification
       */}
-      <section className="py-16 sm:py-20 bg-white/80 backdrop-blur-xs border-b border-[#bae6fd]/80">
+      <section className="py-16 sm:py-20 bg-white border-b border-[#e5e7eb]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="max-w-2xl mb-12">
-              <span className="text-xs font-bold text-[#0369a1]">
+              <span className="text-xs font-bold text-[#26505c] uppercase tracking-wider">
                 The Transparent Ledger
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0f2a43] tracking-tight mt-1">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1f2d35] tracking-tight mt-1">
                 Accountability in every volunteer hour.
               </h2>
-              <p className="mt-2 text-sm text-[#335577] leading-relaxed">
-                Light For Volunteer provides a structured framework for community participation, ensuring reliable support for non-profits and verified records for volunteers.
+              <p className="mt-2 text-sm text-[#356775] leading-relaxed">
+                Volunteer Yatra provides a structured framework for community participation, ensuring reliable support for non-profits and verified records for volunteers.
               </p>
             </div>
           </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <ScrollReveal delay={0} direction="up" className="h-full">
-              <div className="p-6 rounded-2xl border border-[#bae6fd]/80 bg-[#f4f9ff] shadow-[0_1px_3px_rgba(15,42,67,0.03)] h-full flex flex-col">
-                <div className="w-10 h-10 rounded-xl bg-[#e0f2fe] border border-[#bae6fd] text-[#0369a1] flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-5 h-5" />
+              <div className="p-7 rounded-2xl border border-[#e5e7eb] bg-[#edf3f4]/50 shadow-[0_1px_3px_rgba(31,45,53,0.03)] hover:border-[#26505c]/30 hover:bg-white hover:shadow-[0_8px_20px_rgba(38,80,92,0.06)] transition-all h-full flex flex-col">
+                <div className="w-12 h-12 rounded-2xl bg-[#26505c] text-[#ffe970] flex items-center justify-center mb-5 shadow-xs">
+                  <ShieldCheck className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-bold text-[#0f2a43]">Verified Non-Profit Partners</h3>
-                <p className="text-xs text-[#335577] mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-[#1f2d35]">Verified Non-Profit Partners</h3>
+                <p className="text-xs text-[#356775] mt-2 leading-relaxed">
                   Registered non-profits submit structured drives with documented goals, defined role expectations, and committed coordinator points of contact.
                 </p>
               </div>
             </ScrollReveal>
 
             <ScrollReveal delay={120} direction="up" className="h-full">
-              <div className="p-6 rounded-2xl border border-[#bae6fd]/80 bg-[#f4f9ff] shadow-[0_1px_3px_rgba(15,42,67,0.03)] h-full flex flex-col">
-                <div className="w-10 h-10 rounded-xl bg-[#e0f2fe] border border-[#bae6fd] text-[#0369a1] flex items-center justify-center mb-4">
-                  <FileCheck className="w-5 h-5" />
+              <div className="p-7 rounded-2xl border border-[#e5e7eb] bg-[#edf3f4]/50 shadow-[0_1px_3px_rgba(31,45,53,0.03)] hover:border-[#26505c]/30 hover:bg-white hover:shadow-[0_8px_20px_rgba(38,80,92,0.06)] transition-all h-full flex flex-col">
+                <div className="w-12 h-12 rounded-2xl bg-[#26505c] text-[#ffe970] flex items-center justify-center mb-5 shadow-xs">
+                  <FileCheck className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-bold text-[#0f2a43]">Tracked Applications &amp; Attendance</h3>
-                <p className="text-xs text-[#335577] mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-[#1f2d35]">Tracked Applications &amp; Attendance</h3>
+                <p className="text-xs text-[#356775] mt-2 leading-relaxed">
                   Volunteers submit structured applications and follow step-by-step progress from review to selection, attendance confirmation, and drive completion.
                 </p>
               </div>
             </ScrollReveal>
 
             <ScrollReveal delay={240} direction="up" className="h-full">
-              <div className="p-6 rounded-2xl border border-[#bae6fd]/80 bg-[#f4f9ff] shadow-[0_1px_3px_rgba(15,42,67,0.03)] h-full flex flex-col">
-                <div className="w-10 h-10 rounded-xl bg-[#e0f2fe] border border-[#bae6fd] text-[#0369a1] flex items-center justify-center mb-4">
-                  <Award className="w-5 h-5" />
+              <div className="p-7 rounded-2xl border border-[#e5e7eb] bg-[#edf3f4]/50 shadow-[0_1px_3px_rgba(31,45,53,0.03)] hover:border-[#26505c]/30 hover:bg-white hover:shadow-[0_8px_20px_rgba(38,80,92,0.06)] transition-all h-full flex flex-col">
+                <div className="w-12 h-12 rounded-2xl bg-[#26505c] text-[#ffe970] flex items-center justify-center mb-5 shadow-xs">
+                  <Award className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-bold text-[#0f2a43]">Documented Service Credentials</h3>
-                <p className="text-xs text-[#335577] mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-[#1f2d35]">Documented Service Credentials</h3>
+                <p className="text-xs text-[#356775] mt-2 leading-relaxed">
                   Complete drives to unlock verifiable certificates of completion, documented hours of civic contribution, and community recognition badges.
                 </p>
               </div>
@@ -440,17 +426,17 @@ export default function HomePage() {
         PARTICIPATION PATHWAYS SECTION
         Dual columns for Volunteers and Organisations
       */}
-      <section className="py-16 sm:py-20 bg-[#f4f9ff]/70 backdrop-blur-xs border-b border-[#bae6fd]/80">
+      <section className="py-16 sm:py-20 bg-[#edf3f4]/40 border-b border-[#e5e7eb]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="max-w-2xl mb-12">
-              <span className="text-xs font-bold text-[#0369a1]">
+              <span className="text-xs font-bold text-[#26505c] uppercase tracking-wider">
                 Participation Pathways
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0f2a43] tracking-tight mt-1">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1f2d35] tracking-tight mt-1">
                 Structured journeys for volunteers and organisations.
               </h2>
-              <p className="mt-2 text-sm text-[#335577] leading-relaxed">
+              <p className="mt-2 text-sm text-[#356775] leading-relaxed">
                 Clear, step-by-step processes designed for integrity, communication, and real civic impact.
               </p>
             </div>
@@ -459,54 +445,50 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Volunteer Pathway Card */}
             <ScrollReveal delay={0} direction="up" className="h-full">
-              <div className="rounded-2xl border border-[#bae6fd] bg-white p-6 sm:p-8 flex flex-col justify-between shadow-[0_2px_8px_rgba(15,42,67,0.03)] h-full">
+              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-7 sm:p-9 flex flex-col justify-between shadow-[0_2px_8px_rgba(31,45,53,0.03)] h-full">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e0f2fe] border border-[#bae6fd] text-xs font-bold text-[#075985] mb-4">
-                    <Compass className="w-3.5 h-3.5 text-[#0369a1]" />
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#edf3f4] border border-[#e5e7eb] text-xs font-bold text-[#26505c] mb-4">
+                    <Compass className="w-3.5 h-3.5 text-[#26505c]" />
                     <span>For Volunteers &amp; Interns</span>
                   </div>
-                  <h3 className="text-xl font-bold text-[#0f2a43]">
+                  <h3 className="text-xl font-bold text-[#1f2d35]">
                     Contribute skills, track hours, and build a verified service record.
                   </h3>
-                  <ul className="mt-6 space-y-4 text-xs text-[#335577]">
+                  <ul className="mt-6 space-y-4 text-xs text-[#356775]">
                     <li className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#e0f2fe] text-[#075985] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                      <span className="w-6 h-6 rounded-full bg-[#26505c] text-[#ffe970] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         1
                       </span>
                       <div>
-                        <strong className="text-[#0f2a43] block text-xs font-bold">Create your profile</strong>
+                        <strong className="text-[#1f2d35] block text-xs font-bold">Create your profile</strong>
                         Highlight skills, availability, and social causes that matter to you.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#e0f2fe] text-[#075985] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                      <span className="w-6 h-6 rounded-full bg-[#26505c] text-[#ffe970] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         2
                       </span>
                       <div>
-                        <strong className="text-[#0f2a43] block text-xs font-bold">Apply to verified drives</strong>
+                        <strong className="text-[#1f2d35] block text-xs font-bold">Apply to verified drives</strong>
                         Submit structured applications with tailored pitches directly to organisations.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#e0f2fe] text-[#075985] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                      <span className="w-6 h-6 rounded-full bg-[#26505c] text-[#ffe970] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         3
                       </span>
                       <div>
-                        <strong className="text-[#0f2a43] block text-xs font-bold">Complete service &amp; earn certificates</strong>
+                        <strong className="text-[#1f2d35] block text-xs font-bold">Complete service &amp; earn certificates</strong>
                         Receive coordinator attendance confirmation, hours tracking, and recognized certificates.
                       </div>
                     </li>
                   </ul>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-[#e2eaf2]">
+                <div className="mt-8 pt-6 border-t border-[#edf3f4]">
                   <Link
                     href="/signup/volunteer"
-                    className={buttonVariants({
-                      variant: "default",
-                      size: "sm",
-                      className: "w-full sm:w-auto font-semibold gap-1.5",
-                    })}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#ffe970] hover:bg-[#f3b61f] text-[#26505c] text-sm font-bold shadow-xs transition-all active:scale-[0.97] w-full sm:w-auto"
                   >
                     Join as Volunteer <ArrowRight className="w-4 h-4" />
                   </Link>
@@ -516,54 +498,50 @@ export default function HomePage() {
 
             {/* Organisation Pathway Card */}
             <ScrollReveal delay={150} direction="up" className="h-full">
-              <div className="rounded-2xl border border-[#bae6fd] bg-white p-6 sm:p-8 flex flex-col justify-between shadow-[0_2px_8px_rgba(15,42,67,0.03)] h-full">
+              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-7 sm:p-9 flex flex-col justify-between shadow-[0_2px_8px_rgba(31,45,53,0.03)] h-full">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e0f2fe] border border-[#bae6fd] text-xs font-bold text-[#075985] mb-4">
-                    <Building2 className="w-3.5 h-3.5 text-[#0369a1]" />
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#edf3f4] border border-[#e5e7eb] text-xs font-bold text-[#26505c] mb-4">
+                    <Building2 className="w-3.5 h-3.5 text-[#26505c]" />
                     <span>For Non-Profit Organisations</span>
                   </div>
-                  <h3 className="text-xl font-bold text-[#0f2a43]">
+                  <h3 className="text-xl font-bold text-[#1f2d35]">
                     Mobilize reliable volunteers for on-ground and digital initiatives.
                   </h3>
-                  <ul className="mt-6 space-y-4 text-xs text-[#335577]">
+                  <ul className="mt-6 space-y-4 text-xs text-[#356775]">
                     <li className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#e0f2fe] text-[#075985] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                      <span className="w-6 h-6 rounded-full bg-[#26505c] text-[#ffe970] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         1
                       </span>
                       <div>
-                        <strong className="text-[#0f2a43] block text-xs font-bold">Register your organisation</strong>
+                        <strong className="text-[#1f2d35] block text-xs font-bold">Register your organisation</strong>
                         Submit official organisation details to join the Amaanitvam verified network.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#e0f2fe] text-[#075985] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                      <span className="w-6 h-6 rounded-full bg-[#26505c] text-[#ffe970] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         2
                       </span>
                       <div>
-                        <strong className="text-[#0f2a43] block text-xs font-bold">Publish structured drives</strong>
+                        <strong className="text-[#1f2d35] block text-xs font-bold">Publish structured drives</strong>
                         Define role requirements, dates, locations, openings, and impact goals.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#e0f2fe] text-[#075985] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                      <span className="w-6 h-6 rounded-full bg-[#26505c] text-[#ffe970] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         3
                       </span>
                       <div>
-                        <strong className="text-[#0f2a43] block text-xs font-bold">Review &amp; certify attendance</strong>
+                        <strong className="text-[#1f2d35] block text-xs font-bold">Review &amp; certify attendance</strong>
                         Shortlist applicants, coordinate with volunteers, and mark completed drives.
                       </div>
                     </li>
                   </ul>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-[#e2eaf2]">
+                <div className="mt-8 pt-6 border-t border-[#edf3f4]">
                   <Link
                     href="/signup/organisation"
-                    className={buttonVariants({
-                      variant: "secondary",
-                      size: "sm",
-                      className: "w-full sm:w-auto font-semibold gap-1.5",
-                    })}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#26505c] hover:bg-[#1e3f49] text-white text-sm font-semibold shadow-xs transition-all active:scale-[0.97] w-full sm:w-auto"
                   >
                     Register Organisation <ArrowRight className="w-4 h-4" />
                   </Link>
@@ -576,44 +554,38 @@ export default function HomePage() {
 
       {/* 
         INSTITUTIONAL CIVIC ACTION BANNER
-        Authoritative Midnight Blue Surface with Zephyr landscape texture
+        Authoritative Deep Teal Surface with Zephyr landscape texture & Sunflower Yellow CTA
       */}
-      <section className="relative overflow-hidden py-14 sm:py-16 bg-[#0f2a43] text-white">
+      <section className="relative overflow-hidden py-16 sm:py-20 bg-[#26505c] text-white">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-luminosity pointer-events-none"
+          className="absolute inset-0 bg-cover bg-center opacity-15 mix-blend-luminosity pointer-events-none"
           style={{ backgroundImage: "url('/Zephyr%20032.png')" }}
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0f2a43] via-[#0f2a43]/90 to-[#075985]/80 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#26505c] via-[#26505c]/95 to-[#1e3f49]/90 pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="max-w-xl">
-                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-snug">
-                  Ready to contribute to your community?
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-snug">
+                  Ready to start your Volunteer Yatra?
                 </h2>
-                <p className="mt-2 text-sm text-[#93c5fd] leading-relaxed">
-                  Join the Amaanitvam volunteer network today to discover verified opportunities, or register your organization to post community drives.
+                <p className="mt-2 text-sm sm:text-base text-[#edf3f4]/90 leading-relaxed">
+                  Join the volunteer network today to discover verified opportunities, or register your organization to post community drives.
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
                 <Link
                   href="/signup/volunteer"
-                  className={buttonVariants({
-                    size: "lg",
-                    className: "bg-[#0369a1] hover:bg-[#075985] text-white font-semibold px-6 justify-center shadow-[0_2px_8px_rgba(3,105,161,0.4)]",
-                  })}
+                  className="inline-flex items-center justify-center px-8 py-3.5 bg-[#ffe970] hover:bg-[#f3b61f] text-[#26505c] font-bold text-sm sm:text-base rounded-2xl shadow-md transition-all active:scale-[0.97]"
                 >
                   Join as Volunteer
                 </Link>
                 <Link
                   href="/about"
-                  className={buttonVariants({
-                    size: "lg",
-                    className: "border border-white/40 bg-transparent text-white hover:bg-white/10 hover:border-white hover:text-white justify-center",
-                  })}
+                  className="inline-flex items-center justify-center px-7 py-3.5 border border-white/40 bg-transparent text-white hover:bg-white/10 rounded-2xl text-sm sm:text-base font-semibold transition-all active:scale-[0.97]"
                 >
                   About Our Mission
                 </Link>
