@@ -8,7 +8,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Review, Application]), NotificationsModule],
+  imports: [
+    TypeOrmModule.forFeature([Review, Application]),
+    NotificationsModule,
+  ],
   controllers: [ReviewsController],
   providers: [ReviewsService],
 })

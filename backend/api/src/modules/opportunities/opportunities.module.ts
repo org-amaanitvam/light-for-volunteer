@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Opportunity } from '../../database/entities/opportunity.entity';
 import { Organisation } from '../../database/entities/organisation.entity';
+import { OrganisationMember } from '../../database/entities/organisation-member.entity';
 import { Application } from '../../database/entities/application.entity';
 import { User } from '../users/entities/user.entity';
 import { SearchModule } from '../search/search.module';
@@ -12,7 +13,7 @@ import { OpportunitySubscriber } from './opportunity.subscriber';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Opportunity, Organisation, Application, User]),
+    TypeOrmModule.forFeature([Opportunity, Organisation, OrganisationMember, Application, User]),
     SearchModule,
     NotificationsModule,
   ],

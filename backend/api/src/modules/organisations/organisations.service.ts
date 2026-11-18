@@ -7,11 +7,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, type QueryDeepPartialEntity } from 'typeorm';
 import { Organisation } from '../../database/entities/organisation.entity';
+import { OrganisationMember } from '../../database/entities/organisation-member.entity';
+import { OrganisationMemberRole } from '../../database/enums/organisation-member-role.enum';
+import { OrganisationMemberStatus } from '../../database/enums/organisation-member-status.enum';
 import { Review } from '../../database/entities/review.entity';
 import { VerificationStatus } from '../../database/enums/verification-status.enum';
 import { CreateOrganisationDto } from '../../dtos/organisation/create-organisation.dto';
 import { UpdateOrganisationDto } from '../../dtos/organisation/update-organisation.dto';
-import { User } from '../users/entities/user.entity';
 
 type OrganisationOwnerResponse = {
   id: string;
@@ -56,6 +58,8 @@ export class OrganisationsService {
   constructor(
     @InjectRepository(Organisation)
     private readonly organisations: Repository<Organisation>,
+    @InjectRepository(OrganisationMember)
+    private readonly members: Repository<OrganisationMember>,
     @InjectRepository(Review)
     private readonly reviews: Repository<Review>,
   ) {}
@@ -72,7 +76,6 @@ export class OrganisationsService {
     this.assertVerificationDocumentOwner(userId, input.verificationDocUrl);
 
     const organisation = this.organisations.create();
-    organisation.user = { id: userId } as User;
     organisation.org_name = orgName;
     if (input.about !== undefined) organisation.about = input.about;
     if (input.website !== undefined) organisation.website = input.website;
@@ -89,6 +92,16 @@ export class OrganisationsService {
 
     try {
       const saved = await this.organisations.save(organisation);
+      await this.members.save(
+        this.members.create({
+          organisation: saved,
+          user: { id: userId },
+          role: OrganisationMemberRole.OWNER,
+          status: OrganisationMemberStatus.APPROVED,
+          decidedBy: { id: userId },
+          decidedAt: new Date(),
+        }),
+      );
       return this.toOwnerResponse(saved, userId);
     } catch (error) {
       if (this.isUniqueViolation(error)) {
@@ -184,11 +197,16 @@ export class OrganisationsService {
   ): Promise<OrganisationOwnerResponse | OrganisationPublicResponse> {
     const organisation = await this.organisations.findOne({
       where: { id },
-      relations: { user: true },
+      relations: { members: { user: true } },
     });
     if (!organisation) throw new NotFoundException('Organisation not found');
 
-    const isOwner = organisation.user?.id === userId;
+    const isOwner = organisation.members?.some(
+      (member) =>
+        member.user?.id === userId &&
+        member.role === OrganisationMemberRole.OWNER &&
+        member.status === OrganisationMemberStatus.APPROVED,
+    );
     const isAdmin = userRole === 'admin';
     if (
       organisation.verification_status !== VerificationStatus.VERIFIED &&
@@ -198,12 +216,27 @@ export class OrganisationsService {
       throw new NotFoundException('Organisation not found');
     }
 
-    if (isOwner || isAdmin) return this.toOwnerResponse(organisation, organisation.user.id);
-    return this.toPublicResponse(organisation, organisation.user.id);
+    const ownerId =
+      organisation.members?.find(
+        (member) =>
+          member.role === OrganisationMemberRole.OWNER &&
+          member.status === OrganisationMemberStatus.APPROVED,
+      )?.user?.id ?? userId;
+
+    if (isOwner || isAdmin) return this.toOwnerResponse(organisation, ownerId);
+    return this.toPublicResponse(organisation, ownerId);
   }
 
-  private findByOwner(userId: string): Promise<Organisation | null> {
-    return this.organisations.findOne({ where: { user: { id: userId } } });
+  private async findByOwner(userId: string): Promise<Organisation | null> {
+    const membership = await this.members.findOne({
+      where: {
+        user: { id: userId },
+        role: OrganisationMemberRole.OWNER,
+        status: OrganisationMemberStatus.APPROVED,
+      },
+      relations: { organisation: true },
+    });
+    return membership?.organisation ?? null;
   }
 
   private assertVerificationDocumentOwner(userId: string, document: string | undefined): void {
