@@ -10,6 +10,8 @@ import { InjectRepository } from '@nestjs/typeorm'; // Import decorator here
 import { Repository } from 'typeorm';                 // Import generic Repository here
 import { Review } from '../../database/entities/review.entity';
 import { Application } from '../../database/entities/application.entity';
+import { OrganisationMemberRole } from '../../database/enums/organisation-member-role.enum';
+import { OrganisationMemberStatus } from '../../database/enums/organisation-member-status.enum';
 import { CreateReviewDto } from '../../dtos/review/create-review.dto';
 import { ApplicationStatus } from '../../database/enums/application-status.enum';
 import { NotificationType } from '../../database/enums/notification-type.enum';
@@ -56,7 +58,7 @@ export class ReviewsService {
             volunteer: true,
             opportunity: {
             organisation: {
-                user: true, // TO CONFIRM: property name from Organisation entity
+                members: { user: true },
             },
             },
         },
@@ -73,10 +75,26 @@ export class ReviewsService {
     }
 
     const volunteerId = application.volunteer.id;
-    const organisationOwnerId = application.opportunity.organisation.user.id;
+    const organisationOwnerId = application.opportunity.organisation.members?.find(
+      (member) =>
+        member.role === OrganisationMemberRole.OWNER &&
+        member.status === OrganisationMemberStatus.APPROVED,
+    )?.user.id;
+    if (!organisationOwnerId) {
+      throw new NotFoundException('Organisation owner not found');
+    }
     let givenToId: string;
     if (role === 'volunteer' && volunteerId === givenById) givenToId = organisationOwnerId;
-    else if (role === 'organisation' && organisationOwnerId === givenById) givenToId = volunteerId;
+    else if (
+      role === 'organisation' &&
+      organisationOwnerId === givenById &&
+      application.opportunity.organisation.members?.some(
+        (member) =>
+          member.user?.id === givenById &&
+          member.role === OrganisationMemberRole.OWNER &&
+          member.status === OrganisationMemberStatus.APPROVED,
+      )
+    ) givenToId = volunteerId;
     else throw new ForbiddenException('Only participants of this completed application can review each other');
     if (givenById === givenToId) throw new BadRequestException('You cannot review yourself');
 

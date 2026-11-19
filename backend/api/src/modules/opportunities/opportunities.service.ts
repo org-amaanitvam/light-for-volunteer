@@ -11,6 +11,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Opportunity } from '../../database/entities/opportunity.entity';
 import { Organisation } from '../../database/entities/organisation.entity';
+import { OrganisationMember } from '../../database/entities/organisation-member.entity';
+import { OrganisationMemberRole } from '../../database/enums/organisation-member-role.enum';
+import { OrganisationMemberStatus } from '../../database/enums/organisation-member-status.enum';
 import { Application } from '../../database/entities/application.entity';
 import { User } from '../users/entities/user.entity';
 import { OpportunityStatus } from '../../database/enums/opportunity-status.enum';
@@ -52,6 +55,9 @@ export class OpportunitiesService {
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+    @InjectRepository(OrganisationMember)
+    private readonly memberRepo: Repository<OrganisationMember>,
 
     private readonly searchService: SearchService,
 
@@ -192,8 +198,10 @@ export class OpportunitiesService {
     const qb = this.opportunityRepo
       .createQueryBuilder('opp')
       .leftJoinAndSelect('opp.organisation', 'org')
-      .leftJoin('org.user', 'orgUser')
-      .addSelect(['orgUser.id', 'orgUser.name']);
+      .leftJoin('org.members', 'orgOwner', 'orgOwner.role = :ownerRole AND orgOwner.status = :approvedStatus', {
+        ownerRole: OrganisationMemberRole.OWNER,
+        approvedStatus: OrganisationMemberStatus.APPROVED,
+      });
 
     const searchParam = (query.search || query.q || '').trim();
     const typeParam = query.type;
@@ -213,7 +221,7 @@ export class OpportunitiesService {
         qb.andWhere('opp.status = :status', { status: requestedStatus });
       } else if (isOrganisation && currentUser) {
         // Can filter by status for own organisation listings
-        qb.andWhere('opp.status = :status AND orgUser.id = :userId', {
+        qb.andWhere('opp.status = :status AND orgOwner.user_id = :userId', {
           status: requestedStatus,
           userId: currentUser.sub,
         });
@@ -327,7 +335,7 @@ export class OpportunitiesService {
       where: { id },
       relations: {
         organisation: {
-          user: true,
+          members: { user: true },
         },
       },
     });
@@ -339,7 +347,9 @@ export class OpportunitiesService {
     // Access control:
     if (opp.status !== OpportunityStatus.LIVE) {
       const isAdmin = currentUser?.role === 'admin';
-      const isOwner = currentUser?.sub && opp.organisation?.user?.id === currentUser.sub;
+      const isOwner =
+        currentUser?.sub &&
+        this.isApprovedOwner(opp.organisation, currentUser.sub);
 
       if (!isAdmin && !isOwner) {
         throw new NotFoundException(`Opportunity with ID "${id}" not found`);
@@ -359,9 +369,15 @@ export class OpportunitiesService {
    * enriched with application count metrics.
    */
   async findMine(userId: string): Promise<any[]> {
-    const organisation = await this.organisationRepo.findOne({
-      where: { user: { id: userId } },
+    const membership = await this.memberRepo.findOne({
+      where: {
+        user: { id: userId },
+        role: OrganisationMemberRole.OWNER,
+        status: OrganisationMemberStatus.APPROVED,
+      },
+      relations: { organisation: true },
     });
+    const organisation = membership?.organisation;
 
     if (!organisation) {
       return [];
@@ -417,7 +433,7 @@ export class OpportunitiesService {
   ): Promise<any> {
     const opp = await this.findOpportunityWithOrg(id);
 
-    this.assertOwnership(opp, userId, userRole);
+    await this.assertOwnership(opp, userId, userRole);
 
     if (dto.title !== undefined) opp.title = dto.title.trim();
     if (dto.description !== undefined) opp.description = dto.description.trim();
@@ -470,7 +486,7 @@ export class OpportunitiesService {
   async remove(id: string, userId: string, userRole: string): Promise<{ message: string; id: string }> {
     const opp = await this.findOpportunityWithOrg(id);
 
-    this.assertOwnership(opp, userId, userRole);
+    await this.assertOwnership(opp, userId, userRole);
 
     // Check if there are active applications
     const activeAppCount = await this.applicationRepo.count({
@@ -501,7 +517,7 @@ export class OpportunitiesService {
   async submitForReview(id: string, userId: string, userRole: string): Promise<any> {
     const opp = await this.findOpportunityWithOrg(id);
 
-    this.assertOwnership(opp, userId, userRole);
+    await this.assertOwnership(opp, userId, userRole);
 
     if (opp.status !== OpportunityStatus.DRAFT && opp.status !== OpportunityStatus.REJECTED) {
       throw new BadRequestException(
@@ -540,7 +556,7 @@ export class OpportunitiesService {
   async close(id: string, userId: string, userRole: string): Promise<any> {
     const opp = await this.findOpportunityWithOrg(id);
 
-    this.assertOwnership(opp, userId, userRole);
+    await this.assertOwnership(opp, userId, userRole);
 
     if (opp.status === OpportunityStatus.CLOSED) {
       return this.serializeOpportunity(opp);
@@ -571,7 +587,7 @@ export class OpportunitiesService {
   async reopen(id: string, userId: string, userRole: string): Promise<any> {
     const opp = await this.findOpportunityWithOrg(id);
 
-    this.assertOwnership(opp, userId, userRole);
+    await this.assertOwnership(opp, userId, userRole);
 
     if (opp.status !== OpportunityStatus.CLOSED) {
       throw new BadRequestException('Only closed opportunities can be reopened');
@@ -641,7 +657,7 @@ export class OpportunitiesService {
       where: { id },
       relations: {
         organisation: {
-          user: true,
+          members: { user: true },
         },
       },
     });
@@ -653,13 +669,27 @@ export class OpportunitiesService {
     return opp;
   }
 
-  private assertOwnership(opp: Opportunity, userId: string, userRole: string): void {
+  private async assertOwnership(
+    opp: Opportunity,
+    userId: string,
+    userRole: string,
+  ): Promise<void> {
     if (userRole === 'admin') return;
 
-    const orgOwnerId = opp.organisation?.user?.id;
-    if (!orgOwnerId || orgOwnerId !== userId) {
+    if (!opp.organisation || !this.isApprovedOwner(opp.organisation, userId)) {
       throw new ForbiddenException('You do not have permission to modify this opportunity');
     }
+  }
+
+  private isApprovedOwner(organisation: Organisation | undefined, userId: string): boolean {
+    return Boolean(
+      organisation?.members?.some(
+        (member) =>
+          member.user?.id === userId &&
+          member.role === OrganisationMemberRole.OWNER &&
+          member.status === OrganisationMemberStatus.APPROVED,
+      ),
+    );
   }
 
   private async resolveOrganisationForUser(
@@ -672,10 +702,15 @@ export class OpportunitiesService {
       if (org) return org;
     }
 
-    let organisation = await this.organisationRepo.findOne({
-      where: { user: { id: userId } },
-      relations: { user: true },
+    const membership = await this.memberRepo.findOne({
+      where: {
+        user: { id: userId },
+        role: OrganisationMemberRole.OWNER,
+        status: OrganisationMemberStatus.APPROVED,
+      },
+      relations: { organisation: true },
     });
+    let organisation = membership?.organisation;
 
     if (!organisation) {
       const user = await this.userRepo.findOne({ where: { id: userId } });
@@ -685,10 +720,19 @@ export class OpportunitiesService {
 
       // Auto-initialize organisation record for organisation user
       organisation = this.organisationRepo.create({
-        user,
         org_name: user.name || 'Organisation',
       });
       organisation = await this.organisationRepo.save(organisation);
+      await this.memberRepo.save(
+        this.memberRepo.create({
+          organisation,
+          user,
+          role: OrganisationMemberRole.OWNER,
+          status: OrganisationMemberStatus.APPROVED,
+          decidedBy: user,
+          decidedAt: new Date(),
+        }),
+      );
       this.logger.log(`Created organization profile for user ${userId}`);
     }
 

@@ -6,6 +6,9 @@ import { Repository } from 'typeorm';
 import { Application } from '../../database/entities/application.entity';
 import { Opportunity } from '../../database/entities/opportunity.entity';
 import { VolunteerProfile } from '../../database/entities/volunteer-profile.entity';
+import { OrganisationMember } from '../../database/entities/organisation-member.entity';
+import { OrganisationMemberRole } from '../../database/enums/organisation-member-role.enum';
+import { OrganisationMemberStatus } from '../../database/enums/organisation-member-status.enum';
 import { ApplicationStatus } from '../../database/enums/application-status.enum';
 import { OpportunityStatus } from '../../database/enums/opportunity-status.enum';
 import { CreateApplicationDto } from '../../dtos/application/create-application.dto';
@@ -30,6 +33,8 @@ export class ApplicationsService {
     private readonly opportunityRepo: Repository<Opportunity>,
     @InjectRepository(VolunteerProfile)
     private readonly volunteerProfileRepo: Repository<VolunteerProfile>,
+    @InjectRepository(OrganisationMember)
+    private readonly memberRepo: Repository<OrganisationMember>,
     private readonly gamificationService: GamificationService,
     private readonly notifications: NotificationsService,
   ) { }
@@ -37,7 +42,7 @@ export class ApplicationsService {
   async create(volunteerId: string, dto: CreateApplicationDto) {
     const opportunity = await this.opportunityRepo.findOne({
       where: { id: dto.opportunityId },
-      relations: { organisation: { user: true } },
+      relations: { organisation: true },
     });
     if (!opportunity) {
       throw new NotFoundException('Opportunity not found');
@@ -84,7 +89,9 @@ export class ApplicationsService {
       );
 
       try {
-        const organisationOwnerId = opportunity.organisation?.user?.id;
+        const organisationOwnerId = opportunity.organisation
+          ? await this.findApprovedOwnerId(opportunity.organisation.id)
+          : null;
         if (organisationOwnerId) await this.notifications.create({
           userId: organisationOwnerId,
           type: NotificationType.APPLICATION_UPDATE,
@@ -139,10 +146,13 @@ export class ApplicationsService {
   async findForOpportunity(opportunityId: string, userId: string, userRole: string) {
     const opportunity = await this.opportunityRepo.findOne({
       where: { id: opportunityId },
-      relations: { organisation: { user: true } },
+      relations: { organisation: true },
     });
     if (!opportunity) throw new NotFoundException('Opportunity not found');
-    if (userRole !== 'admin' && opportunity.organisation?.user?.id !== userId) {
+    if (
+      userRole !== 'admin' &&
+      !(await this.isApprovedOwner(opportunity.organisation?.id, userId))
+    ) {
       throw new ForbiddenException('You can only review applicants to your own opportunities');
     }
 
@@ -165,13 +175,16 @@ export class ApplicationsService {
   async updateStatus(id: string, status: ApplicationStatus, userId: string, userRole: string, hoursCompleted?: number) {
     const application = await this.applicationRepo.findOne({
       where: { id },
-      relations: { opportunity: { organisation: { user: true } }, volunteer: true },
+      relations: { opportunity: { organisation: true }, volunteer: true },
     });
     if (!application) {
       throw new NotFoundException('Application not found');
     }
 
-    if (userRole !== 'admin' && application.opportunity.organisation?.user?.id !== userId) {
+    if (
+      userRole !== 'admin' &&
+      !(await this.isApprovedOwner(application.opportunity.organisation?.id, userId))
+    ) {
       throw new ForbiddenException('You can only update applicants to your own opportunities');
     }
 
@@ -209,6 +222,7 @@ export class ApplicationsService {
       } catch {
         this.logger.warn(`Application ${saved.id} changed status, but its volunteer notification could not be sent.`);
       }
+
     }
 
     if (status === ApplicationStatus.COMPLETED) {
@@ -254,5 +268,34 @@ export class ApplicationsService {
       completed_at: application.completed_at ?? null,
       completed_hours: application.completed_hours ?? 0,
     };
+  }
+
+  private async findApprovedOwnerId(organisationId: string): Promise<string | null> {
+    const owner = await this.memberRepo.findOne({
+      where: {
+        organisation: { id: organisationId },
+        role: OrganisationMemberRole.OWNER,
+        status: OrganisationMemberStatus.APPROVED,
+      },
+      relations: { user: true },
+    });
+    return owner?.user.id ?? null;
+  }
+
+  private async isApprovedOwner(
+    organisationId: string | undefined,
+    userId: string,
+  ): Promise<boolean> {
+    if (!organisationId) return false;
+    return Boolean(
+      await this.memberRepo.findOne({
+        where: {
+          organisation: { id: organisationId },
+          user: { id: userId },
+          role: OrganisationMemberRole.OWNER,
+          status: OrganisationMemberStatus.APPROVED,
+        },
+      }),
+    );
   }
 }

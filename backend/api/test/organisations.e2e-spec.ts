@@ -5,6 +5,9 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { Organisation } from '../src/database/entities/organisation.entity';
+import { OrganisationMember } from '../src/database/entities/organisation-member.entity';
+import { OrganisationMemberRole } from '../src/database/enums/organisation-member-role.enum';
+import { OrganisationMemberStatus } from '../src/database/enums/organisation-member-status.enum';
 import { VerificationStatus } from '../src/database/enums/verification-status.enum';
 import { UsersService } from '../src/modules/users/users.service';
 
@@ -73,6 +76,18 @@ describe('Organisations (e2e)', () => {
       const owner = await signup('create-org', 'organisation');
 
       const created = await createOrganisation(owner.token).expect(201);
+      const membership = await dataSource.getRepository(OrganisationMember).findOne({
+        where: {
+          organisation: { id: created.body.id },
+          user: { id: owner.userId },
+        },
+      });
+      expect(membership).toMatchObject({
+        role: OrganisationMemberRole.OWNER,
+        status: OrganisationMemberStatus.APPROVED,
+        jobTitle: null,
+      });
+
       expect(created.body).toMatchObject({
         id: expect.any(String),
         orgName: 'E2E Community Organisation',

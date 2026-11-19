@@ -1,10 +1,11 @@
 import { DEFAULT_ROLE, ROLES, type Role } from '@lfv/types';
-import { Organisation } from '../../../database/entities/organisation.entity';
+import { OrganisationMember } from '../../../database/entities/organisation-member.entity';
 import { VolunteerProfile } from '../../../database/entities/volunteer-profile.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -71,6 +72,6 @@ export class User {
   @OneToOne(() => VolunteerProfile, (profile) => profile.user)
   volunteerProfile!: VolunteerProfile;
 
-  @OneToOne(() => Organisation, (org) => org.user)
-  organisation!: Organisation;
+  @OneToMany(() => OrganisationMember, (member) => member.user)
+  organisationMemberships!: OrganisationMember[];
 }
