@@ -737,7 +737,6 @@ export default function OrganisationSignupPage() {
             <OTPInput
               value={otpCode}
               onChange={setOtpCode}
-              error={errors.otp}
             />
             {submitError && (
               <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
