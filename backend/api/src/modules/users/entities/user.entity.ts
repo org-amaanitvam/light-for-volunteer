@@ -1,6 +1,5 @@
 import { DEFAULT_ROLE, ROLES, type Role } from '@lfv/types';
 import { OrganisationMember } from '../../../database/entities/organisation-member.entity';
-import { Organisation } from '../../../database/entities/organisation.entity';
 import { VolunteerProfile } from '../../../database/entities/volunteer-profile.entity';
 import {
   Column,
