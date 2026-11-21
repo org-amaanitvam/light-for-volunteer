@@ -1,4 +1,4 @@
-{
+﻿{
   "extends": "../../packages/tsconfig/base.json",
   "compilerOptions": {
     "module": "commonjs",
@@ -19,6 +19,7 @@
       "src/*": ["./src/*"],
       "*": ["./node_modules/*"]
     },
+    "baseUrl": "./",
     "incremental": true,
     "strictPropertyInitialization": false
   },
