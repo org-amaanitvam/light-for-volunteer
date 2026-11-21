@@ -15,10 +15,8 @@ import {
   Image as ImageIcon,
   CheckCircle,
   ChevronRight,
-  X,
   HelpCircle,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,7 +105,6 @@ const initialForm: OrganisationFormData = {
 // ---------------------------------------------------------------------------
 
 export default function OrganisationSignupPage() {
-  const router = useRouter();
   const [step, setStep] = useState<FormStep>("type");
   const [form, setForm] = useState<OrganisationFormData>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -175,7 +172,7 @@ export default function OrganisationSignupPage() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [form, requiredDocs, otpCode, otpSent]);
+  }, [form, requiredDocs, otpCode, otpSent, consentChecked]);
 
   // -------------------------------------------------------------------------
   // Handlers
@@ -270,7 +267,6 @@ export default function OrganisationSignupPage() {
         throw new Error(errData.message || "Failed to register organisation");
       }
 
-      const data = await res.json();
       setStep("success");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to register organisation. Please try again.");
@@ -1119,39 +1115,19 @@ function FileUploadZone({
 interface OTPInputProps {
   value: string;
   onChange: (value: string) => void;
-  error?: string;
 }
 
-function OTPInput({ value, onChange, error }: OTPInputProps) {
-  const [inputs, setInputs] = useState<string[]>(Array(6).fill(""));
+function OTPInput({ value, onChange }: OTPInputProps) {
+  const digits = value.replace(/\D/g, "").slice(0, 6).padEnd(6, "").split("");
 
-  React.useEffect(() => {
-    const digits = value.replace(/\D/g, "").slice(0, 6);
-    setInputs(digits.padEnd(6, "").split(""));
-    onChange(digits);
-  }, [value, onChange]);
-
-  const handleInput = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = (e.target as HTMLInputElement).value.replace(/\D/g, "");
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const index = parseInt(e.currentTarget.id.split("-")[1], 10);
+    const val = e.currentTarget.value.replace(/\D/g, "");
     if (val) {
-      const next = [...inputs];
-      next[index] = val;
-      setInputs(next);
-      if (index < 5) {
-        const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement | undefined;
-        nextInput?.focus();
-      }
-      const combined = next.join("");
-      onChange(combined);
+      const newDigits = [...digits];
+      newDigits[index] = val;
+      onChange(newDigits.join(""));
     }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const paste = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    const next = paste.padEnd(6, "").split("");
-    setInputs(next);
-    onChange(next.join(""));
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1161,16 +1137,23 @@ function OTPInput({ value, onChange, error }: OTPInputProps) {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const paste = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const newDigits = paste.padEnd(6, "").split("");
+    onChange(newDigits.join(""));
+  };
+
   return (
     <div className="flex gap-2 justify-center">
-      {inputs.map((digit, i) => (
+      {digits.map((digit, i) => (
         <input
           key={i}
           id={`otp-${i}`}
           type="text"
           maxLength={1}
           value={digit}
-          onChange={(e) => handleInput(i, e)}
+          onChange={handleChange}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={handlePaste}
           className="w-10 h-11 rounded-xl border text-center text-lg font-mono text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 text-center"
