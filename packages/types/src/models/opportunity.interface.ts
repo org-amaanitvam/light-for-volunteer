@@ -26,6 +26,9 @@ export interface OpportunityData {
   openings: number;
   deadline: string | Date;
   status: OpportunityStatus;
+  student_friendly?: boolean;
+  studentFriendly?: boolean;
+  commitment?: string | null;
   organisation?: OpportunityOrganisationSummary;
   org?: string;
   applications_count?: number;
@@ -49,6 +52,9 @@ export interface CreateOpportunityPayload {
   openings?: number;
   deadline: string | Date;
   status?: OpportunityStatus;
+  student_friendly?: boolean;
+  studentFriendly?: boolean;
+  commitment?: string;
 }
 
 export interface UpdateOpportunityPayload extends Partial<CreateOpportunityPayload> {}
@@ -62,7 +68,10 @@ export interface OpportunitySearchParams {
   status?: OpportunityStatus;
   skills?: string;
   orgId?: string;
-  sortBy?: 'newest' | 'relevance' | 'deadline_soon' | 'points';
+  student_friendly?: boolean;
+  studentFriendly?: boolean;
+  commitment?: string;
+  sortBy?: 'newest' | 'relevance' | 'deadline_soon' | 'points' | 'deadline' | 'commitment' | 'student_friendly' | 'studentFriendly';
   sortOrder?: 'ASC' | 'DESC';
   page?: number;
   limit?: number;

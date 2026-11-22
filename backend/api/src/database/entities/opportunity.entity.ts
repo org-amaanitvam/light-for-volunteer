@@ -21,6 +21,8 @@ import { Application } from './application.entity';
 @Index(['type'])
 @Index(['location_type'])
 @Index(['deadline'])
+@Index(['student_friendly'])
+@Index(['commitment'])
 export class Opportunity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -61,6 +63,12 @@ export class Opportunity {
 
   @Column({ type: 'date', nullable: true })
   deadline: Date | null;
+
+  @Column({ type: 'boolean', default: false })
+  student_friendly: boolean;
+
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  commitment: string | null;
 
   @Column({ type: 'enum', enum: OpportunityStatus, default: OpportunityStatus.DRAFT })
   status: OpportunityStatus;
