@@ -67,7 +67,6 @@ import { MentorsModule } from './modules/mentors/mentors.module';
     NotificationsModule,
     StorageModule,
     SearchModule,
-    ReportsModule,
     LeaderboardModule, // Suraj: leaderboard recalculation
     CertificatesModule,
     MentorsModule,

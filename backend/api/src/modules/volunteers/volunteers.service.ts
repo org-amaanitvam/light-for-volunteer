@@ -6,6 +6,7 @@ import { UpdateVolunteerProfileDto } from '../../dtos/volunteer-profile/update-v
 import { User } from '../users/entities/user.entity';
 import { Application } from '../../database/entities/application.entity';
 import { ApplicationStatus } from '../../database/enums/application-status.enum';
+import { GamificationService } from '../gamification/gamification.service';
 
 type VolunteerProfileResponse = {
   id: string;
@@ -41,6 +42,20 @@ type VolunteerProfileChanges = {
   portfolio_links?: string[] | null;
 };
 
+type ProfileCompletionReward = {
+  awarded: boolean;
+  completion?: number;
+  awardedPoints?: number;
+  totalPoints?: number;
+  points?: number;
+  message?: string;
+};
+
+type VolunteerProfileUpdateResponse = VolunteerProfileResponse & {
+  profileCompletion: number;
+  reward: ProfileCompletionReward;
+};
+
 /**
  * Updates volunteer-owned columns independently from values owned by other
  * modules, so a stale profile read cannot overwrite concurrent gamification.
@@ -52,7 +67,8 @@ export class VolunteersService {
     private readonly profiles: Repository<VolunteerProfile>,
     @InjectRepository(Application)
     private readonly applications: Repository<Application>,
-  ) {}
+    private readonly gamificationService: GamificationService,
+  ) { }
 
   async getMyProfile(userId: string): Promise<VolunteerProfileResponse> {
     const profile = await this.ensureProfile(userId);
@@ -62,29 +78,39 @@ export class VolunteersService {
   async updateMyProfile(
     userId: string,
     input: UpdateVolunteerProfileDto,
-  ): Promise<VolunteerProfileResponse> {
+  ): Promise<VolunteerProfileUpdateResponse> {
     const profile = await this.ensureProfile(userId);
     const changes: VolunteerProfileChanges = {};
 
     if (input.headline !== undefined) {
-      changes.headline = typeof input.headline === 'string' ? input.headline.trim() : null;
+      changes.headline = input.headline?.trim() || null;
     }
+
     if (input.about !== undefined) {
-      changes.about = typeof input.about === 'string' ? input.about.trim() : null;
+      changes.about = input.about?.trim() || null;
     }
+
     if (input.resumeUrl !== undefined) {
       this.assertStorageKeyOwner(userId, input.resumeUrl, 'resumes');
-      changes.resume_url = typeof input.resumeUrl === 'string' ? input.resumeUrl : null;
+      changes.resume_url = input.resumeUrl || null;
     }
 
     const skills = input.skills as string[] | null | undefined;
+
     if (skills !== undefined) {
-      changes.skills = skills === null ? null : this.normalizeList(skills, 'skills', 30, 50, true);
+      changes.skills =
+        skills === null
+          ? null
+          : this.normalizeList(skills, 'skills', 30, 50, true);
     }
 
     const portfolioLinks = input.portfolioLinks as string[] | null | undefined;
+
     if (portfolioLinks !== undefined) {
-      for (const link of portfolioLinks ?? []) this.assertStorageKeyOwner(userId, link, 'portfolio');
+      for (const link of portfolioLinks ?? []) {
+        this.assertStorageKeyOwner(userId, link, 'portfolio');
+      }
+
       changes.portfolio_links =
         portfolioLinks === null
           ? null
@@ -98,14 +124,50 @@ export class VolunteersService {
       );
     }
 
-    const updated = await this.profiles.findOne({ where: { id: profile.id } });
-    if (!updated) throw new NotFoundException('Volunteer profile not found');
-    return this.toOwnerResponse(updated, await this.getTotalHours(userId));
+    const updated = await this.profiles.findOne({
+      where: { id: profile.id },
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Volunteer profile not found');
+    }
+
+    // Award profile completion points
+    const reward = await this.gamificationService.awardProfileCompletionPoints(userId);
+
+    // Fetch profile again to get updated gamification points
+    const finalProfile = await this.profiles.findOne({
+      where: { id: profile.id },
+    });
+
+    if (!finalProfile) {
+      throw new NotFoundException('Volunteer profile not found');
+    }
+
+    return {
+      ...this.toOwnerResponse(
+        finalProfile,
+        await this.getTotalHours(userId),
+      ),
+      profileCompletion:
+        this.gamificationService.calculateProfileCompletion(finalProfile),
+      reward,
+    };
   }
 
-  private assertStorageKeyOwner(userId: string, value: string | null | undefined, purpose: 'resumes' | 'portfolio'): void {
-    if (value?.startsWith(`${purpose}/`) && !value.startsWith(`${purpose}/${userId}/`)) {
-      throw new BadRequestException('Uploaded file must belong to this volunteer');
+  private assertStorageKeyOwner(
+    userId: string,
+    value: string | null | undefined,
+    purpose: 'resumes' | 'portfolio',
+  ): void {
+    if (!value) return;
+
+    const expectedPrefix = `${purpose}/${userId}/`;
+
+    if (!value.startsWith(expectedPrefix)) {
+      throw new BadRequestException(
+        'Invalid storage key or file ownership',
+      );
     }
   }
 

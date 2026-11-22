@@ -5,9 +5,10 @@ import { User } from '../users/entities/user.entity';
 import { Application } from '../../database/entities/application.entity';
 import { VolunteersController } from './volunteers.controller';
 import { VolunteersService } from './volunteers.service';
+import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([VolunteerProfile, User, Application])],
+  imports: [TypeOrmModule.forFeature([VolunteerProfile, User, Application]), GamificationModule],
   controllers: [VolunteersController],
   providers: [VolunteersService],
 })
