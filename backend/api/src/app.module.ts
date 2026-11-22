@@ -70,6 +70,7 @@ import { MentorsModule } from './modules/mentors/mentors.module';
     LeaderboardModule, // Suraj: leaderboard recalculation
     CertificatesModule,
     MentorsModule,
+    ReportsModule
   ],
   controllers: [HealthController],
   providers: [
