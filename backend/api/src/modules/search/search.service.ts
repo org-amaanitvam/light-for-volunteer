@@ -15,6 +15,9 @@ export interface IndexedOpportunityDoc {
   location_type: string;
   city?: string | null;
   duration?: string | null;
+  commitment?: string | null;
+  student_friendly: boolean;
+  studentFriendly?: boolean;
   points_reward: number;
   openings: number;
   deadline?: string | null;
@@ -31,6 +34,11 @@ export interface SearchFacets {
   categories: Record<string, number>;
   types: Record<string, number>;
   locationTypes: Record<string, number>;
+  commitments?: Record<string, number>;
+  studentFriendly?: {
+    true: number;
+    false: number;
+  };
 }
 
 export interface SearchResult<T = any> {
@@ -138,6 +146,8 @@ export class SearchService implements OnModuleInit {
     const cityParam = query.city?.trim().toLowerCase();
     const skillsParam = query.skills?.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
     const orgIdParam = query.orgId || query.organisationId;
+    const studentFriendlyParam = query.student_friendly ?? query.studentFriendly;
+    const commitmentParam = query.commitment?.trim().toLowerCase();
 
     const page = Math.max(1, Number(query.page || 1));
     const limit = Math.max(1, Math.min(100, Number(query.limit || 10)));
@@ -183,6 +193,14 @@ export class SearchService implements OnModuleInit {
       items = items.filter((item) => item.org_id === orgIdParam);
     }
 
+    if (studentFriendlyParam !== undefined) {
+      items = items.filter((item) => Boolean(item.student_friendly) === Boolean(studentFriendlyParam));
+    }
+
+    if (commitmentParam) {
+      items = items.filter((item) => item.commitment?.toLowerCase().includes(commitmentParam));
+    }
+
     // Apply Keyword Search & Relevance Scoring
     let scoredItems: { doc: IndexedOpportunityDoc; score: number }[];
 
@@ -197,6 +215,7 @@ export class SearchService implements OnModuleInit {
           const cat = (doc.category || '').toLowerCase();
           const city = (doc.city || '').toLowerCase();
           const org = (doc.org_name || '').toLowerCase();
+          const commit = (doc.commitment || '').toLowerCase();
           const skills = (doc.skills_required || []).map((s) => s.toLowerCase()).join(' ');
 
           for (const term of searchTerms) {
@@ -206,6 +225,7 @@ export class SearchService implements OnModuleInit {
             if (skills.includes(term)) score += 5;
             if (cat.includes(term)) score += 4;
             if (org.includes(term)) score += 3;
+            if (commit.includes(term)) score += 3;
             if (city.includes(term)) score += 2;
             if (desc.includes(term)) score += 1;
           }
@@ -233,6 +253,18 @@ export class SearchService implements OnModuleInit {
         const pA = a.doc.points_reward ?? 0;
         const pB = b.doc.points_reward ?? 0;
         return sortOrder === 'ASC' ? pA - pB : pB - pA;
+      }
+
+      if (sortBy === 'commitment') {
+        const cA = a.doc.commitment || '';
+        const cB = b.doc.commitment || '';
+        return sortOrder === 'ASC' ? cA.localeCompare(cB) : cB.localeCompare(cA);
+      }
+
+      if (sortBy === 'student_friendly' || sortBy === 'studentFriendly') {
+        const sA = a.doc.student_friendly ? 1 : 0;
+        const sB = b.doc.student_friendly ? 1 : 0;
+        return sortOrder === 'ASC' ? sA - sB : sB - sA;
       }
 
       // Default: newest
@@ -275,6 +307,8 @@ export class SearchService implements OnModuleInit {
     const categories: Record<string, number> = {};
     const types: Record<string, number> = {};
     const locationTypes: Record<string, number> = {};
+    const commitments: Record<string, number> = {};
+    const studentFriendly = { true: 0, false: 0 };
 
     for (const item of items) {
       if (item.category) {
@@ -286,9 +320,17 @@ export class SearchService implements OnModuleInit {
       if (item.location_type) {
         locationTypes[item.location_type] = (locationTypes[item.location_type] || 0) + 1;
       }
+      if (item.commitment) {
+        commitments[item.commitment] = (commitments[item.commitment] || 0) + 1;
+      }
+      if (item.student_friendly) {
+        studentFriendly.true += 1;
+      } else {
+        studentFriendly.false += 1;
+      }
     }
 
-    return { categories, types, locationTypes };
+    return { categories, types, locationTypes, commitments, studentFriendly };
   }
 
   private buildDoc(opp: Opportunity | any): IndexedOpportunityDoc {
@@ -308,6 +350,9 @@ export class SearchService implements OnModuleInit {
       location_type: opp.location_type,
       city: opp.city || null,
       duration: opp.duration || null,
+      commitment: opp.commitment || null,
+      student_friendly: opp.student_friendly ?? false,
+      studentFriendly: opp.student_friendly ?? false,
       points_reward: opp.points_reward ?? 0,
       openings: opp.openings ?? 1,
       deadline: opp.deadline ? new Date(opp.deadline).toISOString() : null,
