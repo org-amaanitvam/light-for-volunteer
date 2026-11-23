@@ -116,7 +116,7 @@ describe('Volunteers (e2e)', () => {
         skills: ['React', 'Accessibility'],
         portfolioLinks: ['https://example.com/work'],
         resumeUrl: 'https://example.com/resume.pdf',
-        points: 0,
+        points: 10,
         badges: [],
       });
     });
