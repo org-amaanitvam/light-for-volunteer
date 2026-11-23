@@ -223,6 +223,7 @@ export class AdminService {
 
       return {
         message: `Opportunity ${dto.status} successfully`,
+        status: updated.status,
         opportunity: {
           id: updated.id,
           title: updated.title,
