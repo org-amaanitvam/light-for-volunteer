@@ -91,7 +91,10 @@ export class VolunteersService {
     }
 
     if (input.resumeUrl !== undefined) {
-      this.assertStorageKeyOwner(userId, input.resumeUrl, 'resumes');
+      if (input.resumeUrl) {
+        this.assertStorageKeyOwner(userId, input.resumeUrl, 'resumes');
+      }
+
       changes.resume_url = input.resumeUrl || null;
     }
 
@@ -157,16 +160,20 @@ export class VolunteersService {
 
   private assertStorageKeyOwner(
     userId: string,
-    value: string | null | undefined,
-    purpose: 'resumes' | 'portfolio',
-  ): void {
-    if (!value) return;
+    key: string,
+    folder: string,
+  ) {
+    // Allow external HTTPS URLs.
+    if (key.startsWith('https://')) {
+      return;
+    }
 
-    const expectedPrefix = `${purpose}/${userId}/`;
+    // Uploaded files must belong to the current user.
+    const expectedPrefix = `${folder}/${userId}/`;
 
-    if (!value.startsWith(expectedPrefix)) {
+    if (!key.startsWith(expectedPrefix)) {
       throw new BadRequestException(
-        'Invalid storage key or file ownership',
+        'You can only use files uploaded to your own account',
       );
     }
   }
