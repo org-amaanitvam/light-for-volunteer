@@ -48,6 +48,9 @@ export interface OpportunityItem {
   city?: string | null;
   location?: string | null;
   duration?: string | null;
+  commitment?: string | null;
+  student_friendly?: boolean;
+  studentFriendly?: boolean;
   points_reward?: number;
   pointsReward?: number;
   openings?: number;
@@ -171,7 +174,10 @@ export interface OpportunityQueryParams {
   skills?: string;
   orgId?: string;
   organisationId?: string;
-  sortBy?: "newest" | "relevance" | "deadline_soon" | "points" | "deadline";
+  student_friendly?: boolean | string;
+  studentFriendly?: boolean | string;
+  commitment?: string;
+  sortBy?: "newest" | "relevance" | "deadline_soon" | "points" | "deadline" | "commitment" | "student_friendly" | "studentFriendly";
   sortOrder?: "ASC" | "DESC" | "asc" | "desc";
   page?: number | string;
   limit?: number | string;
@@ -194,6 +200,9 @@ export interface CreateOpportunityInput {
   openings?: number;
   deadline: string;
   status?: string;
+  student_friendly?: boolean;
+  studentFriendly?: boolean;
+  commitment?: string;
   orgId?: string;
   org_id?: string;
   [key: string]: unknown;
@@ -215,6 +224,9 @@ export interface UpdateOpportunityInput {
   openings?: number;
   deadline?: string;
   status?: string;
+  student_friendly?: boolean;
+  studentFriendly?: boolean;
+  commitment?: string;
   orgId?: string;
   org_id?: string;
   [key: string]: unknown;

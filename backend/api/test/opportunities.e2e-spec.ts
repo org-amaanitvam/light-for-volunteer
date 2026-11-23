@@ -122,12 +122,17 @@ describe('Opportunities & Search Module (e2e)', () => {
           pointsReward: 50,
           openings: 3,
           deadline: futureDate.toISOString(),
+          student_friendly: true,
+          commitment: '5 hours/week',
         })
         .expect(201);
 
       expect(res.body).toHaveProperty('id');
       expect(res.body.title).toBe('Youth Coding & Digital Literacy Mentor');
       expect(res.body.status).toBe(OpportunityStatus.DRAFT);
+      expect(res.body.student_friendly).toBe(true);
+      expect(res.body.studentFriendly).toBe(true);
+      expect(res.body.commitment).toBe('5 hours/week');
       expect(res.body.organisation.org_name).toBe('Hope EdTech Foundation');
 
       createdOppId = res.body.id;
@@ -181,6 +186,77 @@ describe('Opportunities & Search Module (e2e)', () => {
       expect(found.title).toBe('Youth Coding & Digital Literacy Mentor');
     });
 
+    let secondOppId: string;
+
+    it('Admin creates a second LIVE opportunity with student_friendly false and commitment 20 hours/week', async () => {
+      const futureDate = new Date();
+      futureDate.setMonth(futureDate.getMonth() + 2);
+
+      const res = await request(server)
+        .post('/api/opportunities')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          title: 'Full-time Environmental Project Lead',
+          description: 'Lead large scale environmental projects across districts.',
+          type: OpportunityType.INTERNSHIP,
+          category: 'Environment & Climate',
+          skillsRequired: ['Leadership', 'Project Management'],
+          locationType: LocationType.ON_SITE,
+          city: 'Mumbai',
+          duration: '6 months',
+          pointsReward: 100,
+          openings: 2,
+          deadline: futureDate.toISOString(),
+          status: OpportunityStatus.LIVE,
+          student_friendly: false,
+          commitment: '20 hours/week',
+        })
+        .expect(201);
+
+      expect(res.body.status).toBe(OpportunityStatus.LIVE);
+      expect(res.body.student_friendly).toBe(false);
+      expect(res.body.commitment).toBe('20 hours/week');
+      secondOppId = res.body.id;
+    });
+
+    it('Filters opportunities server-side by student_friendly boolean', async () => {
+      const resTrue = await request(server)
+        .get('/api/opportunities?student_friendly=true')
+        .expect(200);
+      const foundTrue1 = resTrue.body.data.find((item: any) => item.id === createdOppId);
+      const foundTrue2 = resTrue.body.data.find((item: any) => item.id === secondOppId);
+      expect(foundTrue1).toBeDefined();
+      expect(foundTrue2).toBeUndefined();
+
+      const resFalse = await request(server)
+        .get('/api/opportunities?student_friendly=false')
+        .expect(200);
+      const foundFalse1 = resFalse.body.data.find((item: any) => item.id === createdOppId);
+      const foundFalse2 = resFalse.body.data.find((item: any) => item.id === secondOppId);
+      expect(foundFalse1).toBeUndefined();
+      expect(foundFalse2).toBeDefined();
+    });
+
+    it('Filters opportunities server-side by commitment keyword', async () => {
+      const res = await request(server)
+        .get('/api/opportunities?commitment=5%20hours')
+        .expect(200);
+      const found = res.body.data.find((item: any) => item.id === createdOppId);
+      expect(found).toBeDefined();
+    });
+
+    it('Sorts opportunities server-side by commitment and student_friendly', async () => {
+      const resCommitment = await request(server)
+        .get('/api/opportunities?sortBy=commitment&sortOrder=ASC')
+        .expect(200);
+      expect(resCommitment.body.data.length).toBeGreaterThan(0);
+
+      const resStudent = await request(server)
+        .get('/api/opportunities?sortBy=student_friendly&sortOrder=DESC')
+        .expect(200);
+      expect(resStudent.body.data.length).toBeGreaterThan(0);
+    });
+
     it('Search index has synchronized: GET /api/search/opportunities finds the live listing', async () => {
       const res = await request(server)
         .get('/api/search/opportunities?search=Coding')
@@ -189,14 +265,35 @@ describe('Opportunities & Search Module (e2e)', () => {
       expect(res.body.data.length).toBeGreaterThan(0);
       const found = res.body.data.find((item: any) => item.id === createdOppId);
       expect(found).toBeDefined();
+      expect(found.student_friendly).toBe(true);
+      expect(found.commitment).toBe('5 hours/week');
       expect(res.body.meta).toHaveProperty('facets');
     });
 
-    it('Search facets endpoint returns category and location aggregates', async () => {
+    it('Search filtering and sorting by student_friendly and commitment', async () => {
+      const resFilter = await request(server)
+        .get('/api/search/opportunities?student_friendly=true')
+        .expect(200);
+      const found1 = resFilter.body.data.find((item: any) => item.id === createdOppId);
+      const found2 = resFilter.body.data.find((item: any) => item.id === secondOppId);
+      expect(found1).toBeDefined();
+      expect(found2).toBeUndefined();
+
+      const resSort = await request(server)
+        .get('/api/search/opportunities?sortBy=commitment&sortOrder=ASC')
+        .expect(200);
+      expect(resSort.body.data.length).toBeGreaterThan(0);
+    });
+
+    it('Search facets endpoint returns category, location, commitment, and studentFriendly aggregates', async () => {
       const res = await request(server).get('/api/search/facets').expect(200);
       expect(res.body).toHaveProperty('categories');
       expect(res.body).toHaveProperty('types');
       expect(res.body).toHaveProperty('locationTypes');
+      expect(res.body).toHaveProperty('commitments');
+      expect(res.body).toHaveProperty('studentFriendly');
+      expect(res.body.studentFriendly).toHaveProperty('true');
+      expect(res.body.studentFriendly).toHaveProperty('false');
     });
 
     it('Organisation updates opportunity details (PATCH /api/opportunities/:id)', async () => {
@@ -206,11 +303,15 @@ describe('Opportunities & Search Module (e2e)', () => {
         .send({
           title: 'Advanced Youth Coding & AI Mentor',
           openings: 5,
+          commitment: '10 hours/week',
+          student_friendly: false,
         })
         .expect(200);
 
       expect(res.body.title).toBe('Advanced Youth Coding & AI Mentor');
       expect(res.body.openings).toBe(5);
+      expect(res.body.commitment).toBe('10 hours/week');
+      expect(res.body.student_friendly).toBe(false);
     });
 
     it('Organisation views their own opportunities list (GET /api/opportunities/mine)', async () => {
@@ -269,6 +370,12 @@ describe('Opportunities & Search Module (e2e)', () => {
         message: 'Opportunity deleted successfully',
         id: createdOppId,
       });
+
+      if (secondOppId) {
+        await request(server)
+          .delete(`/api/opportunities/${secondOppId}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+      }
     });
   });
 });

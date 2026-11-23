@@ -130,6 +130,8 @@ export class OpportunitiesService {
     const locationType = dto.locationType || dto.location_type || LocationType.REMOTE;
     const pointsReward = dto.pointsReward ?? dto.points_reward ?? 0;
     const openings = dto.openings ?? 1;
+    const studentFriendly = dto.student_friendly ?? dto.studentFriendly ?? false;
+    const commitment = dto.commitment?.trim() || null;
 
     let initialStatus = dto.status || OpportunityStatus.DRAFT;
     if (initialStatus === OpportunityStatus.LIVE && userRole !== 'admin') {
@@ -150,6 +152,8 @@ export class OpportunitiesService {
       points_reward: pointsReward,
       openings,
       deadline: dto.deadline,
+      student_friendly: studentFriendly,
+      commitment,
       status: initialStatus,
     });
 
@@ -211,6 +215,8 @@ export class OpportunitiesService {
     const skillsParam = query.skills?.trim();
     const orgIdParam = query.orgId || query.organisationId;
     const requestedStatus = query.status;
+    const studentFriendlyParam = query.student_friendly ?? query.studentFriendly;
+    const commitmentParam = query.commitment?.trim();
 
     // RBAC & Visibility rules:
     const isAdmin = currentUser?.role === 'admin';
@@ -282,11 +288,25 @@ export class OpportunitiesService {
       }
     }
 
+    // Filter by Student Friendly
+    if (studentFriendlyParam !== undefined) {
+      qb.andWhere('opp.student_friendly = :studentFriendly', {
+        studentFriendly: studentFriendlyParam,
+      });
+    }
+
+    // Filter by Commitment
+    if (commitmentParam) {
+      qb.andWhere('LOWER(opp.commitment) LIKE :commitment', {
+        commitment: `%${commitmentParam.toLowerCase()}%`,
+      });
+    }
+
     // Keyword Search
     if (searchParam) {
       const searchPattern = `%${searchParam.toLowerCase()}%`;
       qb.andWhere(
-        '(LOWER(opp.title) LIKE :search OR LOWER(opp.description) LIKE :search OR LOWER(opp.category) LIKE :search OR LOWER(opp.city) LIKE :search OR LOWER(opp.skills_required) LIKE :search OR LOWER(org.org_name) LIKE :search)',
+        '(LOWER(opp.title) LIKE :search OR LOWER(opp.description) LIKE :search OR LOWER(opp.category) LIKE :search OR LOWER(opp.city) LIKE :search OR LOWER(opp.commitment) LIKE :search OR LOWER(opp.skills_required) LIKE :search OR LOWER(org.org_name) LIKE :search)',
         { search: searchPattern },
       );
     }
@@ -299,6 +319,10 @@ export class OpportunitiesService {
       qb.orderBy('opp.deadline', sortOrder);
     } else if (sortBy === 'points') {
       qb.orderBy('opp.points_reward', sortOrder);
+    } else if (sortBy === 'commitment') {
+      qb.orderBy('opp.commitment', sortOrder);
+    } else if (sortBy === 'student_friendly' || sortBy === 'studentFriendly') {
+      qb.orderBy('opp.student_friendly', sortOrder);
     } else {
       // Default: newest
       qb.orderBy('opp.created_at', sortOrder);
@@ -456,6 +480,11 @@ export class OpportunitiesService {
 
     if (dto.openings !== undefined) opp.openings = dto.openings;
     if (dto.deadline !== undefined) opp.deadline = dto.deadline;
+
+    const studentFriendly = dto.student_friendly ?? dto.studentFriendly;
+    if (studentFriendly !== undefined) opp.student_friendly = studentFriendly;
+
+    if (dto.commitment !== undefined) opp.commitment = dto.commitment?.trim() || null;
 
     if (dto.status !== undefined) {
       // Validate permissible direct status updates
@@ -774,6 +803,9 @@ export class OpportunitiesService {
       pointsReward: opp.points_reward ?? 0,
       openings: opp.openings ?? 1,
       deadline: opp.deadline,
+      student_friendly: opp.student_friendly ?? false,
+      studentFriendly: opp.student_friendly ?? false,
+      commitment: opp.commitment ?? null,
       status: opp.status,
       applications_count: applicationsCount,
       organisation: opp.organisation
