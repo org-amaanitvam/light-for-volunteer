@@ -1,15 +1,15 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from '../../dtos/review/create-review.dto';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('reviews')
 @Controller('reviews')
 export class ReviewsController {
-  constructor(private readonly service: ReviewsService) {}
+  constructor(private readonly service: ReviewsService) { }
 
   @Public()
   @Get('ping')

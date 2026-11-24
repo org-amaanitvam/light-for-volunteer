@@ -116,7 +116,7 @@ describe('Volunteers (e2e)', () => {
         skills: ['React', 'Accessibility'],
         portfolioLinks: ['https://example.com/work'],
         resumeUrl: 'https://example.com/resume.pdf',
-        points: 0,
+        points: 10,
         badges: [],
       });
     });
@@ -149,9 +149,9 @@ describe('Volunteers (e2e)', () => {
         .send({
           headline: 'Volunteer',
           about: 'Profile details',
+          portfolioLinks: ['https://example.com/work'],
           resumeUrl: 'https://example.com/resume.pdf',
           skills: ['Mentoring'],
-          portfolioLinks: ['https://example.com/work'],
         })
         .expect(200);
 
@@ -217,7 +217,10 @@ describe('Volunteers (e2e)', () => {
       await request(server)
         .patch('/api/volunteers/profile')
         .set(asUser(owner.token))
-        .send({ headline: 'Community helper', resumeUrl: 'https://example.com/private.pdf' })
+        .send({
+          headline: 'Community helper',
+          resumeUrl: 'https://example.com/private.pdf',
+        })
         .expect(200);
 
       const response = await request(server)

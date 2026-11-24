@@ -18,7 +18,7 @@ export class GamificationService {
     @InjectRepository(PointTransaction)
     private readonly transactionRepository: Repository<PointTransaction>,
     private readonly notifications: NotificationsService,
-  ) {}
+  ) { }
 
   async getMyGamification(userId: string) {
     const profile = await this.profileRepository.findOne({
@@ -47,11 +47,7 @@ export class GamificationService {
     };
   }
 
-  async awardPoints(
-    userId: string,
-    eventType: string,
-    eventKey: string,
-    points: number,
+  async awardPoints(userId: string, eventType: string, eventKey: string, points: number,
   ) {
     if (!Number.isInteger(points) || points <= 0) {
       throw new BadRequestException('Points must be a positive integer.');
@@ -63,11 +59,9 @@ export class GamificationService {
 
     return this.dataSource.transaction(async (manager) => {
       const profileRepo = manager.getRepository(VolunteerProfile);
-     
 
       const profile = await profileRepo.findOne({
         where: { user: { id: userId } },
-        relations: { user: true },
         lock: { mode: 'pessimistic_write' },
       });
 
@@ -75,7 +69,6 @@ export class GamificationService {
         throw new NotFoundException('Volunteer profile not found.');
       }
 
-      // The unique event_key prevents duplicate awards.
       const insertResult = await manager
         .createQueryBuilder()
         .insert()
@@ -87,9 +80,11 @@ export class GamificationService {
           points,
         })
         .orIgnore()
+        .returning(['id'])
         .execute();
 
-      if (insertResult.identifiers.length === 0) {
+      // PostgreSQL RETURNING returns an empty array when the insert is ignored.
+      if (!insertResult.raw || insertResult.raw.length === 0) {
         return {
           awarded: false,
           message: 'This event has already been processed.',
@@ -161,5 +156,48 @@ export class GamificationService {
       },
       badges: profile.badges,
     };
+  }
+
+  //Calculate Profile completion 
+  calculateProfileCompletion(profile: VolunteerProfile): number {
+    const checks = [
+      !!profile.headline?.trim(),
+      !!profile.about?.trim(),
+      (profile.skills ?? []).some(skill => skill.trim().length > 0),
+      !!profile.resume_url?.trim(),
+      (profile.portfolio_links ?? []).some(link => link.trim().length > 0),
+    ];
+
+    const completed = checks.filter(Boolean).length;
+
+    return Math.round((completed / checks.length) * 100);
+  }
+
+  //Award points to the user
+  async awardProfileCompletionPoints(userId: string) {
+    const profile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!profile) {
+      throw new NotFoundException('Volunteer profile not found.');
+    }
+
+    const completion = this.calculateProfileCompletion(profile);
+
+    if (completion < 100) {
+      return {
+        awarded: false,
+        completion,
+        message: 'Complete your profile to earn points.',
+      };
+    }
+
+    return this.awardPoints(
+      userId,
+      'profile_completed',
+      `profile-completed:${userId}`,
+      10,
+    );
   }
 }

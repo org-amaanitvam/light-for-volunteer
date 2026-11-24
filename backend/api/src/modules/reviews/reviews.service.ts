@@ -1,9 +1,9 @@
-import { 
-  Injectable, 
-  BadRequestException, 
-  NotFoundException, 
-  ForbiddenException, 
-  ConflictException 
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm'; // Import decorator here
@@ -16,7 +16,8 @@ import { CreateReviewDto } from '../../dtos/review/create-review.dto';
 import { ApplicationStatus } from '../../database/enums/application-status.enum';
 import { NotificationType } from '../../database/enums/notification-type.enum';
 import { NotificationsService } from '../notifications/notifications.service';
-
+import { GamificationService } from '../gamification/gamification.service';
+import { User } from '../users/entities/user.entity';
 /**
  * Two-way ratings after completion.
  *
@@ -30,7 +31,8 @@ export class ReviewsService {
     @InjectRepository(Application)
     private readonly applicationRepo: Repository<Application>,
     private readonly notifications: NotificationsService,
-  ) {}
+    private readonly gamificationService: GamificationService,
+  ) { }
 
   async findMine(userId: string) {
     const reviews = await this.reviewRepo.find({
@@ -53,16 +55,16 @@ export class ReviewsService {
 
   async create(givenById: string, role: string, dto: CreateReviewDto) {
     const application = await this.applicationRepo.findOne({
-        where: { id: dto.applicationId },
-        relations: {
-            volunteer: true,
-            opportunity: {
-            organisation: {
-                members: { user: true },
-            },
-            },
+      where: { id: dto.applicationId },
+      relations: {
+        volunteer: true,
+        opportunity: {
+          organisation: {
+            members: { user: true },
+          },
         },
-    });
+      },
+    },);
 
     if (!application) {
       throw new NotFoundException('Application not found');
@@ -133,15 +135,36 @@ export class ReviewsService {
       });
     } catch {
       // Keep the saved review successful if notifications are temporarily unavailable.
-    }
+      const reviewer = await this.reviewRepo.manager
+        .getRepository(User)
+        .findOne({
+          where: { id: givenById },
+          select: {
+            id: true,
+            role: true,
+          },
+        });
 
-    return {
-      id: saved.id,
-      applicationId: dto.applicationId,
-      givenBy: givenById,
-      givenTo: givenToId,
-      rating: saved.rating,
-      comment: saved.comment,
-    };
+      let reward = null;
+
+      if (reviewer?.role === 'volunteer') {
+        reward = await this.gamificationService.awardPoints(
+          givenById,
+          'review_submitted',
+          `review-submitted:${saved.id}`,
+          5,
+        );
+      }
+
+      return {
+        id: saved.id,
+        applicationId: dto.applicationId,
+        givenBy: givenById,
+        givenTo: givenToId,
+        rating: saved.rating,
+        comment: saved.comment,
+        reward,
+      };
+    }
   }
 }
