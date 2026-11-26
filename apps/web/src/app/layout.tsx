@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { AuthProvider } from "@/context/auth-context";
+import { LanguageProvider } from "@/context/language-context";
 import { Suspense } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -31,7 +32,7 @@ export default function RootLayout({
           Skip to main content
         </a>
 
-        {/* Global Platform-Wide Atmospheric Background (Zephyr 032.png) */}
+        {/* Global Platform-Wide Atmospheric Background */}
         <div
           className="fixed inset-0 -z-50 bg-cover pointer-events-none"
           style={{
@@ -45,10 +46,26 @@ export default function RootLayout({
         </div>
 
         <AuthProvider>
-          <Suspense fallback={<div className="h-16 sm:h-18 border-b border-[#bae6fd]/80 bg-white" />}><Navbar /></Suspense>
-          <main id="main-content" tabIndex={-1} className="flex-1 outline-none">{children}</main>
-          <Footer />
-          <ChatWindow />
+          <LanguageProvider>
+            <Suspense
+              fallback={
+                <div className="h-16 sm:h-18 border-b border-[#bae6fd]/80 bg-white" />
+              }
+            >
+              <Navbar />
+            </Suspense>
+
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className="flex-1 outline-none"
+            >
+              {children}
+            </main>
+
+            <Footer />
+            <ChatWindow />
+          </LanguageProvider>
         </AuthProvider>
       </body>
     </html>
