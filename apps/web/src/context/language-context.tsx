@@ -1,7 +1,12 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
 
 export type Language = "en" | "hi";
 
@@ -58,28 +63,64 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined
 );
 
+const STORAGE_KEY = "site-language";
+
+const listeners = new Set<() => void>();
+
+function getLanguageSnapshot(): Language {
+  if (typeof window === "undefined") {
+    return "en";
+  }
+
+  const savedLanguage = localStorage.getItem(STORAGE_KEY);
+
+  return savedLanguage === "hi" ? "hi" : "en";
+}
+
+function getServerLanguageSnapshot(): Language {
+  return "en";
+}
+
+function subscribeToLanguage(callback: () => void) {
+  listeners.add(callback);
+
+  function handleStorage(event: StorageEvent) {
+    if (event.key === STORAGE_KEY || event.key === null) {
+      callback();
+    }
+  }
+
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    listeners.delete(callback);
+    window.removeEventListener("storage", handleStorage);
+  };
+}
+
+function updateLanguage(nextLanguage: Language) {
+  localStorage.setItem(STORAGE_KEY, nextLanguage);
+
+  listeners.forEach((callback) => callback());
+}
+
 export function LanguageProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [language, setLanguageState] = useState<Language>("en");
-
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("site-language");
-
-    if (savedLanguage === "hi" || savedLanguage === "en") {
-      setLanguageState(savedLanguage);
-    }
-  }, []);
+  const language = useSyncExternalStore(
+    subscribeToLanguage,
+    getLanguageSnapshot,
+    getServerLanguageSnapshot
+  );
 
   useEffect(() => {
     document.documentElement.lang = language;
-    localStorage.setItem("site-language", language);
   }, [language]);
 
   function setLanguage(nextLanguage: Language) {
-    setLanguageState(nextLanguage);
+    updateLanguage(nextLanguage);
   }
 
   function t(key: TranslationKey) {
