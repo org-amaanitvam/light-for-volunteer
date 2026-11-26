@@ -162,7 +162,7 @@ export default function HowWeVerifyPage() {
           </div>
 
           <p className="text-sm sm:text-base leading-7 text-[#52718e] mb-5">
-            Depending on the organisation's legal structure and registration
+            Depending on the organisation&apos;s legal structure and registration
             type, relevant documents may include:
           </p>
 
@@ -197,7 +197,7 @@ export default function HowWeVerifyPage() {
               <div>
                 <h3 className="font-bold text-[#0f2a43]">Pending</h3>
                 <p className="text-sm leading-6 text-[#52718e]">
-                  The organisation's submission is awaiting administrative
+                  The organisation&apos;s submission is awaiting administrative
                   review.
                 </p>
               </div>
@@ -208,7 +208,7 @@ export default function HowWeVerifyPage() {
               <div>
                 <h3 className="font-bold text-[#0f2a43]">Verified</h3>
                 <p className="text-sm leading-6 text-[#52718e]">
-                  The organisation's submitted information has been reviewed
+                  The organisation&apos;s submitted information has been reviewed
                   and its verification status has been approved.
                 </p>
               </div>
@@ -235,9 +235,9 @@ export default function HowWeVerifyPage() {
 
           <p className="text-sm sm:text-base leading-7 text-[#52718e]">
             Verification on Light For Volunteer indicates that submitted
-            organisation information has undergone the platform's
+            organisation information has undergone the platform&apos;s
             administrative review. It should not be understood as a guarantee
-            of an organisation's activities, financial position, future
+            of an organisation&apos;s activities, financial position, future
             conduct or the outcome of any volunteering opportunity. Volunteers
             should exercise their own judgement before participating.
           </p>
