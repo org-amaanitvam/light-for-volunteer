@@ -20,10 +20,49 @@ import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
 import Image from "next/image";
 
+function LanguageToggle() {
+  const { language, setLanguage, t } = useLanguage();
+
+  return (
+    <div
+      className="inline-flex items-center gap-1 rounded-xl border border-[#bae6fd] bg-[#f4f9ff] p-1"
+      aria-label={t("language")}
+    >
+      <Languages className="h-4 w-4 ml-1 text-[#0369a1]" />
+
+      <button
+        type="button"
+        onClick={() => setLanguage("en")}
+        aria-pressed={language === "en"}
+        className={`rounded-lg px-2 py-1 text-xs font-bold transition-colors ${
+          language === "en"
+            ? "bg-[#0369a1] text-white"
+            : "text-[#335577] hover:bg-[#e0f2fe]"
+        }`}
+      >
+        EN
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setLanguage("hi")}
+        aria-pressed={language === "hi"}
+        className={`rounded-lg px-2 py-1 text-xs font-bold transition-colors ${
+          language === "hi"
+            ? "bg-[#0369a1] text-white"
+            : "text-[#335577] hover:bg-[#e0f2fe]"
+        }`}
+      >
+        हिंदी
+      </button>
+    </div>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
@@ -84,43 +123,6 @@ export function Navbar() {
     { name: t("blog"), href: "/blog" },
     { name: t("contact"), href: "/contact" },
   ];
-
-  function LanguageToggle() {
-    return (
-      <div
-        className="inline-flex items-center gap-1 rounded-xl border border-[#bae6fd] bg-[#f4f9ff] p-1"
-        aria-label={t("language")}
-      >
-        <Languages className="h-4 w-4 ml-1 text-[#0369a1]" />
-
-        <button
-          type="button"
-          onClick={() => setLanguage("en")}
-          aria-pressed={language === "en"}
-          className={`rounded-lg px-2 py-1 text-xs font-bold transition-colors ${
-            language === "en"
-              ? "bg-[#0369a1] text-white"
-              : "text-[#335577] hover:bg-[#e0f2fe]"
-          }`}
-        >
-          EN
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setLanguage("hi")}
-          aria-pressed={language === "hi"}
-          className={`rounded-lg px-2 py-1 text-xs font-bold transition-colors ${
-            language === "hi"
-              ? "bg-[#0369a1] text-white"
-              : "text-[#335577] hover:bg-[#e0f2fe]"
-          }`}
-        >
-          हिंदी
-        </button>
-      </div>
-    );
-  }
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/92 backdrop-blur-md border-b border-[#bae6fd]/80 shadow-[0_1px_3px_rgba(15,42,67,0.05)] transition-[border-color,background-color] duration-150">
