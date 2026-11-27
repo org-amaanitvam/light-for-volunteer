@@ -2,16 +2,21 @@ import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as argon2 from 'argon2';
 import request from 'supertest';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { Organisation } from '../src/database/entities/organisation.entity';
+import { OrganisationDocument } from '../src/database/entities/organisation-document.entity';
 import { OrganisationMember } from '../src/database/entities/organisation-member.entity';
 import { OrganisationMemberRole } from '../src/database/enums/organisation-member-role.enum';
 import { OrganisationMemberStatus } from '../src/database/enums/organisation-member-status.enum';
 import { VerificationStatus } from '../src/database/enums/verification-status.enum';
+import { OrganisationDocumentType } from '../src/database/enums/organisation-document-type.enum';
+import { OrganisationDocumentStatus } from '../src/database/enums/organisation-document-status.enum';
+import { User } from '../src/modules/users/entities/user.entity';
 import { UsersService } from '../src/modules/users/users.service';
 
 const PASSWORD = 'Sup3rSecret!pass';
+const E2E_DATABASE_NAME = 'light_for_volunteer_test';
 const rand = () => Math.random().toString(36).slice(2, 10);
 const uniqueEmail = (label: string) => `${label}-${rand()}@e2e.test`;
 
@@ -20,6 +25,7 @@ describe('Organisations (e2e)', () => {
   let server: ReturnType<INestApplication['getHttpServer']>;
   let dataSource: DataSource;
   let adminToken: string;
+  const createdUserIds = new Set<string>();
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -34,12 +40,13 @@ describe('Organisations (e2e)', () => {
 
     const users = app.get(UsersService);
     const adminEmail = uniqueEmail('e2e-admin');
-    await users.create({
+    const admin = await users.create({
       email: adminEmail,
       name: 'E2E Admin',
       passwordHash: await argon2.hash(PASSWORD),
       role: 'admin',
     });
+    createdUserIds.add(admin.id);
     const adminLogin = await request(server)
       .post('/api/auth/login')
       .send({ email: adminEmail, password: PASSWORD })
@@ -48,7 +55,39 @@ describe('Organisations (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app?.close();
+    try {
+      if (
+        dataSource?.isInitialized &&
+        dataSource.options.type === 'postgres' &&
+        process.env.NODE_ENV === 'test' &&
+        process.env.DATABASE_NAME === E2E_DATABASE_NAME &&
+        typeof dataSource.options.database === 'string' &&
+        dataSource.options.database === E2E_DATABASE_NAME &&
+        createdUserIds.size > 0
+      ) {
+        await dataSource.transaction(async (manager) => {
+          const ownerMemberships = await manager
+            .getRepository(OrganisationMember)
+            .find({
+              where: {
+                user: { id: In([...createdUserIds]) },
+                role: OrganisationMemberRole.OWNER,
+              },
+              relations: { organisation: true },
+            });
+          const organisationIds = [
+            ...new Set(ownerMemberships.map(({ organisation }) => organisation.id)),
+          ];
+
+          if (organisationIds.length > 0) {
+            await manager.getRepository(Organisation).delete(organisationIds);
+          }
+          await manager.getRepository(User).delete([...createdUserIds]);
+        });
+      }
+    } finally {
+      await app?.close();
+    }
   });
 
   const signup = async (label: string, role: 'volunteer' | 'organisation' = 'volunteer') => {
@@ -57,19 +96,37 @@ describe('Organisations (e2e)', () => {
       .send({ name: `E2E ${label}`, email: uniqueEmail(label), password: PASSWORD, role })
       .expect(201);
 
-    return {
-      token: response.body.accessToken as string,
-      userId: response.body.user.id as string,
-    };
+    const userId = response.body.user.id as string;
+    createdUserIds.add(userId);
+    return { token: response.body.accessToken as string, userId };
   };
 
   const asUser = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-  const createOrganisation = (token: string, orgName = 'E2E Community Organisation') =>
+  const createOrganisation = (
+    token: string,
+    orgName = 'E2E Community Organisation',
+    registrationType?: string,
+  ) =>
     request(server)
       .post('/api/organisations')
       .set(asUser(token))
-      .send({ orgName });
+      .send({ orgName, registrationType });
+
+  const addMembership = (
+    organisationId: string,
+    userId: string,
+    role: OrganisationMemberRole,
+    status: OrganisationMemberStatus,
+  ) =>
+    dataSource.getRepository(OrganisationMember).save(
+      dataSource.getRepository(OrganisationMember).create({
+        organisation: { id: organisationId },
+        user: { id: userId },
+        role,
+        status,
+      }),
+    );
 
   describe('POST /api/organisations', () => {
     it('creates an organisation as pending and rejects a duplicate', async () => {
@@ -140,6 +197,55 @@ describe('Organisations (e2e)', () => {
       expect(response.body.orgName).toBe('My Organisation');
       expect(response.body.verificationStatus).toBe('pending');
     });
+
+    it('allows approved members and denies pending, rejected, and unaffiliated users', async () => {
+      const owner = await signup('get-me-owner', 'organisation');
+      const created = await createOrganisation(owner.token, 'Membership Access Organisation')
+        .expect(201);
+      const approvedMember = await signup('get-me-approved-member', 'organisation');
+      const pendingMember = await signup('get-me-pending-member', 'organisation');
+      const rejectedMember = await signup('get-me-rejected-member', 'organisation');
+      const unaffiliatedUser = await signup('get-me-unaffiliated-user', 'organisation');
+
+      await addMembership(
+        created.body.id,
+        approvedMember.userId,
+        OrganisationMemberRole.VIEWER,
+        OrganisationMemberStatus.APPROVED,
+      );
+      await addMembership(
+        created.body.id,
+        pendingMember.userId,
+        OrganisationMemberRole.VIEWER,
+        OrganisationMemberStatus.PENDING,
+      );
+      await addMembership(
+        created.body.id,
+        rejectedMember.userId,
+        OrganisationMemberRole.VIEWER,
+        OrganisationMemberStatus.REJECTED,
+      );
+
+      const memberResponse = await request(server)
+        .get('/api/organisations/me')
+        .set(asUser(approvedMember.token))
+        .expect(200);
+      expect(memberResponse.body.id).toBe(created.body.id);
+
+      await request(server)
+        .get('/api/organisations/me')
+        .set(asUser(pendingMember.token))
+        .expect(404);
+      await request(server)
+        .get('/api/organisations/me')
+        .set(asUser(rejectedMember.token))
+        .expect(404);
+      await request(server)
+        .get('/api/organisations/me')
+        .set(asUser(unaffiliatedUser.token))
+        .expect(404);
+      await request(server).get('/api/organisations/me').expect(401);
+    });
   });
 
   describe('PATCH /api/organisations/me', () => {
@@ -193,13 +299,67 @@ describe('Organisations (e2e)', () => {
       expect(allowed.body.about).toBe('An ordinary profile edit.');
       expect(allowed.body.verificationStatus).toBe('verified');
     });
+
+    it('rejects non-owner updates and client attempts to change verification status', async () => {
+      const owner = await signup('patch-owner-only', 'organisation');
+      const created = await createOrganisation(owner.token).expect(201);
+      const member = await signup('patch-non-owner', 'organisation');
+      await addMembership(
+        created.body.id,
+        member.userId,
+        OrganisationMemberRole.VIEWER,
+        OrganisationMemberStatus.APPROVED,
+      );
+
+      await request(server)
+        .patch('/api/organisations/me')
+        .set(asUser(member.token))
+        .send({ about: 'Unauthorised edit' })
+        .expect(404);
+      await request(server)
+        .patch('/api/organisations/me')
+        .set(asUser(owner.token))
+        .send({ verificationStatus: 'verified' })
+        .expect(400);
+
+      const unchanged = await request(server)
+        .get('/api/organisations/me')
+        .set(asUser(owner.token))
+        .expect(200);
+      expect(unchanged.body.verificationStatus).toBe('pending');
+      await request(server)
+        .patch('/api/organisations/me')
+        .send({ about: 'Unauthenticated edit' })
+        .expect(401);
+    });
   });
 
   describe('POST /api/organisations/me/resubmit', () => {
     it('moves rejected organisations back to pending only', async () => {
       const owner = await signup('resubmit', 'organisation');
-      const created = await createOrganisation(owner.token).expect(201);
+      const created = await createOrganisation(
+        owner.token,
+        'E2E Community Organisation',
+        'Other',
+      ).expect(201);
       const organisations = dataSource.getRepository(Organisation);
+
+      await dataSource.getRepository(OrganisationDocument).save({
+        organisation: { id: created.body.id },
+        documentType: OrganisationDocumentType.REGISTRATION_CERTIFICATE,
+        fileKey: `verification-documents/${owner.userId}/${rand()}-${rand()}.pdf`,
+        storageProvider: 'r2',
+        originalFileName: 'registration.pdf',
+        mimeType: 'application/pdf',
+        fileSize: 1024,
+        status: OrganisationDocumentStatus.PENDING,
+        isRequired: true,
+        rejectionReason: null,
+        uploadedBy: { id: owner.userId },
+        uploadedByMembership: null,
+        reviewedBy: null,
+        reviewedAt: null,
+      });
 
       await organisations.update(created.body.id, {
         verification_status: VerificationStatus.REJECTED,
@@ -222,6 +382,57 @@ describe('Organisations (e2e)', () => {
         .post('/api/organisations/me/resubmit')
         .set(asUser(owner.token))
         .expect(409);
+    });
+
+    it('rejects resubmission when required documents are missing', async () => {
+      const owner = await signup('resubmit-missing-documents', 'organisation');
+      const created = await createOrganisation(
+        owner.token,
+        'Missing Documents Organisation',
+        'Other',
+      ).expect(201);
+      await dataSource.getRepository(Organisation).update(created.body.id, {
+        verification_status: VerificationStatus.REJECTED,
+      });
+
+      const response = await request(server)
+        .post('/api/organisations/me/resubmit')
+        .set(asUser(owner.token))
+        .expect(400);
+
+      expect(response.body).toMatchObject({
+        statusCode: 400,
+        message: 'Missing required organisation documents: registration_certificate',
+        error: 'Bad Request',
+      });
+    });
+
+    it('does not allow non-owners or unauthenticated users to resubmit', async () => {
+      const owner = await signup('resubmit-owner-only', 'organisation');
+      const created = await createOrganisation(owner.token, 'Resubmit Owner Only', 'Other')
+        .expect(201);
+      await dataSource.getRepository(Organisation).update(created.body.id, {
+        verification_status: VerificationStatus.REJECTED,
+      });
+
+      const member = await signup('resubmit-non-owner', 'organisation');
+      const unaffiliatedUser = await signup('resubmit-unaffiliated', 'organisation');
+      await addMembership(
+        created.body.id,
+        member.userId,
+        OrganisationMemberRole.VIEWER,
+        OrganisationMemberStatus.APPROVED,
+      );
+
+      await request(server)
+        .post('/api/organisations/me/resubmit')
+        .set(asUser(member.token))
+        .expect(404);
+      await request(server)
+        .post('/api/organisations/me/resubmit')
+        .set(asUser(unaffiliatedUser.token))
+        .expect(404);
+      await request(server).post('/api/organisations/me/resubmit').expect(401);
     });
   });
 
@@ -264,6 +475,38 @@ describe('Organisations (e2e)', () => {
       });
       expect(publicView.body).not.toHaveProperty('registrationId');
       expect(publicView.body).not.toHaveProperty('verificationDocUrl');
+    });
+
+    it('does not let membership in one organisation authorize access to another private organisation', async () => {
+      const firstOwner = await signup('cross-org-first-owner', 'organisation');
+      const firstOrganisation = await createOrganisation(
+        firstOwner.token,
+        'First Private Organisation',
+      ).expect(201);
+      const member = await signup('cross-org-member', 'organisation');
+      await addMembership(
+        firstOrganisation.body.id,
+        member.userId,
+        OrganisationMemberRole.VIEWER,
+        OrganisationMemberStatus.APPROVED,
+      );
+
+      const secondOwner = await signup('cross-org-second-owner', 'organisation');
+      const secondOrganisation = await createOrganisation(
+        secondOwner.token,
+        'Second Private Organisation',
+      ).expect(201);
+
+      const memberOrganisation = await request(server)
+        .get('/api/organisations/me')
+        .set(asUser(member.token))
+        .expect(200);
+      expect(memberOrganisation.body.id).toBe(firstOrganisation.body.id);
+
+      await request(server)
+        .get(`/api/organisations/${secondOrganisation.body.id}`)
+        .set(asUser(member.token))
+        .expect(404);
     });
   });
 });

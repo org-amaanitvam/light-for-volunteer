@@ -15,6 +15,7 @@ import { CreateOrganisationDto } from '../../dtos/organisation/create-organisati
 import { UpdateOrganisationDto } from '../../dtos/organisation/update-organisation.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { OrganisationsService } from './organisations.service';
+import type { JwtAccessPayload } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('organisations')
 @ApiBearerAuth()
@@ -37,6 +38,13 @@ export class OrganisationsController {
   @ApiOperation({ summary: 'Get the authenticated organisation profile' })
   getMe(@CurrentUser('sub') userId: string) {
     return this.service.getMe(userId);
+  }
+
+  @Roles('organisation')
+  @Get('me/verification-document/download')
+  @ApiOperation({ summary: 'Get a private download URL for the legacy verification document' })
+  getMyVerificationDocumentDownloadUrl(@CurrentUser() user: JwtAccessPayload) {
+    return this.service.getMyVerificationDocumentDownloadUrl(user);
   }
 
   @Roles('organisation')

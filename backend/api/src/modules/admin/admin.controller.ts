@@ -10,6 +10,7 @@ import { AdminService } from './admin.service';
 import { Response } from 'express';
 import type { JwtAccessPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ReviewOrganisationsDto } from '../../dtos/organisation/review-organisations.dto';
+import { ReviewOrganisationDocumentDto } from '../../dtos/organisation-document/review-organisation-document.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -105,6 +106,42 @@ export class AdminController {
     @CurrentUser() user: JwtAccessPayload,
   ) {
     return this.service.getOrganisationDocument(id, user);
+  }
+
+  @Roles('admin')
+  @Get('organisations/:id/document-records')
+  getOrganisationDocumentRecords(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.getOrganisationDocumentRecords(id);
+  }
+
+  @Roles('admin')
+  @Get('organisations/:id/documents/:documentId/download')
+  getOrganisationDocumentRecordDownloadUrl(
+    @Param('id', ParseUUIDPipe) organisationId: string,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @CurrentUser() user: JwtAccessPayload,
+  ) {
+    return this.service.getOrganisationDocumentRecordDownloadUrl(
+      organisationId,
+      documentId,
+      user,
+    );
+  }
+
+  @Roles('admin')
+  @Patch('organisations/:id/documents/:documentId/review')
+  reviewOrganisationDocument(
+    @Param('id', ParseUUIDPipe) organisationId: string,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @CurrentUser('sub') adminId: string,
+    @Body() dto: ReviewOrganisationDocumentDto,
+  ) {
+    return this.service.reviewOrganisationDocument(
+      organisationId,
+      documentId,
+      adminId,
+      dto,
+    );
   }
 
   @Roles('admin')

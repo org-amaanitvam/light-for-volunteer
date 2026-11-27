@@ -7,7 +7,7 @@ import { ReviewOrganisationDto } from '../../dtos/organisation/review-organisati
 import { Opportunity } from '../../database/entities/opportunity.entity';
 import { OpportunityStatus } from '../../database/enums/opportunity-status.enum';
 import { ReviewOpportunityDto } from '../../dtos/opportunity/review-opportunity.dto';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { Report, ReportAction, ReportStatus, ReportTargetType } from '../../database/entities/report.entity';
 import { Review } from '../../database/entities/review.entity';
 import { Message } from '../../database/entities/message.entity';
@@ -18,6 +18,10 @@ import { Application } from '../../database/entities/application.entity';
 import { StorageService } from '../storage/storage.service';
 import type { JwtAccessPayload } from '../auth/interfaces/jwt-payload.interface';
 import { PresignDownloadDto } from '../../dtos/storage/storage.dto';
+import { OrganisationDocument } from '../../database/entities/organisation-document.entity';
+import { OrganisationDocumentStatus } from '../../database/enums/organisation-document-status.enum';
+import { ReviewOrganisationDocumentDto } from '../../dtos/organisation-document/review-organisation-document.dto';
+import { OrganisationDocumentsService } from '../organisations/organisation-documents.service';
 
 type OrganisationReviewAction =
   | 'approve'
@@ -44,12 +48,16 @@ export class AdminService {
     @InjectRepository(Application)
     private readonly applicationRepository: Repository<Application>,
 
+    @InjectRepository(OrganisationDocument)
+    private readonly organisationDocumentRepository: Repository<OrganisationDocument>,
+
     private readonly storageService: StorageService,
+    private readonly organisationDocumentsService: OrganisationDocumentsService,
   ) { }
 
   //Implementation for Organisation Pending/Verification Service
   async getPendingOrganisations() {
-    return this.organisationRepository.find({
+    const organisations = await this.organisationRepository.find({
       where: {
         verification_status: VerificationStatus.PENDING,
       },
@@ -72,6 +80,11 @@ export class AdminService {
         org_name: 'ASC',
       },
     });
+    return organisations.map((organisation) => ({
+      ...organisation,
+      has_verification_document: Boolean(organisation.verification_doc_url),
+      verification_doc_url: null,
+    }));
   }
 
   async reviewOrganisation(
@@ -94,6 +107,10 @@ export class AdminService {
 
       if (organisation.verification_status !== VerificationStatus.PENDING) {
         throw new ConflictException('Organisation is not awaiting verification');
+      }
+
+      if (dto.status === VerificationStatus.VERIFIED) {
+        await this.assertOrganisationDocumentsApproved(manager, organisation);
       }
 
       const previousStatus = organisation.verification_status;
@@ -159,7 +176,6 @@ export class AdminService {
         'organisation.website',
         'organisation.registration_type',
         'organisation.registration_id',
-        'organisation.verification_doc_url',
         'organisation.verification_status',
         'organisation.rating_avg',
         'user.id',
@@ -495,6 +511,129 @@ export class AdminService {
     };
   }
 
+  async getOrganisationDocumentRecords(organisationId: string) {
+    const organisation = await this.organisationRepository.findOne({
+      where: { id: organisationId },
+    });
+    if (!organisation) throw new NotFoundException('Organisation not found');
+
+    const documents = await this.organisationDocumentRepository.find({
+      where: { organisation: { id: organisationId } },
+      relations: { uploadedBy: true, reviewedBy: true },
+      order: { createdAt: 'DESC' },
+    });
+
+    return documents.map((document) => ({
+      id: document.id,
+      organisationId,
+      documentType: document.documentType,
+      storageProvider: document.storageProvider,
+      originalFileName: document.originalFileName,
+      mimeType: document.mimeType,
+      fileSize: document.fileSize,
+      status: document.status,
+      isRequired: document.isRequired,
+      rejectionReason: document.rejectionReason,
+      uploadedBy: document.uploadedBy?.id ?? null,
+      reviewedBy: document.reviewedBy?.id ?? null,
+      reviewedAt: document.reviewedAt,
+      createdAt: document.createdAt,
+      updatedAt: document.updatedAt,
+    }));
+  }
+
+  async getOrganisationDocumentRecordDownloadUrl(
+    organisationId: string,
+    documentId: string,
+    user: JwtAccessPayload,
+  ) {
+    const document = await this.organisationDocumentRepository.findOne({
+      where: {
+        id: documentId,
+        organisation: { id: organisationId },
+      },
+      relations: { uploadedBy: true },
+    });
+    if (!document || !document.uploadedBy?.id) {
+      throw new NotFoundException('Organisation document not found');
+    }
+
+    return this.storageService.createOrganisationDocumentDownloadUrl(
+      user,
+      document.fileKey,
+      document.uploadedBy.id,
+    );
+  }
+
+  async reviewOrganisationDocument(
+    organisationId: string,
+    documentId: string,
+    adminId: string,
+    dto: ReviewOrganisationDocumentDto,
+  ) {
+    if (
+      dto.status !== OrganisationDocumentStatus.APPROVED &&
+      !dto.reason?.trim()
+    ) {
+      throw new BadRequestException('A reason is required for this document decision');
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      const documentRepository = manager.getRepository(OrganisationDocument);
+      const document = await documentRepository.findOne({
+        where: {
+          id: documentId,
+          organisation: { id: organisationId },
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!document) {
+        throw new NotFoundException('Organisation document not found');
+      }
+      if (document.status !== OrganisationDocumentStatus.PENDING) {
+        throw new ConflictException('Only pending documents can be reviewed');
+      }
+
+      const previousStatus = document.status;
+      document.status = dto.status;
+      document.rejectionReason =
+        dto.status === OrganisationDocumentStatus.APPROVED
+          ? null
+          : dto.reason!.trim();
+      document.reviewedBy = { id: adminId } as User;
+      document.reviewedAt = new Date();
+      const saved = await documentRepository.save(document);
+
+      const auditRepository = manager.getRepository(AuditLog);
+      await auditRepository.save(
+        auditRepository.create({
+          admin: { id: adminId } as User,
+          action: `ORGANISATION_DOCUMENT_${dto.status.toUpperCase()}`,
+          entity_type: 'organisation_document',
+          entity_id: saved.id,
+          details: {
+            organisation_id: organisationId,
+            document_type: saved.documentType,
+            previous_status: previousStatus,
+            new_status: saved.status,
+            reason: saved.rejectionReason,
+          },
+        }),
+      );
+
+      return {
+        id: saved.id,
+        organisationId,
+        documentType: saved.documentType,
+        status: saved.status,
+        rejectionReason: saved.rejectionReason,
+        reviewedBy: adminId,
+        reviewedAt: saved.reviewedAt,
+      };
+    });
+  }
+
   async reviewOrganisationWithReason(
     organisationId: string,
     adminId: string,
@@ -524,6 +663,10 @@ export class AdminService {
         throw new BadRequestException(
           'Only pending organisations can be reviewed',
         );
+      }
+
+      if (action === 'approve') {
+        await this.assertOrganisationDocumentsApproved(manager, organisation);
       }
 
       const previousStatus = organisation.verification_status;
@@ -574,6 +717,28 @@ export class AdminService {
         reason: reason ?? null,
       };
     });
+  }
+
+  private async assertOrganisationDocumentsApproved(
+    manager: EntityManager,
+    organisation: Organisation,
+  ): Promise<void> {
+    const documents = await manager.getRepository(OrganisationDocument).find({
+      where: { organisation: { id: organisation.id } },
+    });
+
+    if (
+      documents.length === 0 &&
+      !organisation.registration_type &&
+      organisation.verification_doc_url
+    ) {
+      return;
+    }
+
+    this.organisationDocumentsService.validateApprovalCompleteness(
+      organisation.registration_type,
+      documents,
+    );
   }
 
   async exportApplications(adminId: string): Promise<string> {

@@ -2,6 +2,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { VerificationStatus } from '../enums/verification-status.enum';
 import { Opportunity } from './opportunity.entity';
 import { OrganisationMember } from './organisation-member.entity';
+import { OrganisationDocument } from './organisation-document.entity';
 
 @Entity('organisations')
 export class Organisation {
@@ -37,4 +38,7 @@ export class Organisation {
 
   @OneToMany(() => Opportunity, opportunity => opportunity.organisation)
   opportunities: Opportunity[];
+
+  @OneToMany(() => OrganisationDocument, (document) => document.organisation)
+  documents: OrganisationDocument[];
 }

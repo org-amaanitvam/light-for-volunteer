@@ -47,6 +47,63 @@ secretAccessKey: this.configService.getOrThrow<string>('storage.secretAccessKey'
 });
 }
 
+  getProviderName(): string {
+return this.configService.get<string>('storage.provider') ?? 'r2';
+  }
+
+  async createOrganisationDocumentDownloadUrl(
+user: JwtAccessPayload,
+key: string,
+uploadedByUserId: string,
+  ) {
+if (user.role !== 'organisation' && user.role !== 'admin') {
+  throw new ForbiddenException(
+    'Only organisation members and admins can access verification documents',
+  );
+}
+
+const ownerPrefix = `verification-documents/${uploadedByUserId}/`;
+if (!key.startsWith(ownerPrefix)) {
+  throw new ForbiddenException('Document storage reference is invalid');
+}
+
+const command = new GetObjectCommand({
+  Bucket: this.bucket,
+  Key: key,
+});
+const downloadUrl = await getSignedUrl(this.s3, command, {
+  expiresIn: this.downloadUrlExpiresIn,
+});
+
+return {
+  downloadUrl,
+  expiresIn: this.downloadUrlExpiresIn,
+};
+  }
+
+  async deleteOrganisationDocumentObject(
+user: JwtAccessPayload,
+key: string,
+uploadedByUserId: string,
+  ): Promise<void> {
+if (user.role !== 'organisation' && user.role !== 'admin') {
+  throw new ForbiddenException(
+    'Only organisation members and admins can manage verification documents',
+  );
+}
+
+if (!key.startsWith(`verification-documents/${uploadedByUserId}/`)) {
+  throw new ForbiddenException('Document storage reference is invalid');
+}
+
+await this.s3.send(
+  new DeleteObjectCommand({
+    Bucket: this.bucket,
+    Key: key,
+  }),
+);
+  }
+
 
   async createUploadUrl(
     user: JwtAccessPayload,
