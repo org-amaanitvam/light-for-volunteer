@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Search,
   MapPin,
@@ -17,8 +17,10 @@ import {
   Users,
   X,
   RotateCcw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { api, OpportunityItem } from "@/lib/api";
+import { api, OpportunityItem, OpportunityQueryParams } from "@/lib/api";
 import { buttonVariants } from "@/components/ui/button";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
@@ -37,6 +39,15 @@ type OpportunityCard = {
   pointsReward: number;
   type: string;
   description: string;
+};
+
+type PaginationMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 };
 
 function toOpportunityCard(item: OpportunityItem): OpportunityCard {
@@ -85,137 +96,280 @@ const SKILLS = [
 
 const DURATIONS = ["2 weeks", "1 month", "3 months", "6 months"];
 
+const DEFAULT_PAGE_SIZE = 12;
+
 function OpportunitiesContent() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // URL Query Parameters
   const paramSearch = searchParams.get("search") || searchParams.get("q") || "";
   const paramCategory = searchParams.get("category") || "";
+  const paramLocationType = searchParams.get("locationType") || "";
+  const paramSkill = searchParams.get("skill") || "";
+  const paramDuration = searchParams.get("duration") || "";
+  const paramDeadline = searchParams.get("deadline") || "";
+  const paramPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
 
-  const [opportunities, setOpportunities] = useState<OpportunityCard[]>([]);
+  // Synchronize local search input with URL search param
+  const [prevSearchParam, setPrevSearchParam] = useState(paramSearch);
+  const [searchInput, setSearchInput] = useState(paramSearch);
+  if (prevSearchParam !== paramSearch) {
+    setPrevSearchParam(paramSearch);
+    setSearchInput(paramSearch);
+  }
+
+  // State
+  const [rawOpportunities, setRawOpportunities] = useState<OpportunityCard[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>({
+    total: 0,
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [userQuery, setUserQuery] = useState<string | null>(null);
-  const [userCategory, setUserCategory] = useState<string | null>(null);
-  const [skill, setSkill] = useState("");
-  const [locationType, setLocationType] = useState("");
-  const [duration, setDuration] = useState("");
-  const [deadline, setDeadline] = useState("");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const query = userQuery !== null ? userQuery : paramSearch;
-  const category = userCategory !== null ? userCategory : paramCategory;
+  // URL synchronization helper
+  const updateFilters = useCallback(
+    (updates: Record<string, string | number | null | undefined>) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
 
+      // If updating any filter criteria (other than page), reset page to 1
+      const isFilterChange = Object.keys(updates).some((key) => key !== "page");
+      if (isFilterChange && updates.page === undefined) {
+        nextParams.delete("page");
+      }
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === undefined || value === "") {
+          nextParams.delete(key);
+        } else if (key === "page" && Number(value) <= 1) {
+          nextParams.delete("page");
+        } else {
+          nextParams.set(key, String(value));
+        }
+      }
+
+      // Clean up legacy `q` if `search` is set
+      if (nextParams.has("search")) {
+        nextParams.delete("q");
+      }
+
+      const queryString = nextParams.toString();
+      const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
+      router.push(targetUrl);
+    },
+    [router, pathname, searchParams]
+  );
+
+  const clearFilters = useCallback(() => {
+    router.push(pathname);
+  }, [router, pathname]);
+
+  // Fetch opportunities using server-side filters & pagination
+  const fetchOpportunities = useCallback(async (isBackground = false) => {
+    if (!isBackground) {
+      setLoading(true);
+    }
+    setLoadError("");
+
+    try {
+      const queryParams: OpportunityQueryParams = {
+        page: paramPage,
+        limit: DEFAULT_PAGE_SIZE,
+        sortBy: "newest",
+      };
+
+      if (paramSearch.trim()) {
+        queryParams.search = paramSearch.trim();
+      }
+      if (paramCategory.trim()) {
+        queryParams.category = paramCategory.trim();
+      }
+      if (paramLocationType.trim()) {
+        queryParams.locationType = paramLocationType.trim();
+      }
+      if (paramSkill.trim()) {
+        queryParams.skill = paramSkill.trim();
+      }
+
+      const result = await api.getOpportunities(queryParams);
+
+      setRawOpportunities(result.data.map(toOpportunityCard));
+      if (result.meta) {
+        setMeta(result.meta);
+      }
+    } catch (error) {
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "Could not load opportunities from server."
+      );
+    } finally {
+      if (!isBackground) {
+        setLoading(false);
+      }
+    }
+  }, [paramSearch, paramCategory, paramLocationType, paramSkill, paramPage]);
+
+  // Trigger fetch when server-relevant filters or page changes
   useEffect(() => {
     let active = true;
-    const load = async () => {
+
+    const run = async () => {
       try {
-        const result = await api.getOpportunities({ limit: 100, sortBy: "newest" });
+        setLoading(true);
+        setLoadError("");
+
+        const queryParams: OpportunityQueryParams = {
+          page: paramPage,
+          limit: DEFAULT_PAGE_SIZE,
+          sortBy: "newest",
+        };
+
+        if (paramSearch.trim()) {
+          queryParams.search = paramSearch.trim();
+        }
+        if (paramCategory.trim()) {
+          queryParams.category = paramCategory.trim();
+        }
+        if (paramLocationType.trim()) {
+          queryParams.locationType = paramLocationType.trim();
+        }
+        if (paramSkill.trim()) {
+          queryParams.skill = paramSkill.trim();
+        }
+
+        const result = await api.getOpportunities(queryParams);
+
         if (active) {
-          setOpportunities(result.data.map(toOpportunityCard));
-          setLoadError("");
+          setRawOpportunities(result.data.map(toOpportunityCard));
+          if (result.meta) {
+            setMeta(result.meta);
+          }
         }
       } catch (error) {
         if (active) {
-          setLoadError(error instanceof Error ? error.message : "Could not load opportunities from server.");
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : "Could not load opportunities from server."
+          );
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
-    void load();
-    window.addEventListener("focus", load);
-    const refreshTimer = window.setInterval(load, 20_000);
+    void run();
+
     return () => {
       active = false;
-      window.removeEventListener("focus", load);
-      window.clearInterval(refreshTimer);
     };
-  }, []);
+  }, [paramSearch, paramCategory, paramLocationType, paramSkill, paramPage]);
 
-  // Filter opportunities (matching original logic)
+  // Keep focus and 20s background refresh for live data updates
+  useEffect(() => {
+    const onFocus = () => {
+      fetchOpportunities(true);
+    };
+
+    window.addEventListener("focus", onFocus);
+    const intervalTimer = window.setInterval(() => {
+      fetchOpportunities(true);
+    }, 20_000);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(intervalTimer);
+    };
+  }, [fetchOpportunities]);
+
+  // Client-side refinement for filters not supported by the backend query DTO (duration & deadline)
   const filteredOpportunities = useMemo(() => {
-    return opportunities.filter((opp) => {
-      const searchText =
-        `${opp.title} ${opp.org} ${opp.location} ${opp.category} ${opp.skills.join(" ")}`.toLowerCase();
-
-      return (
-        searchText.includes(query.toLowerCase().trim()) &&
-        (!category || opp.category.toLowerCase().includes(category.toLowerCase())) &&
-        (!skill || opp.skills.includes(skill)) &&
-        (!locationType || opp.locationType === locationType) &&
-        (!duration || opp.duration === duration) &&
-        (!deadline || (opp.deadline && opp.deadline <= deadline))
-      );
+    return rawOpportunities.filter((opp) => {
+      if (paramDuration && opp.duration !== paramDuration) {
+        return false;
+      }
+      if (paramDeadline && (!opp.deadline || opp.deadline > paramDeadline)) {
+        return false;
+      }
+      return true;
     });
-  }, [opportunities, query, category, skill, locationType, duration, deadline]);
+  }, [rawOpportunities, paramDuration, paramDeadline]);
 
-  function clearFilters() {
-    setUserQuery("");
-    setUserCategory("");
-    setSkill("");
-    setLocationType("");
-    setDuration("");
-    setDeadline("");
-  }
+  // Compute active filter count
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (paramSearch) count++;
+    if (paramCategory) count++;
+    if (paramLocationType) count++;
+    if (paramSkill) count++;
+    if (paramDuration) count++;
+    if (paramDeadline) count++;
+    return count;
+  }, [
+    paramSearch,
+    paramCategory,
+    paramLocationType,
+    paramSkill,
+    paramDuration,
+    paramDeadline,
+  ]);
 
-  const activeFilterCount =
-    (query ? 1 : 0) +
-    (category ? 1 : 0) +
-    (skill ? 1 : 0) +
-    (locationType ? 1 : 0) +
-    (duration ? 1 : 0) +
-    (deadline ? 1 : 0);
+  const handleSearchSubmit = () => {
+    updateFilters({ search: searchInput });
+    document
+      .getElementById("catalogue-results")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > meta.totalPages || newPage === meta.page) return;
+    updateFilters({ page: newPage });
+    document
+      .getElementById("catalogue-results")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const filterSidebar = (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between pb-3 border-b border-[#e2eaf2]">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="w-4 h-4 text-[#0369a1]" />
-          <h2 className="text-sm font-bold text-[#0f2a43]">Filter Drives</h2>
-        </div>
+    <div className="space-y-5 text-sm">
+      <div className="flex items-center justify-between border-b border-[#e2eaf2] pb-3">
+        <span className="font-bold text-[#0f2a43] text-xs uppercase tracking-wider">
+          Filter By
+        </span>
         {activeFilterCount > 0 && (
           <button
-            type="button"
             onClick={clearFilters}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0369a1] hover:text-[#075985] cursor-pointer"
+            className="flex items-center gap-1 text-xs font-semibold text-[#0369a1] hover:underline cursor-pointer"
           >
-            <RotateCcw className="w-3 h-3" /> Reset ({activeFilterCount})
+            <RotateCcw size={12} /> Reset
           </button>
         )}
       </div>
 
       {/* Cause Category */}
       <div>
-        <h3 className="mb-2.5 text-xs font-bold text-[#0c4a6e]">
-          Cause Domain
-        </h3>
-        <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-          <label className="flex items-center gap-2 text-xs font-medium text-[#0f2a43] hover:text-[#0369a1] cursor-pointer">
-            <input
-              type="radio"
-              name="sidebar-category"
-              checked={!category}
-              onChange={() => setUserCategory("")}
-              className="accent-[#0369a1]"
-            />
-            <span>All Causes</span>
-          </label>
-          {CATEGORIES.map((item) => (
-            <label
-              key={item}
-              className="flex items-start gap-2 text-xs text-[#335577] hover:text-[#0f2a43] cursor-pointer"
-            >
-              <input
-                type="radio"
-                name="sidebar-category"
-                checked={category === item}
-                onChange={() => setUserCategory(category === item ? "" : item)}
-                className="mt-0.5 accent-[#0369a1]"
-              />
-              <span className="leading-tight">{item}</span>
-            </label>
+        <h3 className="mb-2 text-xs font-bold text-[#0c4a6e]">Cause Category</h3>
+        <select
+          value={paramCategory}
+          onChange={(e) => updateFilters({ category: e.target.value })}
+          className="w-full rounded-xl border border-[#bae6fd] bg-white p-2.5 text-xs text-[#0f2a43] outline-none focus:border-[#0369a1] focus:ring-1 focus:ring-[#0369a1]"
+        >
+          <option value="">All causes</option>
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       {/* Location Type */}
@@ -228,8 +382,8 @@ function OpportunitiesContent() {
             <input
               type="radio"
               name="sidebar-location"
-              checked={!locationType}
-              onChange={() => setLocationType("")}
+              checked={!paramLocationType}
+              onChange={() => updateFilters({ locationType: "" })}
               className="accent-[#0369a1]"
             />
             <span>All Modes</span>
@@ -242,8 +396,12 @@ function OpportunitiesContent() {
               <input
                 type="radio"
                 name="sidebar-location"
-                checked={locationType === item}
-                onChange={() => setLocationType(locationType === item ? "" : item)}
+                checked={paramLocationType === item}
+                onChange={() =>
+                  updateFilters({
+                    locationType: paramLocationType === item ? "" : item,
+                  })
+                }
                 className="accent-[#0369a1]"
               />
               <span>{item}</span>
@@ -254,12 +412,10 @@ function OpportunitiesContent() {
 
       {/* Required Skills */}
       <div className="pt-3 border-t border-[#e2eaf2]">
-        <h3 className="mb-2 text-xs font-bold text-[#0c4a6e]">
-          Required Skills
-        </h3>
+        <h3 className="mb-2 text-xs font-bold text-[#0c4a6e]">Required Skills</h3>
         <select
-          value={skill}
-          onChange={(e) => setSkill(e.target.value)}
+          value={paramSkill}
+          onChange={(e) => updateFilters({ skill: e.target.value })}
           className="w-full rounded-xl border border-[#bae6fd] bg-white p-2.5 text-xs text-[#0f2a43] outline-none focus:border-[#0369a1] focus:ring-1 focus:ring-[#0369a1]"
         >
           <option value="">All skills</option>
@@ -271,14 +427,14 @@ function OpportunitiesContent() {
         </select>
       </div>
 
-      {/* Commitment Duration */}
+      {/* Commitment Duration (client-side refinement) */}
       <div className="pt-3 border-t border-[#e2eaf2]">
         <h3 className="mb-2 text-xs font-bold text-[#0c4a6e]">
           Commitment Duration
         </h3>
         <select
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
+          value={paramDuration}
+          onChange={(e) => updateFilters({ duration: e.target.value })}
           className="w-full rounded-xl border border-[#bae6fd] bg-white p-2.5 text-xs text-[#0f2a43] outline-none focus:border-[#0369a1] focus:ring-1 focus:ring-[#0369a1]"
         >
           <option value="">Any duration</option>
@@ -290,15 +446,15 @@ function OpportunitiesContent() {
         </select>
       </div>
 
-      {/* Application Deadline */}
+      {/* Application Deadline (client-side refinement) */}
       <div className="pt-3 border-t border-[#e2eaf2]">
         <h3 className="mb-2 text-xs font-bold text-[#0c4a6e]">
           Application Deadline (Before)
         </h3>
         <input
           type="date"
-          value={deadline}
-          onChange={(e) => setDeadline(e.target.value)}
+          value={paramDeadline}
+          onChange={(e) => updateFilters({ deadline: e.target.value })}
           className="w-full rounded-xl border border-[#bae6fd] bg-white p-2 text-xs text-[#0f2a43] outline-none focus:border-[#0369a1]"
         />
       </div>
@@ -353,19 +509,20 @@ function OpportunitiesContent() {
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0369a1]"
                 />
                 <input
-                  value={query}
-                  onChange={(e) => setUserQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearchSubmit();
+                    }
+                  }}
                   placeholder="Search by cause, role, organisation, skill, or city..."
                   className="h-11 w-full rounded-xl border border-[#bae6fd] bg-white/95 backdrop-blur-md pl-10 pr-4 text-sm text-[#0f2a43] placeholder:text-[#5a7b9d] outline-none transition focus:border-[#0369a1] focus:bg-white focus:ring-2 focus:ring-[#0369a1]/20 shadow-xs"
                 />
               </div>
 
               <button
-                onClick={() =>
-                  document
-                    .getElementById("catalogue-results")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
+                onClick={handleSearchSubmit}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0369a1] hover:bg-[#075985] px-6 font-bold text-white shadow-xs transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0369a1] cursor-pointer"
               >
                 Search Drives <ArrowRight size={16} />
@@ -376,25 +533,40 @@ function OpportunitiesContent() {
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <button
                 onClick={() => {
-                  setUserCategory("");
-                  setLocationType("");
+                  updateFilters({ category: "", locationType: "" });
                 }}
                 className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
-                  !category && !locationType
+                  !paramCategory && !paramLocationType
                     ? "border-[#0369a1] bg-[#0369a1] text-white font-bold shadow-xs"
                     : "border-[#bae6fd] bg-white/90 backdrop-blur-xs text-[#335577] hover:bg-[#f4f9ff] hover:text-[#0369a1]"
                 }`}
               >
                 All Causes
               </button>
-              {["Remote", "Education & Literacy", "Environment & Climate", "Healthcare & Mental Health", "Community Outreach"].map((item) => {
-                const isSelected = item === "Remote" ? locationType === "Remote" : category === item;
+              {[
+                "Remote",
+                "Education & Literacy",
+                "Environment & Climate",
+                "Healthcare & Mental Health",
+                "Community Outreach",
+              ].map((item) => {
+                const isSelected =
+                  item === "Remote"
+                    ? paramLocationType === "Remote"
+                    : paramCategory === item;
                 return (
                   <button
                     key={item}
                     onClick={() => {
-                      if (item === "Remote") setLocationType(locationType === "Remote" ? "" : "Remote");
-                      else setUserCategory(category === item ? "" : item);
+                      if (item === "Remote") {
+                        updateFilters({
+                          locationType: paramLocationType === "Remote" ? "" : "Remote",
+                        });
+                      } else {
+                        updateFilters({
+                          category: paramCategory === item ? "" : item,
+                        });
+                      }
                     }}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                       isSelected
@@ -436,7 +608,9 @@ function OpportunitiesContent() {
             className="inline-flex items-center gap-1.5 rounded-xl border border-[#bae6fd] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#0f2a43] shadow-xs lg:hidden cursor-pointer"
           >
             <SlidersHorizontal size={14} className="text-[#0369a1]" />
-            <span>Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}</span>
+            <span>
+              Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}
+            </span>
           </button>
         </div>
 
@@ -472,7 +646,7 @@ function OpportunitiesContent() {
                   onClick={() => setMobileFiltersOpen(false)}
                   className="mt-6 w-full rounded-xl bg-[#0369a1] py-2.5 font-semibold text-white text-xs cursor-pointer hover:bg-[#075985]"
                 >
-                  Show {filteredOpportunities.length} results
+                  Show {meta.total} results
                 </button>
               </aside>
             </div>
@@ -484,7 +658,7 @@ function OpportunitiesContent() {
               <p className="font-semibold text-[#335577] tabular-nums">
                 {loading
                   ? "Loading approved opportunities…"
-                  : `${filteredOpportunities.length} ${filteredOpportunities.length === 1 ? "drive" : "drives"} available`}
+                  : `${meta.total} ${meta.total === 1 ? "drive" : "drives"} available`}
               </p>
 
               {activeFilterCount > 0 && (
@@ -500,11 +674,13 @@ function OpportunitiesContent() {
             {/* Error State */}
             {loadError ? (
               <div className="rounded-2xl border border-[#fecaca] bg-[#fef2f2] px-6 py-12 text-center text-sm text-[#b91c1c]">
-                <p className="font-semibold">Unable to load drives at this time.</p>
+                <p className="font-semibold">
+                  Unable to load drives at this time.
+                </p>
                 <p className="mt-1 text-xs text-[#991b1b]">{loadError}</p>
                 <button
-                  onClick={() => window.location.reload()}
-                  className="mt-4 rounded-xl bg-[#b91c1c] px-4 py-2 text-xs font-semibold text-white hover:bg-[#991b1b]"
+                  onClick={() => fetchOpportunities()}
+                  className="mt-4 rounded-xl bg-[#b91c1c] px-4 py-2 text-xs font-semibold text-white hover:bg-[#991b1b] cursor-pointer"
                 >
                   Retry Connection
                 </button>
@@ -535,7 +711,9 @@ function OpportunitiesContent() {
                   No matching opportunities found
                 </h3>
                 <p className="mt-1 text-xs text-[#5a7b9d] max-w-sm mx-auto">
-                  We could not find any volunteer drives matching your current filters. Try searching with different terms or clearing applied filters.
+                  We could not find any volunteer drives matching your current
+                  filters. Try searching with different terms or clearing applied
+                  filters.
                 </p>
                 <button
                   onClick={clearFilters}
@@ -546,131 +724,229 @@ function OpportunitiesContent() {
               </div>
             ) : (
               /* Architectural Opportunity Cards Grid */
-              <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                {filteredOpportunities.map((opp, index) => {
-                  const isVerified = opp.verificationStatus === "verified";
-                  const openingsText =
-                    typeof opp.openings === "number"
-                      ? opp.openings === 0
-                        ? "Capacity reached"
-                        : `${opp.openings} opening${opp.openings === 1 ? "" : "s"}`
-                      : null;
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                  {filteredOpportunities.map((opp, index) => {
+                    const isVerified = opp.verificationStatus === "verified";
+                    const openingsText =
+                      typeof opp.openings === "number"
+                        ? opp.openings === 0
+                          ? "Capacity reached"
+                          : `${opp.openings} opening${opp.openings === 1 ? "" : "s"}`
+                        : null;
 
-                  return (
-                    <ScrollReveal key={opp.id} delay={(index % 4) * 80} direction="up" className="h-full">
-                      <article
-                        className="flex flex-col justify-between rounded-2xl border border-[#bae6fd]/80 bg-white p-5 sm:p-6 shadow-[0_1px_3px_rgba(15,42,67,0.03)] hover:border-[#7dd3fc] hover:shadow-[0_4px_16px_rgba(3,105,161,0.08)] transition-[border-color,box-shadow,transform] duration-150 h-full"
+                    return (
+                      <ScrollReveal
+                        key={opp.id}
+                        delay={(index % 4) * 80}
+                        direction="up"
+                        className="h-full"
                       >
-                      <div>
-                        <div className="mb-3 flex items-start justify-between gap-2">
-                          <span className="rounded-full bg-[#e0f2fe] px-2.5 py-0.5 text-xs font-semibold text-[#075985]">
-                            {opp.category}
-                          </span>
-
-                          <div className="flex items-center gap-2">
-                            {isVerified && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#065f46] bg-[#ecfdf5] px-2 py-0.5 rounded-full border border-[#a7f3d0]">
-                                <CheckCircle2 className="w-3 h-3 text-[#047857]" /> Verified NGO
+                        <article className="flex flex-col justify-between rounded-2xl border border-[#bae6fd]/80 bg-white p-5 sm:p-6 shadow-[0_1px_3px_rgba(15,42,67,0.03)] hover:border-[#7dd3fc] hover:shadow-[0_4px_16px_rgba(3,105,161,0.08)] transition-[border-color,box-shadow,transform] duration-150 h-full">
+                          <div>
+                            <div className="mb-3 flex items-start justify-between gap-2">
+                              <span className="rounded-full bg-[#e0f2fe] px-2.5 py-0.5 text-xs font-semibold text-[#075985]">
+                                {opp.category}
                               </span>
+
+                              <div className="flex items-center gap-2">
+                                {isVerified && (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#065f46] bg-[#ecfdf5] px-2 py-0.5 rounded-full border border-[#a7f3d0]">
+                                    <CheckCircle2 className="w-3 h-3 text-[#047857]" /> Verified NGO
+                                  </span>
+                                )}
+                                {opp.type === "Internship" ? (
+                                  <GraduationCap
+                                    className="shrink-0 text-[#0369a1]"
+                                    size={18}
+                                    aria-label="Internship"
+                                  />
+                                ) : (
+                                  <BriefcaseBusiness
+                                    className="shrink-0 text-[#5a7b9d]"
+                                    size={18}
+                                    aria-label="Volunteer Drive"
+                                  />
+                                )}
+                              </div>
+                            </div>
+
+                            <h3 className="text-base font-bold leading-snug text-[#0f2a43]">
+                              {opp.title}
+                            </h3>
+
+                            <p className="mt-1 text-xs font-semibold text-[#335577]">
+                              {opp.org}
+                            </p>
+
+                            <p className="mt-2 text-xs leading-relaxed text-[#5a7b9d] line-clamp-3">
+                              {opp.description}
+                            </p>
+
+                            <div className="mt-4 space-y-2 text-xs text-[#335577]">
+                              <div className="flex items-center gap-2">
+                                <MapPin
+                                  size={14}
+                                  className="shrink-0 text-[#0369a1]"
+                                />
+                                <span>
+                                  {opp.location} · {opp.locationType}
+                                </span>
+                              </div>
+
+                              {opp.duration && (
+                                <div className="flex items-center gap-2">
+                                  <Clock
+                                    size={14}
+                                    className="shrink-0 text-[#0369a1]"
+                                  />
+                                  <span>{opp.duration}</span>
+                                </div>
+                              )}
+
+                              {openingsText && (
+                                <div className="flex items-center gap-2">
+                                  <Users
+                                    size={14}
+                                    className="shrink-0 text-[#0369a1]"
+                                  />
+                                  <span className="tabular-nums">
+                                    {openingsText}
+                                  </span>
+                                </div>
+                              )}
+
+                              {opp.deadline && (
+                                <div className="flex items-center gap-2">
+                                  <CalendarDays
+                                    size={14}
+                                    className="shrink-0 text-[#0369a1]"
+                                  />
+                                  <span className="tabular-nums">
+                                    Apply before{" "}
+                                    {new Date(
+                                      `${opp.deadline}T00:00:00`
+                                    ).toLocaleDateString("en-IN", {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {opp.skills.length > 0 && (
+                              <div className="mt-4 flex flex-wrap gap-1.5">
+                                {opp.skills.map((item) => (
+                                  <span
+                                    key={item}
+                                    className="rounded-md bg-[#f4f9ff] border border-[#bae6fd]/60 px-2 py-0.5 text-[11px] font-medium text-[#075985]"
+                                  >
+                                    {item}
+                                  </span>
+                                ))}
+                              </div>
                             )}
-                            {opp.type === "Internship" ? (
-                              <GraduationCap
-                                className="shrink-0 text-[#0369a1]"
-                                size={18}
-                                aria-label="Internship"
-                              />
-                            ) : (
-                              <BriefcaseBusiness
-                                className="shrink-0 text-[#5a7b9d]"
-                                size={18}
-                                aria-label="Volunteer Drive"
-                              />
-                            )}
-                          </div>
-                        </div>
-
-                        <h3 className="text-base font-bold leading-snug text-[#0f2a43]">
-                          {opp.title}
-                        </h3>
-
-                        <p className="mt-1 text-xs font-semibold text-[#335577]">
-                          {opp.org}
-                        </p>
-
-                        <p className="mt-2 text-xs leading-relaxed text-[#5a7b9d] line-clamp-3">
-                          {opp.description}
-                        </p>
-
-                        <div className="mt-4 space-y-2 text-xs text-[#335577]">
-                          <div className="flex items-center gap-2">
-                            <MapPin size={14} className="shrink-0 text-[#0369a1]" />
-                            <span>{opp.location} · {opp.locationType}</span>
                           </div>
 
-                          {opp.duration && (
-                            <div className="flex items-center gap-2">
-                              <Clock size={14} className="shrink-0 text-[#0369a1]" />
-                              <span>{opp.duration}</span>
-                            </div>
-                          )}
+                          <div className="mt-5 flex items-center justify-between gap-3 border-t border-[#e2eaf2] pt-4">
+                            <span className="text-xs font-semibold text-[#0369a1] tabular-nums">
+                              {opp.pointsReward > 0
+                                ? `${opp.pointsReward} Impact Points`
+                                : opp.type}
+                            </span>
 
-                          {openingsText && (
-                            <div className="flex items-center gap-2">
-                              <Users size={14} className="shrink-0 text-[#0369a1]" />
-                              <span className="tabular-nums">{openingsText}</span>
-                            </div>
-                          )}
+                            <Link
+                              href={`/opportunities/${opp.id}`}
+                              className={buttonVariants({
+                                variant: "default",
+                                size: "sm",
+                                className: "gap-1.5 text-xs font-semibold",
+                              })}
+                            >
+                              View Details &amp; Apply <ArrowRight size={14} />
+                            </Link>
+                          </div>
+                        </article>
+                      </ScrollReveal>
+                    );
+                  })}
+                </div>
 
-                          {opp.deadline && (
-                            <div className="flex items-center gap-2">
-                              <CalendarDays size={14} className="shrink-0 text-[#0369a1]" />
-                              <span className="tabular-nums">
-                                Apply before {new Date(`${opp.deadline}T00:00:00`).toLocaleDateString("en-IN", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
+                {/* Pagination Controls */}
+                {meta.totalPages > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#bae6fd]/80 pt-6">
+                    <p className="text-xs text-[#5a7b9d]">
+                      Showing page{" "}
+                      <span className="font-semibold text-[#0f2a43]">
+                        {meta.page}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-semibold text-[#0f2a43]">
+                        {meta.totalPages}
+                      </span>{" "}
+                      ({meta.total} total drives)
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handlePageChange(meta.page - 1)}
+                        disabled={!meta.hasPreviousPage || meta.page <= 1}
+                        className="inline-flex items-center gap-1 rounded-xl border border-[#bae6fd] bg-white px-3 py-1.5 text-xs font-medium text-[#0f2a43] shadow-xs transition hover:bg-[#f4f9ff] hover:text-[#0369a1] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <ChevronLeft size={14} />
+                        Previous
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from(
+                          { length: meta.totalPages },
+                          (_, i) => i + 1
+                        )
+                          .filter(
+                            (pageNumber) =>
+                              pageNumber === 1 ||
+                              pageNumber === meta.totalPages ||
+                              Math.abs(pageNumber - meta.page) <= 1
+                          )
+                          .map((pageNumber, idx, arr) => {
+                            const prev = arr[idx - 1];
+                            const showEllipsis = prev && pageNumber - prev > 1;
+
+                            return (
+                              <span key={pageNumber} className="flex items-center">
+                                {showEllipsis && (
+                                  <span className="px-1 text-xs text-[#5a7b9d]">
+                                    …
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => handlePageChange(pageNumber)}
+                                  className={`h-8 min-w-[32px] rounded-lg px-2 text-xs font-semibold transition ${
+                                    pageNumber === meta.page
+                                      ? "bg-[#0369a1] text-white shadow-xs"
+                                      : "border border-[#bae6fd] bg-white text-[#335577] hover:bg-[#f4f9ff] hover:text-[#0369a1]"
+                                  }`}
+                                >
+                                  {pageNumber}
+                                </button>
                               </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {opp.skills.length > 0 && (
-                          <div className="mt-4 flex flex-wrap gap-1.5">
-                            {opp.skills.map((item) => (
-                              <span
-                                key={item}
-                                className="rounded-md bg-[#f4f9ff] border border-[#bae6fd]/60 px-2 py-0.5 text-[11px] font-medium text-[#075985]"
-                              >
-                                {item}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mt-5 flex items-center justify-between gap-3 border-t border-[#e2eaf2] pt-4">
-                        <span className="text-xs font-semibold text-[#0369a1] tabular-nums">
-                          {opp.pointsReward > 0
-                            ? `${opp.pointsReward} Impact Points`
-                            : opp.type}
-                        </span>
-
-                        <Link
-                          href={`/opportunities/${opp.id}`}
-                          className={buttonVariants({
-                            variant: "default",
-                            size: "sm",
-                            className: "gap-1.5 text-xs font-semibold",
+                            );
                           })}
-                        >
-                          View Details &amp; Apply <ArrowRight size={14} />
-                        </Link>
                       </div>
-                    </article>
-                    </ScrollReveal>
-                  );
-                })}
+
+                      <button
+                        onClick={() => handlePageChange(meta.page + 1)}
+                        disabled={!meta.hasNextPage || meta.page >= meta.totalPages}
+                        className="inline-flex items-center gap-1 rounded-xl border border-[#bae6fd] bg-white px-3 py-1.5 text-xs font-medium text-[#0f2a43] shadow-xs transition hover:bg-[#f4f9ff] hover:text-[#0369a1] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
