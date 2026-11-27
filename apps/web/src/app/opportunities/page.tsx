@@ -1,8 +1,8 @@
-
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   MapPin,
@@ -14,100 +14,11 @@ import {
   GraduationCap,
   HeartHandshake,
   X,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
 } from "lucide-react";
-
-const opportunities = [
-  {
-    id: "opp-1",
-    title: "Youth Coding & Digital Literacy Mentor",
-    org: "Hope EdTech Foundation",
-    category: "Education & Literacy",
-    skills: ["Teaching", "Programming", "Communication"],
-    location: "New Delhi",
-    locationType: "Hybrid",
-    duration: "3 months",
-    deadline: "2026-11-15",
-    commitment: "4 hrs/week",
-    type: "Volunteer",
-    description:
-      "Help young students develop coding skills and improve their digital literacy.",
-  },
-  {
-    id: "opp-2",
-    title: "Urban Tree Plantation Volunteer",
-    org: "Green Canopy Project",
-    category: "Environment & Climate",
-    skills: ["Teamwork", "Communication"],
-    location: "Bengaluru",
-    locationType: "On-site",
-    duration: "1 month",
-    deadline: "2026-11-20",
-    commitment: "Weekends",
-    type: "Volunteer",
-    description:
-      "Participate in tree plantation drives and community environmental awareness.",
-  },
-  {
-    id: "opp-3",
-    title: "Community Health Camp Assistant",
-    org: "Aarogya Seva Trust",
-    category: "Healthcare & Mental Health",
-    skills: ["Communication", "Teamwork"],
-    location: "Mumbai",
-    locationType: "On-site",
-    duration: "2 weeks",
-    deadline: "2026-11-10",
-    commitment: "6 hrs/week",
-    type: "Volunteer",
-    description:
-      "Support community health camps and help coordinate public health activities.",
-  },
-  {
-    id: "opp-4",
-    title: "Frontend Development Intern",
-    org: "Digital Change Initiative",
-    category: "Education & Literacy",
-    skills: ["React", "JavaScript", "Programming"],
-    location: "Remote",
-    locationType: "Remote",
-    duration: "3 months",
-    deadline: "2026-12-05",
-    commitment: "10 hrs/week",
-    type: "Internship",
-    description:
-      "Build accessible web experiences for nonprofit educational initiatives.",
-  },
-  {
-    id: "opp-5",
-    title: "Animal Welfare Community Volunteer",
-    org: "Paws and Care Foundation",
-    category: "Animal Welfare",
-    skills: ["Teamwork", "Communication"],
-    location: "Pune",
-    locationType: "On-site",
-    duration: "1 month",
-    deadline: "2026-11-25",
-    commitment: "Weekends",
-    type: "Volunteer",
-    description:
-      "Help organise animal welfare awareness campaigns and community activities.",
-  },
-  {
-    id: "opp-6",
-    title: "Social Impact Project Mentor",
-    org: "Community Growth Network",
-    category: "Community Outreach",
-    skills: ["Leadership", "Communication", "Teaching"],
-    location: "Remote",
-    locationType: "Remote",
-    duration: "6 months",
-    deadline: "2026-12-15",
-    commitment: "3 hrs/week",
-    type: "Mentorship",
-    description:
-      "Guide volunteers as they plan and deliver meaningful community projects.",
-  },
-];
+import { api, type OpportunityItem, type PaginationMeta } from "@/lib/api";
 
 const categories = [
   "Education & Literacy",
@@ -129,39 +40,151 @@ const skills = [
 
 const durations = ["2 weeks", "1 month", "3 months", "6 months"];
 
-export default function OpportunitiesPage() {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("");
-  const [skill, setSkill] = useState("");
-  const [locationType, setLocationType] = useState("");
-  const [duration, setDuration] = useState("");
-  const [deadline, setDeadline] = useState("");
+function OpportunitiesContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const searchQuery = searchParams.get("search") || searchParams.get("q") || "";
+  const categoryParam = searchParams.get("category") || "";
+  const skillParam = searchParams.get("skill") || searchParams.get("skills") || "";
+  const locationTypeParam = searchParams.get("locationType") || searchParams.get("location_type") || "";
+  const durationParam = searchParams.get("duration") || "";
+  const deadlineParam = searchParams.get("deadline") || "";
+  const pageParam = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+
+  const [prevQuery, setPrevQuery] = useState(searchQuery);
+  const [searchInput, setSearchInput] = useState(searchQuery);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const filteredOpportunities = useMemo(() => {
-    return opportunities.filter((opp) => {
-      const searchText =
-        `${opp.title} ${opp.org} ${opp.location} ${opp.category}`.toLowerCase();
+  if (prevQuery !== searchQuery) {
+    setPrevQuery(searchQuery);
+    setSearchInput(searchQuery);
+  }
 
-      return (
-        searchText.includes(query.toLowerCase().trim()) &&
-        (!category || opp.category === category) &&
-        (!skill || opp.skills.includes(skill)) &&
-        (!locationType || opp.locationType === locationType) &&
-        (!duration || opp.duration === duration) &&
-        (!deadline || opp.deadline <= deadline)
-      );
+  const [opportunities, setOpportunities] = useState<OpportunityItem[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const updateFilters = useCallback(
+    (updates: Record<string, string | number | undefined | null>) => {
+      setIsLoading(true);
+      const current = new URLSearchParams(searchParams.toString());
+
+      const isFilterChange = Object.keys(updates).some((key) => key !== "page");
+      if (isFilterChange && updates.page === undefined) {
+        current.delete("page");
+      }
+
+      Object.entries(updates).forEach(([key, val]) => {
+        if (
+          val === undefined ||
+          val === null ||
+          val === "" ||
+          (key === "page" && Number(val) <= 1)
+        ) {
+          current.delete(key);
+        } else {
+          current.set(key, String(val));
+        }
+      });
+
+      const qs = current.toString();
+      const target = qs ? `${pathname}?${qs}` : pathname;
+      router.push(target, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const run = async () => {
+      try {
+        const queryParams: Record<string, string | number> = {
+          page: pageParam,
+          limit: 10,
+        };
+
+        if (searchQuery.trim()) {
+          queryParams.search = searchQuery.trim();
+        }
+        if (categoryParam) {
+          queryParams.category = categoryParam;
+        }
+        if (locationTypeParam) {
+          queryParams.locationType = locationTypeParam;
+        }
+        if (skillParam) {
+          queryParams.skills = skillParam;
+        }
+
+        const res = await api.getOpportunities(queryParams);
+        if (isMounted) {
+          setOpportunities(res.data || []);
+          setMeta(res.meta || null);
+          setError(null);
+          setIsLoading(false);
+        }
+      } catch (err: unknown) {
+        if (isMounted) {
+          const message =
+            err instanceof Error ? err.message : "Unable to load opportunities. Please try again.";
+          setError(message);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    run();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [searchQuery, categoryParam, locationTypeParam, skillParam, pageParam]);
+
+  const filteredOpportunities = useMemo(() => {
+    if (!durationParam && !deadlineParam) {
+      return opportunities;
+    }
+    return opportunities.filter((opp) => {
+      const matchDuration =
+        !durationParam ||
+        (opp.duration && opp.duration.toLowerCase().includes(durationParam.toLowerCase()));
+      const matchDeadline = !deadlineParam || (opp.deadline && opp.deadline <= deadlineParam);
+      return matchDuration && matchDeadline;
     });
-  }, [query, category, skill, locationType, duration, deadline]);
+  }, [opportunities, durationParam, deadlineParam]);
 
   function clearFilters() {
-    setQuery("");
-    setCategory("");
-    setSkill("");
-    setLocationType("");
-    setDuration("");
-    setDeadline("");
+    setIsLoading(true);
+    setSearchInput("");
+    router.push(pathname, { scroll: false });
   }
+
+  const totalPages = meta?.totalPages ?? 1;
+  const currentPage = meta?.page ?? pageParam;
+  const totalCount = meta?.total ?? opportunities.length;
+
+  function goToPage(p: number) {
+    if (p < 1 || p > totalPages || p === currentPage) return;
+    updateFilters({ page: p });
+    document.getElementById("opportunity-results")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, "...", totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+  }, [currentPage, totalPages]);
 
   const filters = (
     <div className="space-y-6">
@@ -188,8 +211,10 @@ export default function OpportunitiesPage() {
               <input
                 type="radio"
                 name="category"
-                checked={category === item}
-                onChange={() => setCategory(category === item ? "" : item)}
+                checked={categoryParam === item}
+                onChange={() =>
+                  updateFilters({ category: categoryParam === item ? "" : item })
+                }
                 className="mt-1 accent-sky-500"
               />
               {item}
@@ -203,8 +228,8 @@ export default function OpportunitiesPage() {
           Skills
         </h3>
         <select
-          value={skill}
-          onChange={(e) => setSkill(e.target.value)}
+          value={skillParam}
+          onChange={(e) => updateFilters({ skill: e.target.value })}
           className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 outline-none focus:border-sky-400"
         >
           <option value="">All skills</option>
@@ -228,9 +253,11 @@ export default function OpportunitiesPage() {
             <input
               type="radio"
               name="locationType"
-              checked={locationType === item}
+              checked={locationTypeParam === item}
               onChange={() =>
-                setLocationType(locationType === item ? "" : item)
+                updateFilters({
+                  locationType: locationTypeParam === item ? "" : item,
+                })
               }
               className="accent-sky-500"
             />
@@ -244,8 +271,8 @@ export default function OpportunitiesPage() {
           Duration
         </h3>
         <select
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
+          value={durationParam}
+          onChange={(e) => updateFilters({ duration: e.target.value })}
           className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 outline-none focus:border-sky-400"
         >
           <option value="">Any duration</option>
@@ -263,8 +290,8 @@ export default function OpportunitiesPage() {
         </h3>
         <input
           type="date"
-          value={deadline}
-          onChange={(e) => setDeadline(e.target.value)}
+          value={deadlineParam}
+          onChange={(e) => updateFilters({ deadline: e.target.value })}
           className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 outline-none focus:border-sky-400"
         />
       </div>
@@ -297,19 +324,28 @@ export default function OpportunitiesPage() {
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
               />
               <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    updateFilters({ search: searchInput });
+                    document
+                      .getElementById("opportunity-results")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
                 placeholder="Search roles, organisations, skills or cities..."
                 className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
               />
             </div>
 
             <button
-              onClick={() =>
+              onClick={() => {
+                updateFilters({ search: searchInput });
                 document
                   .getElementById("opportunity-results")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
               className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-sky-500 px-6 font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-600"
             >
               Find opportunities <ArrowRight size={18} />
@@ -321,9 +357,9 @@ export default function OpportunitiesPage() {
               <button
                 key={item}
                 onClick={() => {
-                  if (item === "Remote") setLocationType("Remote");
-                  else if (item === "Programming") setSkill("Programming");
-                  else setCategory(item);
+                  if (item === "Remote") updateFilters({ locationType: "Remote" });
+                  else if (item === "Programming") updateFilters({ skill: "Programming" });
+                  else updateFilters({ category: item });
                 }}
                 className="rounded-full border border-sky-100 bg-white/80 px-3 py-1.5 text-xs font-medium text-sky-800 transition hover:bg-sky-100"
               >
@@ -386,7 +422,7 @@ export default function OpportunitiesPage() {
                   onClick={() => setMobileFiltersOpen(false)}
                   className="mt-6 w-full rounded-xl bg-sky-500 py-3 font-semibold text-white"
                 >
-                  Show {filteredOpportunities.length} results
+                  Show {totalCount} results
                 </button>
               </aside>
             </div>
@@ -396,9 +432,10 @@ export default function OpportunitiesPage() {
             <div className="mb-5 flex items-center justify-between gap-3">
               <p className="text-sm text-slate-600">
                 <span className="font-bold text-slate-900">
-                  {filteredOpportunities.length}
+                  {totalCount}
                 </span>{" "}
-                opportunities found
+                {totalCount === 1 ? "opportunity" : "opportunities"} found
+                {meta && meta.totalPages > 1 ? ` (Page ${currentPage} of ${totalPages})` : ""}
               </p>
 
               <button
@@ -409,7 +446,45 @@ export default function OpportunitiesPage() {
               </button>
             </div>
 
-            {filteredOpportunities.length === 0 ? (
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse flex flex-col rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+                  >
+                    <div className="mb-4 flex items-start justify-between">
+                      <div className="h-6 w-28 rounded-full bg-slate-200" />
+                      <div className="h-6 w-6 rounded-full bg-slate-200" />
+                    </div>
+                    <div className="h-6 w-3/4 rounded-lg bg-slate-200 mb-2" />
+                    <div className="h-4 w-1/3 rounded-lg bg-slate-100 mb-4" />
+                    <div className="space-y-2 mb-6">
+                      <div className="h-4 w-full rounded bg-slate-100" />
+                      <div className="h-4 w-5/6 rounded bg-slate-100" />
+                    </div>
+                    <div className="space-y-2 mt-auto pt-4 border-t border-slate-100">
+                      <div className="h-4 w-1/2 rounded bg-slate-100" />
+                      <div className="h-4 w-1/3 rounded bg-slate-100" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
+                <AlertCircle className="mx-auto mb-3 text-red-500" size={36} />
+                <h3 className="text-lg font-bold text-red-900">
+                  Failed to load opportunities
+                </h3>
+                <p className="mt-2 text-sm text-red-700">{error}</p>
+                <button
+                  onClick={() => updateFilters({})}
+                  className="mt-4 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : filteredOpportunities.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
                 <Search className="mx-auto mb-4 text-slate-400" size={36} />
                 <h3 className="text-lg font-bold text-slate-900">
@@ -426,92 +501,184 @@ export default function OpportunitiesPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                {filteredOpportunities.map((opp) => (
-                  <article
-                    key={opp.id}
-                    className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-sky-900/5 sm:p-6"
-                  >
-                    <div className="mb-4 flex items-start justify-between gap-3">
-                      <span className="rounded-full bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700">
-                        {opp.category}
-                      </span>
-                      {opp.type === "Internship" ? (
-                        <GraduationCap
-                          className="shrink-0 text-violet-500"
-                          size={22}
-                        />
-                      ) : (
-                        <BriefcaseBusiness
-                          className="shrink-0 text-sky-500"
-                          size={22}
-                        />
-                      )}
-                    </div>
+              <>
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                  {filteredOpportunities.map((opp) => {
+                    const orgName = opp.org || opp.organisation?.org_name || "Organisation";
+                    const oppSkills = opp.skills || opp.skills_required || [];
+                    const oppLocation =
+                      opp.location || opp.city || (opp.locationType === "Remote" || opp.location_type === "Remote" ? "Remote" : "Various");
+                    const oppLocType = opp.locationType || opp.location_type || "On-site";
+                    const deadlineFormatted = opp.deadline
+                      ? (() => {
+                          try {
+                            const dateStr = opp.deadline.includes("T") ? opp.deadline : `${opp.deadline}T00:00:00`;
+                            const d = new Date(dateStr);
+                            return isNaN(d.getTime())
+                              ? opp.deadline
+                              : d.toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                });
+                          } catch {
+                            return opp.deadline;
+                          }
+                        })()
+                      : null;
 
-                    <h3 className="text-lg font-bold leading-7 text-slate-900 transition group-hover:text-sky-700">
-                      {opp.title}
-                    </h3>
-
-                    <p className="mt-1 text-sm font-medium text-slate-500">
-                      {opp.org}
-                    </p>
-
-                    <p className="mt-3 text-sm leading-6 text-slate-600">
-                      {opp.description}
-                    </p>
-
-                    <div className="mt-5 space-y-3 text-sm text-slate-600">
-                      <div className="flex items-center gap-2">
-                        <MapPin size={17} className="shrink-0 text-sky-500" />
-                        {opp.location} · {opp.locationType}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock size={17} className="shrink-0 text-sky-500" />
-                        {opp.commitment} · {opp.duration}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CalendarDays
-                          size={17}
-                          className="shrink-0 text-sky-500"
-                        />
-                        Apply before{" "}
-                        {new Date(
-                          `${opp.deadline}T00:00:00`,
-                        ).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {opp.skills.map((item) => (
-                        <span
-                          key={item}
-                          className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs text-slate-600"
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
-                      <span className="text-xs font-semibold text-slate-500">
-                        {opp.type}
-                      </span>
-
-                      <Link
-                        href={`/opportunities/${opp.id}`}
-                        className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
+                    return (
+                      <article
+                        key={opp.id}
+                        className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-sky-900/5 sm:p-6"
                       >
-                        View details <ArrowRight size={16} />
-                      </Link>
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                          <span className="rounded-full bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700">
+                            {opp.category}
+                          </span>
+                          {opp.type === "Internship" ? (
+                            <GraduationCap
+                              className="shrink-0 text-violet-500"
+                              size={22}
+                            />
+                          ) : (
+                            <BriefcaseBusiness
+                              className="shrink-0 text-sky-500"
+                              size={22}
+                            />
+                          )}
+                        </div>
+
+                        <h3 className="text-lg font-bold leading-7 text-slate-900 transition group-hover:text-sky-700">
+                          {opp.title}
+                        </h3>
+
+                        <p className="mt-1 text-sm font-medium text-slate-500">
+                          {orgName}
+                        </p>
+
+                        <p className="mt-3 text-sm leading-6 text-slate-600">
+                          {opp.description}
+                        </p>
+
+                        <div className="mt-5 space-y-3 text-sm text-slate-600">
+                          <div className="flex items-center gap-2">
+                            <MapPin size={17} className="shrink-0 text-sky-500" />
+                            {oppLocation} · {oppLocType}
+                          </div>
+                          {(opp.duration || opp.points_reward || opp.pointsReward) && (
+                            <div className="flex items-center gap-2">
+                              <Clock size={17} className="shrink-0 text-sky-500" />
+                              {opp.duration || "Flexible duration"}
+                              {opp.points_reward ? ` · ${opp.points_reward} points` : ""}
+                            </div>
+                          )}
+                          {deadlineFormatted && (
+                            <div className="flex items-center gap-2">
+                              <CalendarDays
+                                size={17}
+                                className="shrink-0 text-sky-500"
+                              />
+                              Apply before {deadlineFormatted}
+                            </div>
+                          )}
+                        </div>
+
+                        {oppSkills.length > 0 && (
+                          <div className="mt-5 flex flex-wrap gap-2">
+                            {oppSkills.map((item) => (
+                              <span
+                                key={item}
+                                className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs text-slate-600"
+                              >
+                                {item}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
+                          <span className="text-xs font-semibold text-slate-500">
+                            {opp.type}
+                          </span>
+
+                          <Link
+                            href={`/opportunities/${opp.id}`}
+                            className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
+                          >
+                            View details <ArrowRight size={16} />
+                          </Link>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {totalPages > 1 && (
+                  <nav
+                    aria-label="Pagination"
+                    className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row"
+                  >
+                    <div className="text-sm text-slate-600">
+                      Showing{" "}
+                      <span className="font-semibold text-slate-900">
+                        {(currentPage - 1) * (meta?.limit ?? 10) + 1}
+                      </span>{" "}
+                      to{" "}
+                      <span className="font-semibold text-slate-900">
+                        {Math.min(currentPage * (meta?.limit ?? 10), totalCount)}
+                      </span>{" "}
+                      of <span className="font-semibold text-slate-900">{totalCount}</span> opportunities
                     </div>
-                  </article>
-                ))}
-              </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                        aria-label="Previous page"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <ChevronLeft size={16} /> Previous
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {pageNumbers.map((p, idx) =>
+                          p === "..." ? (
+                            <span
+                              key={`ellipsis-${idx}`}
+                              className="px-2 text-sm text-slate-400"
+                            >
+                              ...
+                            </span>
+                          ) : (
+                            <button
+                              key={`page-${p}`}
+                              onClick={() => goToPage(Number(p))}
+                              aria-current={p === currentPage ? "page" : undefined}
+                              className={`h-9 w-9 rounded-xl text-sm font-semibold transition ${
+                                p === currentPage
+                                  ? "bg-sky-500 text-white shadow-sm"
+                                  : "text-slate-700 hover:bg-slate-100"
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          )
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                        aria-label="Next page"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </nav>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -520,3 +687,16 @@ export default function OpportunitiesPage() {
   );
 }
 
+export default function OpportunitiesPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-slate-50 flex items-center justify-center p-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-sky-500 border-t-transparent" />
+        </main>
+      }
+    >
+      <OpportunitiesContent />
+    </Suspense>
+  );
+}
