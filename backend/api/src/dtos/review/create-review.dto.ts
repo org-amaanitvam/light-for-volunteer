@@ -1,16 +1,17 @@
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class CreateReviewDto {
   @IsUUID()
   @IsNotEmpty()
   applicationId: string;
 
+  @IsOptional()
   @IsUUID()
   @IsNotEmpty()
   givenTo: string;
 
-  @IsNumber()
+  @IsInt()
   @Min(1)
   @Max(5)
   @Type(() => Number)

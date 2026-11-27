@@ -65,6 +65,8 @@ export class AuthService {
         name: dto.name,
         passwordHash,
         role,
+        phone: dto.phone,
+        city: dto.city,
       });
     } catch (error) {
       // Two concurrent signups with the same email → unique index fires.

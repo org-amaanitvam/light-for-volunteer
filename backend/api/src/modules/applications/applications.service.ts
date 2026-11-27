@@ -1,22 +1,20 @@
 import {
-  BadRequestException, ConflictException, Injectable, NotFoundException,
+  BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Application } from '../../database/entities/application.entity';
 import { Opportunity } from '../../database/entities/opportunity.entity';
+import { VolunteerProfile } from '../../database/entities/volunteer-profile.entity';
+import { OrganisationMember } from '../../database/entities/organisation-member.entity';
+import { OrganisationMemberRole } from '../../database/enums/organisation-member-role.enum';
+import { OrganisationMemberStatus } from '../../database/enums/organisation-member-status.enum';
+import { ApplicationStatus } from '../../database/enums/application-status.enum';
 import { OpportunityStatus } from '../../database/enums/opportunity-status.enum';
 import { CreateApplicationDto } from '../../dtos/application/create-application.dto';
 import { GamificationService } from '../gamification/gamification.service';
-
-// TODO: replace with the project's real application-status enum if one exists.
-const APPLICATION_STATUSES = [
-  'applied',
-  'shortlisted',
-  'selected',
-  'completed',
-  'rejected',
-] as const;
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../../database/enums/notification-type.enum';
 
 /**
  * Pitch/application lifecycle.
@@ -26,17 +24,25 @@ const APPLICATION_STATUSES = [
  */
 @Injectable()
 export class ApplicationsService {
+  private readonly logger = new Logger(ApplicationsService.name);
+
   constructor(
     @InjectRepository(Application)
     private readonly applicationRepo: Repository<Application>,
     @InjectRepository(Opportunity)
     private readonly opportunityRepo: Repository<Opportunity>,
+    @InjectRepository(VolunteerProfile)
+    private readonly volunteerProfileRepo: Repository<VolunteerProfile>,
+    @InjectRepository(OrganisationMember)
+    private readonly memberRepo: Repository<OrganisationMember>,
     private readonly gamificationService: GamificationService,
+    private readonly notifications: NotificationsService,
   ) { }
 
   async create(volunteerId: string, dto: CreateApplicationDto) {
     const opportunity = await this.opportunityRepo.findOne({
       where: { id: dto.opportunityId },
+      relations: { organisation: true },
     });
     if (!opportunity) {
       throw new NotFoundException('Opportunity not found');
@@ -62,6 +68,17 @@ export class ApplicationsService {
       },
     });
 
+    // Profile rows are created lazily by the profile API. Ensure one exists
+    // before awarding first-application points so a new volunteer can apply
+    // without visiting their profile page first.
+    await this.volunteerProfileRepo
+      .createQueryBuilder()
+      .insert()
+      .into(VolunteerProfile)
+      .values({ user: { id: volunteerId } as any })
+      .orIgnore()
+      .execute();
+
     try {
       const saved = await this.applicationRepo.save(
         this.applicationRepo.create({
@@ -71,27 +88,43 @@ export class ApplicationsService {
         }),
       );
 
-      if (previousApplicationCount === 0) {
-        await this.gamificationService.awardPoints(
-          volunteerId,
-          'first_application',
-          `first-application:${volunteerId}`,
-          10,
-        );
+      try {
+        const organisationOwnerId = opportunity.organisation
+          ? await this.findApprovedOwnerId(opportunity.organisation.id)
+          : null;
+        if (organisationOwnerId) await this.notifications.create({
+          userId: organisationOwnerId,
+          type: NotificationType.APPLICATION_UPDATE,
+          title: 'New volunteer application',
+          body: `A volunteer applied to "${opportunity.title}".`,
+          referenceId: opportunity.id,
+          referenceType: 'opportunity',
+        });
+      } catch {
+        this.logger.warn(`Application ${saved.id} was saved, but its organisation notification could not be sent.`);
+      }
 
-        await this.gamificationService.awardBadge(
-          volunteerId,
-          'FIRST_STEP',
-        );
+      if (previousApplicationCount === 0) {
+        try {
+          await this.gamificationService.awardPoints(
+            volunteerId,
+            'first_application',
+            `first-application:${volunteerId}`,
+            10,
+          );
+          await this.gamificationService.awardBadge(volunteerId, 'FIRST_STEP');
+        } catch (error) {
+          // Keep a successful application successful if optional gamification
+          // data (such as the badge catalogue) has not been seeded yet.
+          this.logger.warn(
+            `Application ${saved.id} was saved, but first-application rewards could not be issued: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
       }
 
       return {
-        id: saved.id,
+        ...this.serialize(saved),
         opportunity_id: opportunity.id,
-        volunteer_id: volunteerId,
-        pitch_text: saved.pitch_text,
-        status: saved.status,
-        applied_at: saved.applied_at,
       };
     } catch (err: any) {
       if (err?.code === '23505') {
@@ -101,56 +134,168 @@ export class ApplicationsService {
     }
   }
 
-  async updateStatus(id: string, status: string) {
-    if ((APPLICATION_STATUSES as readonly string[]).indexOf(status) === -1) {
-      throw new BadRequestException(
-        `Invalid status. Allowed values: ${APPLICATION_STATUSES.join(', ')}`,
-      );
+  async findMine(volunteerId: string) {
+    const applications = await this.applicationRepo.find({
+      where: { volunteer: { id: volunteerId } },
+      relations: { opportunity: { organisation: true } },
+      order: { applied_at: 'DESC' },
+    });
+    return applications.map((application) => this.serialize(application));
+  }
+
+  async findForOpportunity(opportunityId: string, userId: string, userRole: string) {
+    const opportunity = await this.opportunityRepo.findOne({
+      where: { id: opportunityId },
+      relations: { organisation: true },
+    });
+    if (!opportunity) throw new NotFoundException('Opportunity not found');
+    if (
+      userRole !== 'admin' &&
+      !(await this.isApprovedOwner(opportunity.organisation?.id, userId))
+    ) {
+      throw new ForbiddenException('You can only review applicants to your own opportunities');
     }
 
+    const applications = await this.applicationRepo.find({
+      where: { opportunity: { id: opportunityId } },
+      relations: { volunteer: true },
+      order: { applied_at: 'ASC' },
+    });
+    return applications.map((application) => ({
+      ...this.serialize(application),
+      volunteer: {
+        id: application.volunteer.id,
+        name: application.volunteer.name,
+        email: application.volunteer.email,
+        city: application.volunteer.city,
+      },
+    }));
+  }
+
+  async updateStatus(id: string, status: ApplicationStatus, userId: string, userRole: string, hoursCompleted?: number) {
     const application = await this.applicationRepo.findOne({
       where: { id },
-      relations: { opportunity: true, volunteer: true },
+      relations: { opportunity: { organisation: true }, volunteer: true },
     });
     if (!application) {
       throw new NotFoundException('Application not found');
     }
 
-    application.status = status as Application['status'];
+    if (
+      userRole !== 'admin' &&
+      !(await this.isApprovedOwner(application.opportunity.organisation?.id, userId))
+    ) {
+      throw new ForbiddenException('You can only update applicants to your own opportunities');
+    }
+
+    const allowed: Record<ApplicationStatus, ApplicationStatus[]> = {
+      [ApplicationStatus.APPLIED]: [ApplicationStatus.SHORTLISTED, ApplicationStatus.SELECTED, ApplicationStatus.REJECTED],
+      [ApplicationStatus.SHORTLISTED]: [ApplicationStatus.SELECTED, ApplicationStatus.REJECTED],
+      [ApplicationStatus.SELECTED]: [ApplicationStatus.COMPLETED, ApplicationStatus.REJECTED],
+      [ApplicationStatus.COMPLETED]: [],
+      [ApplicationStatus.REJECTED]: [],
+    };
+    if (status !== application.status && !allowed[application.status].includes(status)) {
+      throw new BadRequestException(`Cannot move an application from ${application.status} to ${status}`);
+    }
+
+    const previousStatus = application.status;
+    application.status = status;
+    if (status === ApplicationStatus.COMPLETED && !application.completed_at) {
+      application.completed_at = new Date();
+    }
+    if (status === ApplicationStatus.COMPLETED && hoursCompleted !== undefined) {
+      application.completed_hours = hoursCompleted;
+    }
     const saved = await this.applicationRepo.save(application);
 
-    if (status === 'completed') {
+    if (previousStatus !== status) {
+      try {
+        await this.notifications.create({
+          userId: application.volunteer.id,
+          type: NotificationType.APPLICATION_UPDATE,
+          title: 'Application status updated',
+          body: `Your application for "${application.opportunity.title}" is now ${status}.`,
+          referenceId: application.id,
+          referenceType: 'application',
+        });
+      } catch {
+        this.logger.warn(`Application ${saved.id} changed status, but its volunteer notification could not be sent.`);
+      }
+
+    }
+
+    if (status === ApplicationStatus.COMPLETED) {
       const volunteerId = application.volunteer.id;
-
-      await this.gamificationService.awardPoints(
-        volunteerId,
-        'opportunity_completed',
-        `opportunity-completed:${application.id}`,
-        50,
-      );
-
-      const completedCount = await this.applicationRepo.count({
-        where: {
-          volunteer: { id: volunteerId },
-          status: 'completed' as Application['status'],
-        },
-      });
-
-      if (completedCount >= 5) {
-        await this.gamificationService.awardBadge(
+      try {
+        await this.volunteerProfileRepo
+          .createQueryBuilder()
+          .insert()
+          .into(VolunteerProfile)
+          .values({ user: { id: volunteerId } as any })
+          .orIgnore()
+          .execute();
+        await this.gamificationService.awardPoints(
           volunteerId,
-          'FIVE_COMPLETIONS',
+          'opportunity_completed',
+          `opportunity-completed:${application.id}`,
+          50,
+        );
+        const completedCount = await this.applicationRepo.count({
+          where: { volunteer: { id: volunteerId }, status: ApplicationStatus.COMPLETED },
+        });
+        if (completedCount >= 5) await this.gamificationService.awardBadge(volunteerId, 'FIVE_COMPLETIONS');
+      } catch (error) {
+        this.logger.warn(
+          `Application ${saved.id} was completed, but gamification rewards could not be issued: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
 
+    return this.serialize(saved);
+  }
+
+  private serialize(application: Application) {
     return {
-      id: saved.id,
-      opportunity_id: application.opportunity.id,
-      volunteer_id: application.volunteer.id,
-      pitch_text: saved.pitch_text,
-      status: saved.status,
-      applied_at: saved.applied_at,
+      id: application.id,
+      opportunity_id: application.opportunity?.id,
+      opportunity_title: application.opportunity?.title,
+      organisation: application.opportunity?.organisation?.org_name,
+      volunteer_id: application.volunteer?.id,
+      pitch_text: application.pitch_text,
+      status: application.status,
+      applied_at: application.applied_at,
+      completed_at: application.completed_at ?? null,
+      completed_hours: application.completed_hours ?? 0,
     };
+  }
+
+  private async findApprovedOwnerId(organisationId: string): Promise<string | null> {
+    const owner = await this.memberRepo.findOne({
+      where: {
+        organisation: { id: organisationId },
+        role: OrganisationMemberRole.OWNER,
+        status: OrganisationMemberStatus.APPROVED,
+      },
+      relations: { user: true },
+    });
+    return owner?.user.id ?? null;
+  }
+
+  private async isApprovedOwner(
+    organisationId: string | undefined,
+    userId: string,
+  ): Promise<boolean> {
+    if (!organisationId) return false;
+    return Boolean(
+      await this.memberRepo.findOne({
+        where: {
+          organisation: { id: organisationId },
+          user: { id: userId },
+          role: OrganisationMemberRole.OWNER,
+          status: OrganisationMemberStatus.APPROVED,
+        },
+      }),
+    );
   }
 }

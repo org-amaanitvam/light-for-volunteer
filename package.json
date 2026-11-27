@@ -12,6 +12,7 @@
     "node": ">=24.9"
   },
   "scripts": {
+    "postinstall": "npm run build --workspace packages/types",
     "typeorm": "typeorm-ts-node-commonjs",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
@@ -19,11 +20,11 @@
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "npm run test:e2e --workspaces --if-present",
     "dev:web": "npm run dev --workspace web",
-    "dev:api": "npm run dev --workspace @lfv/api",
+    "dev:api": "npm run dev --workspace backend/api",
     "db:up": "docker compose -f docker/docker-compose.yml up -d",
     "db:down": "docker compose -f docker/docker-compose.yml down",
-    "db:migrate": "npm run migration:run --workspace @lfv/api",
-    "seed:admin": "npm run seed:admin --workspace @lfv/api"
+    "db:migrate": "npm run migration:run --workspace backend/api",
+    "seed:admin": "npm run seed:admin --workspace backend/api"
   },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
@@ -32,6 +33,10 @@
     "@scarf/scarf": false
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1145.0",
+    "@aws-sdk/s3-request-presigner": "^3.1145.0",
+    "@neon/config": "^1.10.0",
+    "@neon/env": "^1.6.8",
     "@nestjs/mapped-types": "^12.0.0",
     "@nestjs/typeorm": "^12.0.2",
     "class-transformer": "^0.5.1",

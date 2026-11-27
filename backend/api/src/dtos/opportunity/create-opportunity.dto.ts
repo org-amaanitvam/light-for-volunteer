@@ -1,6 +1,7 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDate,
   IsEnum,
   IsInt,
@@ -30,37 +31,85 @@ export class CreateOpportunityDto {
   @IsNotEmpty()
   category: string;
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  skillsRequired: string[];
+  skillsRequired?: string[];
 
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skills_required?: string[];
+
+  @IsOptional()
   @IsEnum(LocationType)
-  @IsNotEmpty()
-  locationType: LocationType;
+  locationType?: LocationType;
+
+  @IsOptional()
+  @IsEnum(LocationType)
+  location_type?: LocationType;
 
   @IsOptional()
   @IsString()
   city?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  duration: string;
+  duration?: string;
 
+  @IsOptional()
   @IsInt()
   @Min(0)
   @Type(() => Number)
-  pointsReward: number;
+  pointsReward?: number;
 
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  points_reward?: number;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  openings: number;
+  openings?: number = 1;
 
   @Type(() => Date)
   @IsDate()
   deadline: Date;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true || value === 1 || value === '1') return true;
+    if (value === 'false' || value === false || value === 0 || value === '0') return false;
+    return value;
+  })
+  @IsBoolean()
+  student_friendly?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true || value === 1 || value === '1') return true;
+    if (value === 'false' || value === false || value === 0 || value === '0') return false;
+    return value;
+  })
+  @IsBoolean()
+  studentFriendly?: boolean;
+
+  @IsOptional()
+  @IsString()
+  commitment?: string;
+
+  @IsOptional()
   @IsEnum(OpportunityStatus)
   status?: OpportunityStatus = OpportunityStatus.DRAFT;
+
+  @IsOptional()
+  @IsString()
+  orgId?: string;
+
+  @IsOptional()
+  @IsString()
+  org_id?: string;
 }

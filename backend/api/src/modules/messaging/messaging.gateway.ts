@@ -26,7 +26,7 @@ import { MessagingService } from './messaging.service';
  */
 @WebSocketGateway({
   namespace: '/ws',
-  cors: { origin: '*' }, // Suryansh will tighten CORS via env config.
+  cors: { origin: process.env.WEB_ORIGIN ?? 'http://localhost:3000' },
 })
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class MessagingGateway

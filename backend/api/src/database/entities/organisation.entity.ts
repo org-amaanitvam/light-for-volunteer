@@ -1,18 +1,12 @@
-import { 
-  Entity, PrimaryGeneratedColumn, Column,OneToOne, OneToMany,JoinColumn 
-} from 'typeorm';
-import { User } from '../../modules/users/entities/user.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { VerificationStatus } from '../enums/verification-status.enum';
 import { Opportunity } from './opportunity.entity';
+import { OrganisationMember } from './organisation-member.entity';
 
 @Entity('organisations')
 export class Organisation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @OneToOne(() => User, user => user.organisation,{ onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
-  user: User;
 
   @Column()
   org_name: string;
@@ -37,6 +31,9 @@ export class Organisation {
 
   @Column({ type: 'float', default: 0.0 })
   rating_avg: number;
+
+  @OneToMany(() => OrganisationMember, (member) => member.organisation)
+  members: OrganisationMember[];
 
   @OneToMany(() => Opportunity, opportunity => opportunity.organisation)
   opportunities: Opportunity[];

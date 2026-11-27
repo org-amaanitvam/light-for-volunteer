@@ -10,6 +10,7 @@ import appConfig from './config/app.config';
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
+import storageConfig from './config/storage.config';
 import { envValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -27,6 +28,9 @@ import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 import { VolunteersModule } from './modules/volunteers/volunteers.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { HealthController } from './modules/health/health.controller';
+import { CertificatesModule } from './modules/certificates/certificates.module';
+import { MentorsModule } from './modules/mentors/mentors.module';
 /**
  * Global guard order: JWT auth → RBAC roles (registered inside AuthModule),
  * then throttling registered here. Route opt-outs: `@Public()`,
@@ -35,10 +39,16 @@ import { ReportsModule } from './modules/reports/reports.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
-      load: [appConfig, authConfig, databaseConfig, redisConfig],
-      validationSchema: envValidationSchema,
-    }),
+  isGlobal: true,
+  load: [
+    appConfig,
+    authConfig,
+    databaseConfig,
+    redisConfig,
+    storageConfig,
+  ],
+  validationSchema: envValidationSchema,
+}),
     ThrottlerModule.forRoot([
       { ttl: 60_000, limit: Number(process.env.THROTTLE_GLOBAL_LIMIT ?? 100) },
     ]),
@@ -46,7 +56,6 @@ import { ReportsModule } from './modules/reports/reports.module';
     DatabaseModule,
     UsersModule,
     AuthModule,
-    // Feature stubs — owned by their respective teammates.
     VolunteersModule,
     OrganisationsModule,
     OpportunitiesModule,
@@ -58,9 +67,12 @@ import { ReportsModule } from './modules/reports/reports.module';
     NotificationsModule,
     StorageModule,
     SearchModule,
-    ReportsModule,
     LeaderboardModule, // Suraj: leaderboard recalculation
+    CertificatesModule,
+    MentorsModule,
+    ReportsModule
   ],
+  controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

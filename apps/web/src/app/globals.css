@@ -1,91 +1,160 @@
 @import "tailwindcss";
 
+/* 
+ * Light For Volunteer — The Transparent Ledger Design System
+ * Strict White × Blue Palette & Anti-AI-Slop Foundation
+ */
+
+@theme {
+  /* White & Blue Chromatic Ramp */
+  --color-canvas-pure: #ffffff;
+  --color-canvas-ice: #f4f9ff;
+  --color-canvas-ground: #f8fafc;
+  --color-blue-glacial: #e0f2fe;
+  --color-blue-light: #dbeafe;
+  --color-blue-sky: #93c5fd;
+  --color-blue-hairline: #bae6fd;
+  --color-blue-civic: #0369a1;
+  --color-blue-deep: #075985;
+  --color-blue-navy: #0c4a6e;
+  --color-blue-midnight: #0f2a43;
+
+  /* Brand Primary - Civic Azure (5.93:1 contrast against #ffffff) */
+  --color-primary: #0369a1;
+  --color-primary-hover: #075985;
+  --color-primary-active: #0c4a6e;
+  --color-primary-foreground: #ffffff;
+
+  /* Secondary - Glacial Blue with Deep Azure (6.59:1 contrast) */
+  --color-secondary: #e0f2fe;
+  --color-secondary-foreground: #075985;
+  --color-secondary-hover: #bae6fd;
+
+  /* Accent - Ice / Sky Highlight */
+  --color-accent: #f0f9ff;
+  --color-accent-foreground: #0369a1;
+
+  /* Surfaces & Grounds */
+  --color-ground: #f4f9ff;
+  --color-ground-subtle: #eef6fc;
+  --color-surface: #ffffff;
+
+  /* Typographic Ramp - Midnight Blue tinted neutrals */
+  --color-text-main: #0f2a43;
+  --color-text-muted: #335577;
+  --color-text-subtle: #5a7b9d;
+
+  /* Structural Hairline Boundaries */
+  --color-border-hairline: #bae6fd;
+  --color-border-subtle: #e2eaf2;
+
+  /* Semantic Status Colors (Used strictly for functional status markers) */
+  --color-success: #047857;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-success-foreground: #065f46;
+
+  --color-destructive: #b91c1c;
+  --color-destructive-bg: #fef2f2;
+  --color-destructive-border: #fecaca;
+  --color-destructive-foreground: #991b1b;
+
+  --color-warning: #b45309;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-foreground: #92400e;
+
+  /* Radii Vocabulary */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+}
+
 @layer base {
   :root {
-    --background: 204 100% 98%;
-    --foreground: 215 25% 15%;
+    --background: 210 100% 98%;
+    --foreground: 209 63% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 209 63% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 209 63% 16%;
 
-    /* Light Blue Brand Primary: Sky 600 / 500 */
-    --primary: 199 89% 48%;
+    /* Civic Azure */
+    --primary: 201 96% 32%;
     --primary-foreground: 0 0% 100%;
 
-    /* Soft Sky Secondary: Sky 100 */
+    /* Glacial Blue */
     --secondary: 204 94% 94%;
-    --secondary-foreground: 200 80% 25%;
+    --secondary-foreground: 201 90% 27%;
 
-    /* Muted Slate/Sky */
-    --muted: 204 50% 95%;
-    --muted-foreground: 215 16% 47%;
+    /* Muted Slate */
+    --muted: 210 50% 96%;
+    --muted-foreground: 211 40% 33%;
 
-    /* Soft Blue Accent */
-    --accent: 199 95% 91%;
-    --accent-foreground: 201 90% 27%;
+    /* Accent */
+    --accent: 204 100% 97%;
+    --accent-foreground: 201 96% 32%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 204 45% 88%;
-    --input: 204 45% 88%;
-    --ring: 199 89% 48%;
+    --border: 204 88% 86%;
+    --input: 204 88% 86%;
+    --ring: 201 96% 32%;
 
     --radius: 0.75rem;
   }
+}
 
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+html {
+  scroll-behavior: smooth;
+}
 
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
+html,
+body {
+  background-color: #f4f9ff;
+  color: #0f2a43;
+  overflow-x: clip;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 98%;
+/* Tabular figures for numbers, metrics, hours, dates */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
 
-    --primary: 199 89% 52%;
-    --primary-foreground: 222 47% 11%;
+/* Accessible focus ring - Hallmark rule 6 & Better-Accessibility */
+:focus-visible {
+  outline: 2px solid #0369a1 !important;
+  outline-offset: 2px !important;
+}
 
-    --secondary: 217 33% 22%;
-    --secondary-foreground: 199 89% 75%;
-
-    --muted: 217 33% 22%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 33% 25%;
-    --accent-foreground: 199 89% 75%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 33% 24%;
-    --input: 217 33% 24%;
-    --ring: 199 89% 52%;
+/* Reduced-motion accessibility fallback */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-* {
-  border-color: hsl(var(--border, 204 45% 88%));
-}
-
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  overflow-x: hidden;
-}
-
-/* Custom scrollbar */
+/* Architectural clean scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f0f9ff;
+  background: #f0f7ff;
 }
 ::-webkit-scrollbar-thumb {
   background: #bae6fd;
@@ -93,16 +162,4 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #7dd3fc;
-}
-
-/* Glassmorphism utility */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(186, 230, 253, 0.6);
-}
-.glass-panel-dark {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 189, 248, 0.2);
 }

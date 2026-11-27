@@ -12,6 +12,11 @@
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_SYNC = 'true';
 process.env.DATABASE_MIGRATIONS_RUN = 'false';
+// Never let e2e schema synchronization touch the developer or production DB.
+process.env.DATABASE_NAME = 'light_for_volunteer_test';
+if (!process.env.DATABASE_NAME.endsWith('_test')) {
+  throw new Error('E2E tests require an isolated database ending in _test.');
+}
 process.env.REFRESH_GRACE_SECONDS = '2';
 process.env.THROTTLE_AUTH_LIMIT = '1000';
 process.env.THROTTLE_AUTH_TTL = '60';
@@ -23,3 +28,11 @@ process.env.GOOGLE_CLIENT_ID = '';
 process.env.GOOGLE_CLIENT_SECRET = '';
 process.env.ADMIN_EMAIL ||= '';
 process.env.ADMIN_PASSWORD ||= '';
+
+process.env.STORAGE_PROVIDER ||= 'r2';
+process.env.R2_ACCOUNT_ID ||= 'test-account-id';
+process.env.R2_REGION ||= 'auto';
+process.env.R2_BUCKET_NAME ||= 'test-storage-bucket';
+process.env.R2_ENDPOINT ||= 'https://test-account-id.r2.cloudflarestorage.com';
+process.env.R2_ACCESS_KEY_ID ||= 'testing-access-key-id';
+process.env.R2_SECRET_ACCESS_KEY ||= 'testing-secret-access-key';

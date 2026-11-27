@@ -1,23 +1,27 @@
-import { 
-  Injectable, 
-  BadRequestException, 
-  NotFoundException, 
-  ForbiddenException, 
-  ConflictException 
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm'; // Import decorator here
 import { Repository } from 'typeorm';                 // Import generic Repository here
 import { Review } from '../../database/entities/review.entity';
 import { Application } from '../../database/entities/application.entity';
+import { OrganisationMemberRole } from '../../database/enums/organisation-member-role.enum';
+import { OrganisationMemberStatus } from '../../database/enums/organisation-member-status.enum';
 import { CreateReviewDto } from '../../dtos/review/create-review.dto';
 import { ApplicationStatus } from '../../database/enums/application-status.enum';
-
+import { NotificationType } from '../../database/enums/notification-type.enum';
+import { NotificationsService } from '../notifications/notifications.service';
+import { GamificationService } from '../gamification/gamification.service';
+import { User } from '../users/entities/user.entity';
 /**
  * Two-way ratings after completion.
  *
- * Owner: Samman. Placeholder only — Auth
- * (src/modules/auth) is the reference for service/controller patterns.
+ * Reviews can be submitted by either participant after an application is completed.
  */
 @Injectable()
 export class ReviewsService {
@@ -26,24 +30,41 @@ export class ReviewsService {
     private readonly reviewRepo: Repository<Review>,
     @InjectRepository(Application)
     private readonly applicationRepo: Repository<Application>,
-  ) {}
+    private readonly notifications: NotificationsService,
+    private readonly gamificationService: GamificationService,
+  ) { }
 
-  async create(givenById: string, dto: CreateReviewDto) {
-    if (givenById === dto.givenTo) {
-      throw new BadRequestException('You cannot review yourself');
-    }
-
-    const application = await this.applicationRepo.findOne({
-        where: { id: dto.applicationId },
-        relations: {
-            volunteer: true,
-            opportunity: {
-            organisation: {
-                user: true, // TO CONFIRM: property name from Organisation entity
-            },
-            },
-        },
+  async findMine(userId: string) {
+    const reviews = await this.reviewRepo.find({
+      where: { given_by: { id: userId } },
+      relations: { application: { opportunity: { organisation: true } }, given_to: true, given_by: true },
+      order: { created_at: 'DESC' },
     });
+    return reviews.map((review) => ({
+      id: review.id,
+      applicationId: review.application?.id,
+      opportunityTitle: review.application?.opportunity?.title ?? 'Opportunity',
+      organisation: review.application?.opportunity?.organisation?.org_name ?? 'Organisation',
+      rating: review.rating,
+      comment: review.comment,
+      createdAt: review.created_at,
+      reviewerName: 'You',
+      reviewedPerson: review.given_to?.name ?? 'Participant',
+    }));
+  }
+
+  async create(givenById: string, role: string, dto: CreateReviewDto) {
+    const application = await this.applicationRepo.findOne({
+      where: { id: dto.applicationId },
+      relations: {
+        volunteer: true,
+        opportunity: {
+          organisation: {
+            members: { user: true },
+          },
+        },
+      },
+    },);
 
     if (!application) {
       throw new NotFoundException('Application not found');
@@ -55,25 +76,35 @@ export class ReviewsService {
       );
     }
 
-    const participants = [
-      application.volunteer.id,
-      application.opportunity.organisation.user.id, // TO CONFIRM
-    ];
-
-    if (
-      !participants.includes(givenById) ||
-      !participants.includes(dto.givenTo)
-    ) {
-      throw new ForbiddenException(
-        'Only participants of this application can review each other',
-      );
+    const volunteerId = application.volunteer.id;
+    const organisationOwnerId = application.opportunity.organisation.members?.find(
+      (member) =>
+        member.role === OrganisationMemberRole.OWNER &&
+        member.status === OrganisationMemberStatus.APPROVED,
+    )?.user.id;
+    if (!organisationOwnerId) {
+      throw new NotFoundException('Organisation owner not found');
     }
+    let givenToId: string;
+    if (role === 'volunteer' && volunteerId === givenById) givenToId = organisationOwnerId;
+    else if (
+      role === 'organisation' &&
+      organisationOwnerId === givenById &&
+      application.opportunity.organisation.members?.some(
+        (member) =>
+          member.user?.id === givenById &&
+          member.role === OrganisationMemberRole.OWNER &&
+          member.status === OrganisationMemberStatus.APPROVED,
+      )
+    ) givenToId = volunteerId;
+    else throw new ForbiddenException('Only participants of this completed application can review each other');
+    if (givenById === givenToId) throw new BadRequestException('You cannot review yourself');
 
     const existing = await this.reviewRepo.findOne({
       where: {
         application: { id: dto.applicationId },
         given_by: { id: givenById },
-        given_to: { id: dto.givenTo },
+        given_to: { id: givenToId },
       },
     });
 
@@ -87,19 +118,53 @@ export class ReviewsService {
       this.reviewRepo.create({
         application: { id: dto.applicationId },
         given_by: { id: givenById },
-        given_to: { id: dto.givenTo },
+        given_to: { id: givenToId },
         rating: dto.rating,
         comment: dto.comment,
       }),
     );
 
-    return {
-      id: saved.id,
-      applicationId: dto.applicationId,
-      givenBy: givenById,
-      givenTo: dto.givenTo,
-      rating: saved.rating,
-      comment: saved.comment,
-    };
+    try {
+      await this.notifications.create({
+        userId: givenToId,
+        type: NotificationType.REVIEW_RECEIVED,
+        title: 'You received a review',
+        body: `A participant left feedback for ${application.opportunity.title}.`,
+        referenceId: saved.id,
+        referenceType: 'review',
+      });
+    } catch {
+      // Keep the saved review successful if notifications are temporarily unavailable.
+      const reviewer = await this.reviewRepo.manager
+        .getRepository(User)
+        .findOne({
+          where: { id: givenById },
+          select: {
+            id: true,
+            role: true,
+          },
+        });
+
+      let reward = null;
+
+      if (reviewer?.role === 'volunteer') {
+        reward = await this.gamificationService.awardPoints(
+          givenById,
+          'review_submitted',
+          `review-submitted:${saved.id}`,
+          5,
+        );
+      }
+
+      return {
+        id: saved.id,
+        applicationId: dto.applicationId,
+        givenBy: givenById,
+        givenTo: givenToId,
+        rating: saved.rating,
+        comment: saved.comment,
+        reward,
+      };
+    }
   }
 }

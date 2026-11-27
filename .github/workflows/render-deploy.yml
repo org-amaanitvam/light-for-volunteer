@@ -1,0 +1,39 @@
+name: Deploy to Render
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main, staging]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.workflow_run.head_branch == 'main' && 'production' || 'staging' }}
+    steps:
+      - name: Deploy API then web service
+        env:
+          BRANCH_NAME: ${{ github.event.workflow_run.head_branch }}
+          API_STAGING: ${{ secrets.RENDER_API_DEPLOY_HOOK_STAGING }}
+          WEB_STAGING: ${{ secrets.RENDER_WEB_DEPLOY_HOOK_STAGING }}
+          API_PRODUCTION: ${{ secrets.RENDER_API_DEPLOY_HOOK_PRODUCTION }}
+          WEB_PRODUCTION: ${{ secrets.RENDER_WEB_DEPLOY_HOOK_PRODUCTION }}
+        run: |
+          set -euo pipefail
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            API_HOOK="$API_PRODUCTION"
+            WEB_HOOK="$WEB_PRODUCTION"
+          else
+            API_HOOK="$API_STAGING"
+            WEB_HOOK="$WEB_STAGING"
+          fi
+          if [[ -z "$API_HOOK" || -z "$WEB_HOOK" ]]; then
+            echo "Configure both Render API and web deploy hook secrets for $BRANCH_NAME."
+            exit 1
+          fi
+          curl --fail --silent --show-error --request POST "$API_HOOK"
+          curl --fail --silent --show-error --request POST "$WEB_HOOK"

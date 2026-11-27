@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl, Matches, MaxLength } from 'class-validator';
 import { VerificationStatus } from '../../database/enums/verification-status.enum';
 
 export class CreateOrganisationDto {
@@ -23,7 +23,11 @@ export class CreateOrganisationDto {
   registrationId?: string;
 
   @IsOptional()
-  @IsUrl({}, { message: 'Verification document must be a valid URL' })
+  @IsString()
+  @MaxLength(1024)
+  @Matches(/^(verification-documents\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.pdf|https:\/\/\S+)$/i, {
+    message: 'Verification document must be an uploaded PDF key or HTTPS URL',
+  })
   verificationDocUrl?: string;
 }
 

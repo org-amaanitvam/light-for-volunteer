@@ -12,15 +12,48 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
+  // Simple uptime checks for monitors configured at the service root.
+  app.getHttpAdapter().get('/', (_req, res) => {
+    res.status(200).json({
+      status: 'OK',
+      message: 'Light for Volunteer Backend is running',
+    });
+  });
+
+  // UptimeRobot health-check endpoint
+  app.getHttpAdapter().get('/health', (_req, res) => {
+    res.status(200).json({
+      status: 'OK',
+      message: 'Light for Volunteer Backend is running',
+    });
+  });
+
   app.setGlobalPrefix('api');
   app.use(helmet());
 
   const config = app.get(ConfigService);
-  const webOrigin = config.get<string>('app.webOrigin') ?? 'http://localhost:3000';
+  const webOrigin = config.get<string>('app.webOrigin'); //?? 'http://localhost:3000';
   const port = config.get<number>('app.port') ?? 3001;
+  const nodeEnv = process.env.NODE_ENV ?? 'development';
 
   // CORS locked to the frontend origin (bearer tokens, no cookies → no
   // credentials needed).
+
+  if (nodeEnv === 'production') {
+  if (!webOrigin) {
+    throw new Error('WEB_ORIGIN must be configured in production');
+  }
+
+  if (
+    webOrigin.includes('localhost') ||
+    webOrigin.includes('127.0.0.1')
+  ) {
+    throw new Error(
+      'Localhost WEB_ORIGIN is not allowed in production',
+    );
+  }
+}
+
   app.enableCors({ origin: [webOrigin], credentials: false });
 
   app.useGlobalPipes(
@@ -38,7 +71,7 @@ async function bootstrap(): Promise<void> {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Light For Volunteer API')
-    .setDescription('Auth & RBAC foundation — Light For Volunteer backend')
+    .setDescription('Authentication, volunteer and organisation profiles, opportunities, applications, reviews, moderation, messaging, notifications and storage APIs.')
     .setVersion('0.1.0')
     .addBearerAuth()
     .build();

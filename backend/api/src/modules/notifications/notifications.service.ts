@@ -96,6 +96,12 @@ export class NotificationsService {
     });
   }
 
+  async hasReferenceNotification(userId: string, type: NotificationType, referenceId: string): Promise<boolean> {
+    return this.notificationRepo.exists({
+      where: { user_id: userId, type, reference_id: referenceId },
+    });
+  }
+
   // ── Update ─────────────────────────────────────────────────────
 
   /** Mark a single notification as read. */
