@@ -15,6 +15,7 @@ import { CreateApplicationDto } from '../../dtos/application/create-application.
 import { GamificationService } from '../gamification/gamification.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../../database/enums/notification-type.enum';
+import { In } from 'typeorm';
 
 /**
  * Pitch/application lifecycle.
@@ -298,4 +299,45 @@ export class ApplicationsService {
       }),
     );
   }
+
+  async bulkUpdateStatus(
+    ids: string[],
+    status: ApplicationStatus,
+    userId: string,
+    userRole: string,
+    hoursCompleted?: number,
+  ) {
+    const applications = await this.applicationRepo.find({
+      where: { id: In(ids) },
+      relations: { opportunity: { organisation: true } },
+    });
+
+    const foundIds = new Set(applications.map((a) => a.id));
+    const missing = ids.filter((id) => !foundIds.has(id));
+    if (missing.length) {
+      throw new NotFoundException(`Applications not found: ${missing.join(', ')}`);
+    }
+
+    // Authorise every organisation up front so a mixed batch fails as a whole.
+    if (userRole !== 'admin') {
+      const orgIds = [...new Set(applications.map((a) => a.opportunity.organisation?.id))];
+      for (const orgId of orgIds) {
+        if (!(await this.isApprovedOwner(orgId, userId))) {
+          throw new ForbiddenException('You can only update applicants to your own opportunities');
+        }
+      }
+    }
+
+    const results: { id: string; ok: boolean; error?: string }[] = [];
+    for (const id of ids) {
+      try {
+        await this.updateStatus(id, status, userId, userRole, hoursCompleted);
+        results.push({ id, ok: true });
+      } catch (err) {
+        results.push({ id, ok: false, error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+    return { updated: results.filter((r) => r.ok).length, results };
+  }
 }
+

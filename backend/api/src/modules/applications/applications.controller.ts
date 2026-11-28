@@ -6,6 +6,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from '../../dtos/application/create-application.dto';
 import { UpdateApplicationStatusDto } from '../../dtos/application/update-application-status.dto';
+import { BulkUpdateApplicationStatusDto } from '../../dtos/application/bulk-change-application-status.dto';
 import type { JwtAccessPayload } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('applications')
@@ -59,5 +60,18 @@ export class ApplicationsController {
     @Body() body: UpdateApplicationStatusDto,
   ) {
     return this.service.updateStatus(id, body.status, user.sub, user.role, body.hoursCompleted);
+  }
+
+  @ApiBearerAuth()
+  @Roles('organisation', 'admin')
+  @ApiOperation({ summary: 'Update the status of several applications at once' })
+  @Patch('status/bulk')
+  bulkUpdateStatus(
+    @CurrentUser() user: JwtAccessPayload,
+    @Body() body: BulkUpdateApplicationStatusDto,
+  ) {
+    return this.service.bulkUpdateStatus(
+      body.applicationIds, body.status, user.sub, user.role, body.hoursCompleted,
+    );
   }
 }
